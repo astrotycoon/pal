@@ -525,7 +525,6 @@ void palTokenizer::ReadString(palToken* token) {
 	char ch;
 
 	ReadNextCh(ch); // skip over the quote character
-	palAssert(ch == quote_ch);
 
 	while (PeekNextCh(ch)) {
 		SkipNextCh();
