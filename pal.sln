@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpal", "libpal\libpal.vcproj", "{D86A5751-CB74-4A55-AE5E-81AD99380E4C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pal_test", "pal_test\pal_test.vcproj", "{CF09789A-8968-4731-B8E0-4B32B9C192E2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D86A5751-CB74-4A55-AE5E-81AD99380E4C} = {D86A5751-CB74-4A55-AE5E-81AD99380E4C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "freetype", "libpal\freetype\builds\win32\vc2008\freetype.vcproj", "{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D86A5751-CB74-4A55-AE5E-81AD99380E4C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D86A5751-CB74-4A55-AE5E-81AD99380E4C}.Debug|Win32.Build.0 = Debug|Win32
+		{D86A5751-CB74-4A55-AE5E-81AD99380E4C}.Release|Win32.ActiveCfg = Release|Win32
+		{D86A5751-CB74-4A55-AE5E-81AD99380E4C}.Release|Win32.Build.0 = Release|Win32
+		{CF09789A-8968-4731-B8E0-4B32B9C192E2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF09789A-8968-4731-B8E0-4B32B9C192E2}.Debug|Win32.Build.0 = Debug|Win32
+		{CF09789A-8968-4731-B8E0-4B32B9C192E2}.Release|Win32.ActiveCfg = Release|Win32
+		{CF09789A-8968-4731-B8E0-4B32B9C192E2}.Release|Win32.Build.0 = Release|Win32
+		{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}.Debug|Win32.Build.0 = Debug|Win32
+		{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}.Release|Win32.ActiveCfg = Release|Win32
+		{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

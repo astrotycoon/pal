@@ -1,0 +1,14 @@
+Debug
+Release
+*.obj
+*.pdb
+*.idb
+*.pdf
+*.ilk
+*.exe
+*.lib
+*.user
+*.ncb
+*.suo
+PS3_SNC_PPU_Debug
+PS3_SNC_PPU_Release

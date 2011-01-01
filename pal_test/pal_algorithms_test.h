@@ -1,0 +1,6 @@
+#ifndef PAL_TEST_PAL_ALGORITHMS_TEST_H_
+#define PAL_TEST_PAL_ALGORITHMS_TEST_H_
+
+bool PalAlgorithmsTest ();
+
+#endif  // PAL_TEST_PAL_ALGORITHMS_TEST_H_
