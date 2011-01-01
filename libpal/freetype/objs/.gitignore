@@ -7,3 +7,4 @@ ftoption.h
 libfreetype.la
 .libs
 *.lo
+BuildLog.htm
