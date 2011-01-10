@@ -62,21 +62,21 @@ static gcaMemoryChunkHeader* HandlePointerToMemoryChunkHeader(void* p) {
 }
 
 uint32_t palCompactingAllocator::GetNextHandle() {
-  palGCAHandle handle = palAtomicInc(&next_handle_);
+  palGCAHandle handle = ++next_handle_;
   if (handle == 0) {
-    handle = palAtomicInc(&next_handle_);
+    handle = ++next_handle_;
   }
   return handle;
 }
 
 palCompactingAllocator::palCompactingAllocator() : chunk_list_head() {
-  palAtomicSet(0, &map_count_);
-  palAtomicSet(0, &next_handle_);
+  map_count_.Exchange(0);
+  next_handle_.Exchange(0);
 }
 
 palCompactingAllocator::palCompactingAllocator(uint32_t size, void* memory) : chunk_list_head() {
-  palAtomicSet(0, &map_count_);
-  palAtomicSet(0, &next_handle_);
+  map_count_.Exchange(0);
+  next_handle_.Exchange(0);
   Create(size, memory);
 }
 
@@ -212,17 +212,17 @@ void* palCompactingAllocator::MapHandle(palGCAHandle handle) {
     // Invalid handle
     return NULL;
   }
-  palAtomicInc(&map_count_);
+  ++map_count_;
   return *ptr_to_address;
 }
 
 void palCompactingAllocator::UnmapHandle(palGCAHandle handle) {
-  palAtomicDec(&map_count_);
+  --map_count_;
   return;
 }
 
 void palCompactingAllocator::Compact(uint32_t chunks_to_compact) {
-  if (palAtomicGet(&map_count_) != 0) {
+  if (map_count_.Load() != 0) {
     // someone called Compact while holding a mapping
     palBreakHere();
   }

@@ -29,22 +29,21 @@
 #include "libpal/pal_align.h"
 #include "libpal/pal_atomic.h"
 
-typedef palAtomic palSpinlock;
+typedef palAtomicFlag palSpinlock;
 
 PAL_INLINE void palSpinlockInit(palSpinlock* spinlock) {
-  palAtomicSet(0, spinlock);
+  spinlock->flag_ = 0;
 }
 
 PAL_INLINE void palSpinlockTake(palSpinlock* spinlock) {
-  while (palAtomicCAS(0, 1, spinlock) == false) {
-    // spin until we can take the lock
+  while (spinlock->TestAndSet()) {
+    // spin until we got it
     continue;
   }
 }
 
 PAL_INLINE void palSpinlockRelease(palSpinlock* spinlock) {
-  // release the lock
-  palAtomicSet(0, spinlock);
+  spinlock->Clear();
 }
 
 #endif  // LIBPAL_PAL_SPINLOCK_H__

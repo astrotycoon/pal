@@ -13,16 +13,16 @@ void thread_args_test(uintptr_t seven)
   palThreadExit();
 }
 
-static palAtomic countdown = { 44 };
+static palAtomicInt32 countdown(44);
 
 void thread_countdown(uintptr_t seven)
 {
-  palAtomic* a = reinterpret_cast<palAtomic*>(seven);
+  palAtomicInt32* a = reinterpret_cast<palAtomicInt32*>(seven);
 
   bool exit = false;
   do 
   {
-    int d = palAtomicDec(a);
+    int d = (*a)--;
     palPrintf("[%d] *a = %d\n", palThreadGetID(), d);
     if (d <= 0)
       exit = true;

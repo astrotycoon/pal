@@ -3,39 +3,44 @@
 
 bool PalAtomicTest ()
 {
-  palAtomic a;
-  palAtomicSet(4, &a);
-  if (palAtomicGet(&a) != 4)
+  palAtomicInt32 a;
+  a.Exchange(4);
+
+  if (a.Load() != 4)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicInc(&a) != 5)
+  if (++a != 5)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicDec(&a) != 4)
+  if (--a != 4)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicAdd(40, &a) != 44)
+  a.FetchAdd(40);
+  if (a.Load() != 44)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicSub(40, &a) != 4)
+  a.FetchSub(40);
+  if (a.Load() != 4)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicCAS(4, 7, &a) == false)
+  int32_t compare = 4;
+  if (a.CompareExchange(compare, 7) == false)
   {
     palBreakHere();
     return false;
   }
-  if (palAtomicCAS(4, 44, &a) == true)
+  compare = 4;
+  if (a.CompareExchange(compare, 44) == true)
   {
     palBreakHere();
     return false;

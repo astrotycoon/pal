@@ -108,7 +108,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;c:\workspace\external\SDL-1.2.14\include&quot;;&quot;$(SolutionDir)&quot;;&quot;$(SolutionDir)\libpal\freetype\include&quot;"
+				AdditionalIncludeDirectories="&quot;c:\workspace\external\SDL-1.2.14\include&quot;;&quot;$(SolutionDir)&quot;;c:\workspace\pal\libpal\freetype\include\;c:\workspace\pal\;&quot;c:\workspace\external\glew-win32\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"

@@ -36,8 +36,8 @@ class palCompactingAllocator {
  private:
   PAL_DISALLOW_COPY_AND_ASSIGN(palCompactingAllocator);
 
-  palAtomic map_count_;
-  palAtomic next_handle_;
+  palAtomicInt32 map_count_;
+  palAtomicInt32 next_handle_;
 
   uint32_t GetNextHandle();
 

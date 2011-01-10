@@ -25,30 +25,140 @@
 #define LIBPAL_PAL_ATOMIC_WINDOWS_H_
 
 #include <Windows.h>
+#include <intrin.h>
 
-PAL_INLINE int palAtomicInc(palAtomic* atomic) {
-  return InterlockedIncrement((volatile LONG*)atomic);
+template <> 
+struct palAtomicIntegral<int32_t> {
+private:
+  volatile long value_;
+  // disable copying
+  palAtomicIntegral(const palAtomicIntegral&);
+  palAtomicIntegral& operator=(const palAtomicIntegral&);
+public:
+  palAtomicIntegral() {
+    _InterlockedExchange(&value_, 0);
+  }
+  palAtomicIntegral(int32_t initial_value) {
+    _InterlockedExchange(&value_, initial_value);
+  }
+
+  /* Atomically stores new_value into *this */
+  void Store(int32_t new_value) volatile {
+    _InterlockedExchange(&value_, new_value);
+  }
+
+  /* Atomically fetches the value stored in *this and returns it */
+  int32_t Load() const volatile {
+    return _InterlockedExchangeAdd((volatile long*)&value_, 0);
+  }
+
+  /* Atomically store a new value and return old value */
+  int32_t Exchange(int32_t new_value) volatile {
+    return _InterlockedExchange(&value_, new_value);
+  }
+
+  /* Atomically compare the value with expected, and store new_value if they are equal */
+  /* Returns true if value was expected, false otherwise */
+  /* Updates expected with value read */
+  bool CompareExchange(int32_t& expected, int32_t new_value) volatile {
+    int32_t actual;
+    actual = _InterlockedCompareExchange(&value_, new_value, expected);
+    bool success = actual == expected;
+    expected = actual;
+    return success;
+  }
+
+  /* Atomically fetches the value stored in *this and returns it */
+  operator int32_t() const volatile {
+    return _InterlockedExchangeAdd((volatile long*)&value_, 0);
+  }
+
+  /* Atomically fetch the value, perform the operation and return the original value */
+  int32_t FetchAdd(int32_t i) volatile {
+    return _InterlockedExchangeAdd(&value_, i);
+  }
+
+  int32_t FetchSub(int32_t i) volatile {
+    return _InterlockedExchangeAdd(&value_, -i);
+  }
+
+  int32_t FetchAnd(int32_t i) volatile {
+    return _InterlockedAnd(&value_, i);
+  }
+  int32_t FetchOr(int32_t i) volatile {
+    return _InterlockedOr(&value_, i);
+  }
+  int32_t FetchXor(int32_t i) volatile {
+    return _InterlockedXor(&value_, i);
+  }
+
+  /* Atomically perform pre and post increment and decrement */
+  int32_t operator++() volatile {
+    return FetchAdd(1) + 1;
+  }
+
+  int32_t operator++(int) volatile {
+    return FetchAdd(1);
+  }
+
+  int32_t operator--() volatile {
+    return FetchSub(1) - 1;
+  }
+
+  int32_t operator--(int) volatile {
+    return FetchSub(1);
+  }
+
+  /* Atomically perform the operations, returning the resulting value */
+  int32_t operator+=(int32_t i) volatile {
+    return FetchAdd(i) + i;
+  }
+  int32_t operator-=(int32_t i) volatile {
+    return FetchSub(i) - i;
+  }
+  int32_t operator&=(int32_t i) volatile {
+    return FetchAnd(i) & i;
+  }
+  int32_t operator|=(int32_t i) volatile {
+    return FetchOr(i) | i;
+  }
+  int32_t operator^=(int32_t i) volatile {
+    return FetchXor(i) ^ i;
+  }
+};
+
+PAL_INLINE palAtomicFlag::palAtomicFlag() {
+  _InterlockedExchange(&flag_, 0);
 }
 
-PAL_INLINE int palAtomicDec(palAtomic* atomic) {
-  return InterlockedDecrement((volatile LONG*)atomic);
+PAL_INLINE bool palAtomicFlag::TestAndSet() volatile {
+  return _InterlockedCompareExchange(&flag_, 1, 0) == 1;
 }
 
-PAL_INLINE int palAtomicAdd(int i, palAtomic* atomic) {
-  return InterlockedExchangeAdd((volatile LONG*)atomic, i) + i;
+PAL_INLINE void palAtomicFlag::Clear() volatile {
+  _InterlockedExchange(&flag_, 0);
 }
 
-PAL_INLINE int palAtomicSub(int i, palAtomic* atomic) {
-  return InterlockedExchangeAdd((volatile LONG*)atomic, -i) - i;
+PAL_INLINE palAtomicReferenceCount::palAtomicReferenceCount() {
+  _InterlockedExchange(&count_, 0);
 }
 
-PAL_INLINE bool palAtomicCAS(int old_value, int new_value, palAtomic* atomic) {
-  return InterlockedCompareExchange((volatile LONG*)atomic, new_value, old_value) == old_value;
+/* Atomically decrements reference count */
+/* Returns true if reference count hit 0 */
+PAL_INLINE bool palAtomicReferenceCount::Unref() volatile {
+  return _InterlockedDecrement(&count_) == 0;
 }
 
-PAL_INLINE bool palAtomicDecAndTest(palAtomic* atomic) {
-  return InterlockedDecrement((volatile LONG*)atomic) == 0;
+/* Atomically increases reference count */
+PAL_INLINE void palAtomicReferenceCount::Ref() volatile {
+  _InterlockedIncrement(&count_);
 }
+
+/* Atomically loads and returns the reference count */
+PAL_INLINE uint32_t palAtomicReferenceCount::Load() const volatile {
+  return _InterlockedExchangeAdd((volatile long*)&count_, 0);
+}
+
 
 PAL_INLINE void palAtomicMemoryBarrier() {
 #if defined(PAL_ARCH_32BIT)

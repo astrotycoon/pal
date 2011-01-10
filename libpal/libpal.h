@@ -8,10 +8,7 @@ palSimd:
     Test libm functions (sin, cos, etc)
 
 palAtomic:
- Add set / clear bits wrappers around and/or
- Add support for 16-bit and 64-bit atomic operations
-  What about 128-bit atomic operations??
- Add test and set (or exchange operation)
+  Finish palAtomicAddress and palAtomicInt64
 
 palAllocators:
   Ideas from EA-STL:
@@ -42,6 +39,10 @@ Containers:
   Add alignment template parameter to all container types
   Add allocator template parameter to all container types
 
+  Export alignment, node_type, node_size and allocator from all container types
+
+
+  Modify palListNodePool to become an allocator that is passed as a template argument
   palArray:  
   palArray<T> CopySlice(int start, int end);
   palArray<T> CutSlice(int start, int end);
@@ -65,7 +66,9 @@ Containers:
     palHashSet
     palHashMapCache  
 
+
   Benchmark for Array, HashMap container
+
 Algorithms:
   Finish binarySearch <,>,=,<=,>= API
   Unit tests
