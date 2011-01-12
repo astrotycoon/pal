@@ -98,6 +98,7 @@ Threading:
 #include "libpal/pal_stack_allocator.h"
 #include "libpal/pal_array.h"
 #include "libpal/pal_min_heap.h"
+#include "libpal/pal_image.h"
 #include "libpal/pal_hash_map.h"
 #include "libpal/pal_hash_map_cache.h"
 #include "libpal/pal_hash_set.h"

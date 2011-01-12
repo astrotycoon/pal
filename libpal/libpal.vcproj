@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_image.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_memory.cpp"
 				>
 			</File>
@@ -282,6 +286,14 @@
 					</File>
 				</Filter>
 			</Filter>
+			<Filter
+				Name="image"
+				>
+				<File
+					RelativePath=".\stb\stb_image.c"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -314,6 +326,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_file.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_image.h"
 				>
 			</File>
 			<File
@@ -587,6 +603,14 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="image"
+				>
+				<File
+					RelativePath=".\stb\stb_image.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 	</Files>
