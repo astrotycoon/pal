@@ -24,6 +24,8 @@
 #ifndef PAL_IMAGE_H_
 #define PAL_IMAGE_H_
 
+#include "libpal/pal_types.h"
+
 class palImage {
   unsigned char* pixels;
   int x;
@@ -34,7 +36,7 @@ public:
 
   void Reset();
 
-  bool Load(unsigned char* buffer, int length);
+  bool Load(unsigned char* buffer, uint64_t length);
 
   unsigned char* GetPixels() const;
   int GetWidth() const;

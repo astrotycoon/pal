@@ -49,10 +49,10 @@ void palImage::Reset() {
   y = 0;
 }
 
-bool palImage::Load(unsigned char* buffer, int length) {
+bool palImage::Load(unsigned char* buffer, uint64_t length) {
   int components;
   int required_components = 4;
-  pixels = stbi_load_from_memory(buffer, length, &x, &y, &components, required_components);
+  pixels = stbi_load_from_memory(buffer, (int)length, &x, &y, &components, required_components);
   return pixels != NULL;
 }
 
