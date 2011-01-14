@@ -3,9 +3,7 @@
 
 /* TODO:
 palSimd:
-  Finish rest of libm functions -> pow, inverse trig functions
-  More unit tests
-    Test libm functions (sin, cos, etc)
+  Test and/or implement true SIMD versions of Sin, Cos, Tan, Acos, Asin, Atan, Atan2, Pow, Log and Exp.
 
 palAtomic:
   Finish palAtomicAddress and palAtomicInt64
@@ -83,6 +81,7 @@ Threading:
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
+#include "libpal/pal_scalar.h"
 #include "libpal/pal_simd.h"
 #include "libpal/pal_timer.h"
 #include "libpal/pal_atomic.h"

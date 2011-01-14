@@ -27,15 +27,8 @@
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
 
-#if defined(PAL_CPU_X86)
-#include <xmmintrin.h>
-#include <smmintrin.h>
-#include <cfloat>
-typedef __m128 palSimd;
-#include "libpal/x86/pal_simd_sse.h"
-#else
-#warning no palSimd for your platform
-#endif
+// include implementation
+#include "libpal/pal_simd-inl.h"
 
 extern const palSimd palSimd_UNIT_X;
 extern const palSimd palSimd_UNIT_Y;
@@ -53,7 +46,6 @@ PAL_INLINE float palSimdGetX(palSimd a);
 PAL_INLINE float palSimdGetY(palSimd a);
 PAL_INLINE float palSimdGetZ(palSimd a);
 PAL_INLINE float palSimdGetW(palSimd a);
-
 
 PAL_INLINE palSimd palSimdLoadAligned(const float* ptr);
 PAL_INLINE palSimd palSimdLoadUnaligned(const float* ptr);
@@ -137,18 +129,27 @@ PAL_INLINE palSimd palSimdClamp(palSimd min, palSimd max, palSimd a);
 PAL_INLINE palSimd palSimdAbsolute(palSimd a);
 PAL_INLINE palSimd palSimdNegative(palSimd a);
 
+/* 4D dot product */
 PAL_INLINE palSimd palSimdDot(palSimd a, palSimd b);
+/* 3D dot product */
+PAL_INLINE palSimd palSimdDot3(palSimd a, palSimd b);
+
 PAL_INLINE palSimd palSimdCross(palSimd a, palSimd b);
 
 PAL_INLINE palSimd palSimdSin(palSimd x);
 PAL_INLINE palSimd palSimdCos(palSimd x);
-PAL_INLINE palSimd palSimdLog(palSimd x);
+PAL_INLINE palSimd palSimdTan(palSimd x);
+PAL_INLINE palSimd palSimdAcos(palSimd x);
+PAL_INLINE palSimd palSimdAsin(palSimd x);
 PAL_INLINE palSimd palSimdAtan(palSimd x);
 PAL_INLINE palSimd palSimdAtan2(palSimd y, palSimd x);
+
+PAL_INLINE palSimd palSimdPow(palSimd x);
+PAL_INLINE palSimd palSimdLn(palSimd x);
+PAL_INLINE palSimd palSimdLog(palSimd x);
 PAL_INLINE palSimd palSimdExp(palSimd x);
 
 PAL_INLINE palSimd palSimdLength2(palSimd a);
-
 PAL_INLINE palSimd palSimdLength(palSimd a);
 
 PAL_INLINE void palSimdMatrixTranspose(palSimd* a, palSimd* b, palSimd* c, palSimd* d);

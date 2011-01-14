@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,34 +21,45 @@
 	distribution.
 */
 
-#ifndef __PAL_SCALAR_H
-#define __PAL_SCALAR_H
+#ifndef LIBPAL_PAL_SCALAR_H__
+#define LIBPAL_PAL_SCALAR_H__
 
 #include "libpal/pal_platform.h"
 
-#include <math.h>
-#include <float.h>
+class palScalar {
+public:
+  static float Cos(float x);
+  static float Sin(float x);
+  static float Tan(float x);
+  static float ACos(float x);
+  static float ASin(float x);
+  static float ATan(float x);
+  static float ATan2(float y, float x);
 
-typedef float scalar;
-#define SCALAR_FLOAT
+  // base e
+  static float Ln(float x);
+  // base 10
+  static float Log(float x);
+  static float Exp(float x);
+  static float Pow(float x, float y);
 
-#if defined(PAL_PLATFORM_PS3) || defined(PAL_PLATFORM_APPLE)
-//const scalar M_PI = (3.14159265358979323846f);
-const scalar M_HALF_PI(1.57079632679489661923f);
-const scalar M_RADS_PER_DEG(3.14159265358979323846f / 180.0f);
-const scalar M_DEGS_PER_RAD(180.0f / 3.14159265358979323846f);
-const scalar SCALAR_EPSILON(FLT_EPSILON);
-const scalar SCALAR_MATRIX_INVERSE_EPSILON(1e-6f);
-const scalar SCALAR_INFINITY(FLT_MAX);
-#else
-const scalar M_PI = (3.14159265358979323846f);
-const scalar M_HALF_PI(1.57079632679489661923f);
-const scalar M_RADS_PER_DEG(3.14159265358979323846f / 180.0f);
-const scalar M_DEGS_PER_RAD(180.0f / 3.14159265358979323846f);
-const scalar SCALAR_EPSILON(FLT_EPSILON);
-const scalar SCALAR_MATRIX_INVERSE_EPSILON(1e-6f);
-const scalar SCALAR_INFINITY(FLT_MAX);
-#endif
+  static float Sqrt(float x);
 
-#endif
+  static float RoundUp(float x);
+  static float RoundDown(float x);
+  static float RoundNearest(float x);
+
+  static float Absolute(float x);
+
+  static const float kEpsilon;
+  static const float kMax;
+  static const float kMin;
+  static const float kE;
+  static const float kPi;
+  static const float kHalfPi;
+  static const float kRadiansPerDegree;
+  static const float kDegreesPerRadian;
+};
+
+#endif  // LIBPAL_PAL_SCALAR_H__
 

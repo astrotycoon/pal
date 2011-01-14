@@ -82,9 +82,10 @@
 #ifndef LIBPAL_PAL_SIMD_SSE_H_
 #define LIBPAL_PAL_SIMD_SSE_H_
 
+#include "libpal/pal_debug.h"
 
-#include <cmath>
-// OR: define TRUE_SIMD_SIN, TRUE_SIMD_COS
+#include "libpal/pal_scalar.h"
+// OR: define TRUE_SIMD_TRIG
 
 #define palSimdBroadcast(a, component) _mm_shuffle_ps(a, a, _MM_SHUFFLE(component, component, component, component))
 
@@ -409,6 +410,11 @@ PAL_INLINE palSimd palSimdDot(palSimd a, palSimd b) {
   */
 }
 
+PAL_INLINE palSimd palSimdDot3(palSimd a, palSimd b) {
+  /* Dot between xyz written into all four slots of the result */
+  return _mm_dp_ps(a, b, 0x7f);
+}
+
 PAL_INLINE palSimd palSimdCross(palSimd a, palSimd b) {
   palSimd t0, t1, t2, t3, t4, result;
 
@@ -467,7 +473,7 @@ PAL_INLINE palSimd __palSimdSin(palSimd x) {
 }
 
 PAL_INLINE palSimd palSimdSin(palSimd x) {
-#ifdef TRUE_SIMD_SIN
+#if defined(TRUE_SIMD_TRIG)
   palSimd pi = palSimdSplat((int)0x40490fdb); // 3.141593f
   palSimd inv_pi = palSimdSplat((int)0x3ea2f983); // 1.0f / 3.141593f
 
@@ -483,22 +489,68 @@ PAL_INLINE palSimd palSimdSin(palSimd x) {
 
   return __palSimdSin(x_ror);
 #else
-  float sin_x = sinf(palSimdGetX(x));
-  return palSimdSplat(sin_x);
+  float sin_x = palScalar::Sin(palSimdGetX(x));
+  float sin_y = palScalar::Sin(palSimdGetY(x));
+  float sin_z = palScalar::Sin(palSimdGetZ(x));
+  float sin_w = palScalar::Sin(palSimdGetW(x));
+  return palSimdSetXYZW(sin_x, sin_y, sin_z, sin_w);
 #endif
 }
 
 PAL_INLINE palSimd palSimdCos(palSimd x) {
-#ifdef TRUE_SIMD_COS
+#if defined(TRUE_SIMD_TRIG)
   palSimd half_pi = palSimdSplat((int)0x3fc90fdb); // 1.570796f
   return palSimdSin(palSimdAdd(x,half_pi));
 #else
-  float cos_x = cosf(palSimdGetX(x));
-  return palSimdSplat(cos_x);
+  float cos_x = palScalar::Cos(palSimdGetX(x));
+  float cos_y = palScalar::Cos(palSimdGetY(x));
+  float cos_z = palScalar::Cos(palSimdGetZ(x));
+  float cos_w = palScalar::Cos(palSimdGetW(x));
+  return palSimdSetXYZW(cos_x, cos_y, cos_z, cos_w);
 #endif
 }
 
-PAL_INLINE palSimd palSimdLog(palSimd x) {
+PAL_INLINE palSimd palSimdTan(palSimd x) {
+  float tan_x = palScalar::Tan(palSimdGetX(x));
+  float tan_y = palScalar::Tan(palSimdGetY(x));
+  float tan_z = palScalar::Tan(palSimdGetZ(x));
+  float tan_w = palScalar::Tan(palSimdGetW(x));
+  return palSimdSetXYZW(tan_x, tan_y, tan_z, tan_w);
+}
+
+PAL_INLINE palSimd palSimdAcos(palSimd x) {
+#if defined(TRUE_SIMD_TRIG)
+  palAssert(false);
+#else
+  float acos_x = palScalar::ACos(palSimdGetX(x));
+  float acos_y = palScalar::ACos(palSimdGetY(x));
+  float acos_z = palScalar::ACos(palSimdGetZ(x));
+  float acos_w = palScalar::ACos(palSimdGetW(x));
+  return palSimdSetXYZW(acos_x, acos_y, acos_z, acos_w);
+#endif
+}
+
+PAL_INLINE palSimd palSimdAsin(palSimd x) {
+#if defined(TRUE_SIMD_TRIG)
+  palAssert(false);
+#else
+  float asin_x = palScalar::ASin(palSimdGetX(x));
+  float asin_y = palScalar::ASin(palSimdGetY(x));
+  float asin_z = palScalar::ASin(palSimdGetZ(x));
+  float asin_w = palScalar::ASin(palSimdGetW(x));
+  return palSimdSetXYZW(asin_x, asin_y, asin_z, asin_w);
+#endif
+}
+
+PAL_INLINE palSimd palSimdPow(palSimd x, palSimd y) {
+  float pow_x = palScalar::Pow(palSimdGetX(x), palSimdGetX(y));
+  float pow_y = palScalar::Pow(palSimdGetY(x), palSimdGetY(y));
+  float pow_z = palScalar::Pow(palSimdGetZ(x), palSimdGetZ(y));
+  float pow_w = palScalar::Pow(palSimdGetW(x), palSimdGetW(y));
+  return palSimdSetXYZW(pow_x, pow_y, pow_z, pow_w);
+}
+
+PAL_INLINE palSimd palSimdLn(palSimd x) {
   __m128i emm0;
 
   palSimd one = palSimdSplat((int)0x3f800000); // 1.0f
@@ -583,6 +635,11 @@ PAL_INLINE palSimd palSimdLog(palSimd x) {
   x = _mm_add_ps(x, tmp);
   x = _mm_or_ps(x, invalid_mask); // negative arg will be NAN
   return x;
+}
+
+PAL_INLINE palSimd palSimdLog(palSimd x) {
+  palAssert(false);
+  return palSimdZero();
 }
 
 // domain: [0, 1]

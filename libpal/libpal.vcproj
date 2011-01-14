@@ -207,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_scalar.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_simd.cpp"
 				>
 			</File>
@@ -512,11 +516,11 @@
 				Name="simd"
 				>
 				<File
-					RelativePath=".\pal_simd.h"
+					RelativePath=".\pal_simd-inl.h"
 					>
 				</File>
 				<File
-					RelativePath=".\pal_simd_inl.h"
+					RelativePath=".\pal_simd.h"
 					>
 				</File>
 			</Filter>
@@ -599,7 +603,7 @@
 					Name="x86"
 					>
 					<File
-						RelativePath=".\pal_simd_sse.h"
+						RelativePath=".\x86\pal_simd_sse.h"
 						>
 					</File>
 				</Filter>

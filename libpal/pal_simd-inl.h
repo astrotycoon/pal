@@ -25,9 +25,10 @@
 #define LIBPAL_PAL_SIMD_INL_H_
 
 #if defined(PAL_CPU_X86)
-#include "libpal/pal_simd_sse.h"
-#elif defined(PAL_CPU_PPC)
-#include "libpal/pal_simd_altivec.h"
+#include <xmmintrin.h>
+#include <smmintrin.h>
+typedef __m128 palSimd;
+#include "libpal/x86/pal_simd_sse.h"
 #else
 #error No simd implementation for your CPU
 #endif
