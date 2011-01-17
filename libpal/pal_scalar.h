@@ -50,12 +50,16 @@ public:
   static float RoundNearest(float x);
 
   static float Absolute(float x);
-
+  // x < 0 return -1.0f;
+  // x == 0 return 0.0f;
+  // x > 0 return 1.0f;
+  static float Sign(float x);
   static const float kEpsilon;
   static const float kMax;
   static const float kMin;
   static const float kE;
   static const float kPi;
+  static const float kSqrtOneHalf;
   static const float kHalfPi;
   static const float kRadiansPerDegree;
   static const float kDegreesPerRadian;

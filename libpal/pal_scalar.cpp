@@ -87,11 +87,20 @@ float palScalar::Absolute(float x) {
   return fabsf(x);
 }
 
+float palScalar::Sign(float x) {
+  if (x < 0)
+    return -1.0f;
+  if (x > 0)
+    return 1.0f;
+  return 0.0f;
+}
+
 const float kEpsilon = FLT_EPSILON;
 const float kMax = FLT_MAX;
 const float kMin = FLT_MIN;
 const float palScalar::kE = 2.71828183f;
 const float palScalar::kPi = 3.14159265f;
+const float palScalar::kSqrtOneHalf = 0.707106781f;
 const float palScalar::kHalfPi = 1.57079633f;
 const float palScalar::kRadiansPerDegree = 0.0174532925f;
 const float palScalar::kDegreesPerRadian = 57.2957795f;
