@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_time_line.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_timer.h"
 				>
 			</File>
@@ -536,7 +540,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\pal_signal.h"
+					RelativePath=".\pal_event.h"
 					>
 				</File>
 			</Filter>

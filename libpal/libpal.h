@@ -111,5 +111,7 @@ Threading:
 #include "libpal/pal_font_rasterizer_freetype.h"
 #include "libpal/pal_utf8.h"
 #include "libpal/pal_profiler.h"
+#include "libpal/pal_delegate.h"
+#include "libpal/pal_event.h"
 
 #endif

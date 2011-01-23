@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_event_test.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_file_test.cpp"
 				>
 			</File>
@@ -232,6 +236,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_container_test.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_event_test.h"
 				>
 			</File>
 			<File

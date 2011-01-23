@@ -8,11 +8,13 @@
 #include "pal_compacting_allocator_test.h"
 #include "pal_algorithms_test.h"
 #include "pal_simd_test.h"
+#include "pal_event_test.h"
 
 int main (int argc, char** argv)
 {
+  PalEventTest();
   PalAlgorithmsTest();
-  //PalSimdTest();
+  PalSimdTest();
   PalCompactingAllocatorTest();
   PalFileTest();
   PalStringTest();
