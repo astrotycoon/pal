@@ -219,6 +219,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_time_line.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_tokenizer.cpp"
 				>
 			</File>

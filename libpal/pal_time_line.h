@@ -24,15 +24,18 @@
 #ifndef LIBPAL_PAL_TIME_LINE_H_
 #define LIBPAL_PAL_TIME_LINE_H_
 
+#include "libpal/pal_event.h"
 #include "libpal/pal_timer.h"
 
 enum palTimeLineDirection {
-  kTimeLineForward,
-  kTimeLineBackward,
+  kTimeLineForward = 0,
+  kTimeLineBackward = 1,
   NUM_palTimeLineDirection,
 };
 
 enum palTimeLineRepeatStyle {
+  /* Don't repeat */
+  kTimeLineRepeatDont,
   /* Each time the time line repeats, the direction will be the same */
   kTimeLineRepeatSameDirection,
   /* Each time the time line repeats, the direction will be reversed */
@@ -51,13 +54,10 @@ enum palTimeLineFilter {
 typedef float (*palCustomFilterFunction)(float unfiltered);
 
 class palTimeLine {
-  float current_time_;
-  float current_filtered_position_;
-  float duration_;
-  float repeat_duration_;
-  int repeat_count_;
-  palTimeLineRepeatStyle repeat_style_;
 public:
+  typedef palEvent<void (palTimeLine*)> EndEventType;
+  typedef EndEventType::DelegateType TimeLineEndDelegate;
+
   palTimeLine();
   ~palTimeLine();
   palTimeLine(const palTimeLine& that);
@@ -65,6 +65,9 @@ public:
 
   void SetDuration(float seconds);
   void SetDuration(palTimerTick ticks);
+
+  /* Callback registration */
+  EndEventType& GetTimeLineEndEvent();
 
   /* Controlling direction */
   void SetDirection(palTimeLineDirection direction);
@@ -89,6 +92,18 @@ public:
 
   /* Mainly returns 0.0 to 1.0, but can return between -1.0 and 2.0 */
   float GetFilteredPosition() const;
+private:
+  float current_time_;
+  float current_filtered_position_;
+  float duration_;
+  float repeat_duration_;
+  int repeat_index_;
+  int repeat_count_;
+  palTimeLineDirection direction_;
+  float direction_sign_;
+  palTimeLineRepeatStyle repeat_style_;
+  palCustomFilterFunction filter_function_;
+  EndEventType end_event_;
 };
 
 #endif  // LIBPAL_PAL_TIME_LINE_H_

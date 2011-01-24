@@ -2,6 +2,9 @@
 #define __LIBPAL_H__
 
 /* TODO:
+Entire library:
+  Switch to copy-and-swap: http://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom and http://www.gmannickg.com/?p=95
+
 palSimd:
   Test and/or implement true SIMD versions of Sin, Cos, Tan, Acos, Asin, Atan, Atan2, Pow, Log and Exp.
 
@@ -29,9 +32,9 @@ palAllocators:
     From DICE presentation. Linear allocator with support for calling destructors.
     Adapt to palAllocator interface
 
-  Random number generator:
-    Move all random number generation into a class
-    Expose "extern palRandom g_palRandomNumberGenerator" for people who don't care
+Random number generator:
+  Move all random number generation into a class
+  Expose "extern palRandom g_palRandomNumberGenerator" for people who don't care
 
 Containers:
   Add alignment template parameter to all container types
@@ -113,5 +116,6 @@ Threading:
 #include "libpal/pal_profiler.h"
 #include "libpal/pal_delegate.h"
 #include "libpal/pal_event.h"
+#include "libpal/pal_time_line.h"
 
 #endif

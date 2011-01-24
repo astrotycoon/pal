@@ -9,9 +9,11 @@
 #include "pal_algorithms_test.h"
 #include "pal_simd_test.h"
 #include "pal_event_test.h"
+#include "pal_time_line_test.h"
 
 int main (int argc, char** argv)
 {
+  PalTimeLineTest();
   PalEventTest();
   PalAlgorithmsTest();
   PalSimdTest();
