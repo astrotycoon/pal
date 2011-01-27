@@ -21,9 +21,10 @@
 	distribution.
 */
 
-#include "libpal/pal_types.h"
 #include "libpal/tlsf/tlsf.h"
 
+#include "libpal/pal_types.h"
+#include "libpal/pal_debug.h"
 #include "libpal/pal_heap_allocator.h"
 
 void palHeapAllocator::Create(void* mem, uint32_t size) {
@@ -33,29 +34,31 @@ void palHeapAllocator::Create(void* mem, uint32_t size) {
   palSpinlockRelease(&lock_);
 }
 
-void* palHeapAllocator::Malloc(uint32_t size) {
+void* palHeapAllocator::Allocate(size_t size, int flags) {
   palSpinlockTake(&lock_);
   void* r = tlsf_malloc(internal_, size);
   palSpinlockRelease(&lock_);
   return r;
 }
 
-void* palHeapAllocator::MallocAligned(uint32_t size, uint32_t alignment) {
+void* palHeapAllocator::Allocate(size_t size, size_t alignment, size_t alignment_offset, int flags) {
+  palAssert(alignment_offset == 0); // don't support it
   palSpinlockTake(&lock_);
   void* r = tlsf_memalign(internal_, alignment, size);
   palSpinlockRelease(&lock_);
   return r; 
 }
 
-void* palHeapAllocator::Realloc(void* p, uint32_t new_size) {
-  palSpinlockTake(&lock_);
-  void* r = tlsf_realloc(internal_, p, new_size);
-  palSpinlockRelease(&lock_);
-  return r;
-}
-
-void  palHeapAllocator::Free(void* p) {
+void  palHeapAllocator::Deallocate(void* p, size_t size) {
   palSpinlockTake(&lock_);
   tlsf_free(internal_, p);
   palSpinlockRelease(&lock_);
+}
+
+const char* palHeapAllocator::GetName() const {
+  return name_;
+}
+
+void        palHeapAllocator::SetName(const char* name) {
+  name_ = name;
 }

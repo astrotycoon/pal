@@ -24,12 +24,27 @@
 #ifndef __PAL_MEMORY_H__
 #define __PAL_MEMORY_H__
 
+#include "libpal/pal_types.h"
+
 #ifndef NULL
 #define NULL 0
 #endif
 
 void* palMalloc(int size);
 void  palFree(void* p);
+
+/* Returns an address 'p' from the system heap, where p+offset is aligned to alignment */
+/* Only guarantees that there will be size bytes available */
+void* palMallocAligned(uint32_t size, uint32_t alignment, uint32_t offset);
+/* Returns an address 'p' from the system heap, where p is aligned to alignment */
+/* Only guarantees that there will be size bytes available */
+void* palMallocAligned(uint32_t size, uint32_t alignment);
+/* Frees the pointer returned from one of the above allocation routines */
+void  palFreeAligned(void* ptr);
+
+void* palMallocAligned4(uint32_t size);
+void* palMallocAligned16(uint32_t size);
+void* palMallocAligned128(uint32_t size);
 
 void* pal_memmove(void* destination, const void* source, int bytes);
 void* pal_memcopy(void* destination, const void* source, int bytes);

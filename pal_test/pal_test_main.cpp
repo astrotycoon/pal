@@ -13,6 +13,7 @@
 
 int main (int argc, char** argv)
 {
+  PalPoolAllocTest();
   PalTimeLineTest();
   PalEventTest();
   PalAlgorithmsTest();
@@ -22,7 +23,6 @@ int main (int argc, char** argv)
   PalStringTest();
   PalStringTest();
   PalThreadTest();
-  PalPoolAllocTest();
   PalAtomicTest();
   PalContainerTest();
   return 0;

@@ -525,7 +525,7 @@ bool palListSortBenchmark() {
   const int num_nodes = 64 * 1024;
   node_pool_memory = (unsigned char*)palMalloc(sizeof(palListNode<int>) * num_nodes);
   palListNodePool<int> il_node_pool;
-  il_node_pool.Create(num_nodes, node_pool_memory);
+  il_node_pool.Create(node_pool_memory, sizeof(palListNode<int>) * num_nodes, 4);
 
   int64_t dt;
   
@@ -545,7 +545,7 @@ bool palListSortTest() {
   static unsigned char node_pool_memory[sizeof(palListNode<int>) * 100];
   palList<int> il;
   palListNodePool<int> il_node_pool;
-  il_node_pool.Create(100, &node_pool_memory[0]);
+  il_node_pool.Create(&node_pool_memory[0], sizeof(palListNode<int>) * 100, 1);
   palListNode<int>* i_4 = new palListNode<int>(4);
   palListNode<int>* i_5 = new palListNode<int>(5);
   palListNode<int>* i_6 = new palListNode<int>(6);
@@ -638,7 +638,7 @@ bool palListTest()
   static unsigned char node_pool_memory[sizeof(palListNode<int>) * 100];
   palList<int> il;
   palListNodePool<int> il_node_pool;
-  il_node_pool.Create(100, &node_pool_memory[0]);
+  il_node_pool.Create(&node_pool_memory[0], sizeof(palListNode<int>) * 100, 1);
   palListNode<int>* i_4 = new palListNode<int>(4);
   palListNode<int>* i_5 = new palListNode<int>(5);
   palListNode<int>* i_6 = new palListNode<int>(6);

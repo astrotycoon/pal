@@ -44,14 +44,14 @@ struct palListNode {
 
 template <typename T>
 class palListNodePool {
-  palPoolAllocator<> pool_;
+  palPoolAllocator pool_;
 
  public:
-  void Create(int size, void* memory) {
-    pool_.Create(sizeof(palListNode<T>), size, memory);
+  void Create(void* memory, uint32_t memory_size, uint32_t alignment) {
+    pool_.Create(memory, memory_size, sizeof(palListNode<T>), alignment);
   }
   palListNode<T>* GetNode() {
-    void* node_memory = pool_.Malloc();
+    void* node_memory = pool_.Allocate(sizeof(palListNode<T>));
     if (!node_memory)
       return NULL;
     new(node_memory) palListNode<T>();
@@ -59,7 +59,7 @@ class palListNodePool {
   }
 
   palListNode<T>* GetNode(const T& val) {
-    void* node_memory = pool_.Malloc();
+    void* node_memory = pool_.Allocate(sizeof(palListNode<T>));
     if (!node_memory)
       return NULL;
     new(node_memory) palListNode<T>(val);
@@ -70,7 +70,7 @@ class palListNodePool {
     if (!node)
       return;
     node->~palListNode<T>();
-    pool_.Free(node);
+    pool_.Deallocate(node, sizeof(palListNode<T>));
   }
 };
 

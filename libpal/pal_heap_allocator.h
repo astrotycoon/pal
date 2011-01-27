@@ -24,30 +24,36 @@
 #ifndef LIBPAL_PAL_HEAP_ALLOCATOR_H__
 #define LIBPAL_PAL_HEAP_ALLOCATOR_H__
 
+#include "libpal/pal_allocator.h"
 #include "libpal/pal_spinlock.h"
 
 class palHeapAllocator
 {
   void* internal_;
   palSpinlock lock_;
- public:
+  const char* name_;
+public:
   
   palHeapAllocator() : internal_(NULL) {
     palSpinlockInit(&lock_);
+    name_ = "palHeapAllocator";
   }
   
   palHeapAllocator(void* mem, uint32_t size) {
     palSpinlockInit(&lock_);
+    name_ = "palHeapAllocator";
     Create(mem, size);
   }
 
 
   void Create(void* mem, uint32_t size);
 
-  void* Malloc(uint32_t size);
-  void* MallocAligned(uint32_t size, uint32_t alignment);
-  void* Realloc(void* p, uint32_t new_size);
-  void  Free(void* p);
+  void* Allocate(size_t size, int flags = kPalAllocationFlagNone);
+  void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone);
+  void  Deallocate(void* p, size_t size);
+
+  const char* GetName() const;
+  void        SetName(const char* name);
 };
 
 #endif  // LIBPAL_PAL_HEAP_ALLOCATOR_H__

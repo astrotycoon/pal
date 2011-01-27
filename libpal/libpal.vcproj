@@ -199,6 +199,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_platform.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_profiler.cpp"
 				>
 			</File>
@@ -220,6 +224,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_time_line.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_timer_event.cpp"
 				>
 			</File>
 			<File
@@ -382,6 +390,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_timer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_timer_event.h"
 				>
 			</File>
 			<File

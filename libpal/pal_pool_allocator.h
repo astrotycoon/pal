@@ -21,14 +21,14 @@
 	distribution.
 */
 
-#ifndef __PAL_POOL_ALLOCATOR_H
-#define __PAL_POOL_ALLOCATOR_H
+#ifndef LIBPAL_PAL_POOL_ALLOCATOR_H_
+#define LIBPAL_PAL_POOL_ALLOCATOR_H_
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_align.h"
 #include "libpal/pal_spinlock.h"
+#include "libpal/pal_allocator.h"
 
-template <int POOL_ALIGNMENT = 16>
 class palPoolAllocator
 {
 protected:
@@ -45,22 +45,32 @@ protected:
 		return ptr >= pool_base_ptr_ && ptr <= (pool_base_ptr_ + (pool_element_size_ * num_pool_elements_-1));
 	}
 public:
-
   palPoolAllocator() : pool_element_size_(0), num_pool_elements_(0), num_free_pool_elements_(0), pool_base_ptr_(0), free_ptr_(0) {
     palSpinlockInit(&spinlock_);
   }
   
-  palPoolAllocator(uint32_t element_size, uint32_t num_elements, void* pool_memory) {
+  palPoolAllocator(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) {
     palSpinlockInit(&spinlock_);
-    Create(element_size, num_elements, pool_memory);
+    Create(pool_memory, pool_memory_size, element_size, element_alignment);
   }
 
-  void Create(uint32_t element_size, uint32_t num_elements, void* pool_memory) {  
-		pool_element_size_ = element_size;
-		num_pool_elements_ = num_elements;
-		num_free_pool_elements_ = num_elements;
-    pool_base_ptr_ = static_cast<unsigned char*>(pool_memory);
+  ~palPoolAllocator ()
+  {
+  }
 
+  void Create(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) {  
+		pool_element_size_ = element_size;
+
+    // find aligned start
+    uintptr_t pool_start_address = (uintptr_t)pool_memory;
+    pool_start_address = palAlign(pool_start_address, element_alignment);
+    // adjust pool memory size
+    pool_memory_size -= pool_start_address - (uintptr_t)pool_memory;
+
+    num_pool_elements_ = pool_memory_size/element_size;
+		num_free_pool_elements_ = num_pool_elements_;
+
+    pool_base_ptr_ = reinterpret_cast<unsigned char*>(pool_start_address);
 		free_ptr_ = pool_base_ptr_;
 		/* Inside each "element" we store a pointer to the next free item */
 		unsigned char* current_element = pool_base_ptr_;
@@ -73,51 +83,53 @@ public:
 		}
 	}
 
-	~palPoolAllocator ()
-	{
-	}
-
-	uint32_t GetNumFree()
-	{
+	uint32_t GetNumFree() {
 		return num_free_pool_elements_;
 	}
 
-	void* Malloc()
-	{
+  void* Allocate(size_t size, int flags = kPalAllocationFlagNone) {
     palSpinlockTake(&spinlock_);
-		if (num_free_pool_elements_ == 0)
-		{
-			return NULL;
-		}
-		num_free_pool_elements_--;
-		unsigned char* new_element = free_ptr_;
-		free_ptr_ = *(unsigned char**)new_element;
+    if (num_free_pool_elements_ == 0) {
+      return NULL;
+    }
+    num_free_pool_elements_--;
+    unsigned char* new_element = free_ptr_;
+    free_ptr_ = *(unsigned char**)new_element;
     palSpinlockRelease(&spinlock_);
-		return new_element;
-	}
-
-	void Free (void* p)
-	{
-		if (!p)
-			return;
-
-		palAssert (PointerFromPool (p));
+    return new_element;
+  }
+  void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone) {
     palSpinlockTake(&spinlock_);
-		num_free_pool_elements_++;
-		*(unsigned char**)p = free_ptr_;
-		free_ptr_ = (unsigned char*)p;
+    if (num_free_pool_elements_ == 0) {
+      return NULL;
+    }
+    num_free_pool_elements_--;
+    unsigned char* new_element = free_ptr_;
+    free_ptr_ = *(unsigned char**)new_element;
     palSpinlockRelease(&spinlock_);
-	}
+    return new_element;
+  }
+
+  void  Deallocate(void* p, size_t size) {
+    if (!p) {
+      return;
+    }
+
+    palAssert (PointerFromPool (p));
+    palSpinlockTake(&spinlock_);
+    num_free_pool_elements_++;
+    *(unsigned char**)p = free_ptr_;
+    free_ptr_ = (unsigned char*)p;
+    palSpinlockRelease(&spinlock_);
+  }
   
-  void FreeAll()
-  {
+  void FreeAll() {
     palSpinlockTake(&spinlock_);
     free_ptr_ = pool_base_ptr_;
 		/* Inside each "element" we store a pointer to the next free item */
 		unsigned char* current_element = pool_base_ptr_;
 		unsigned char* next_free = pool_base_ptr_+pool_element_size_;
-		for (uint32_t i = 0; i < num_pool_elements_-1; i++)
-		{
+		for (uint32_t i = 0; i < num_pool_elements_-1; i++) {
 			*(unsigned char**)current_element = next_free;
 			next_free += pool_element_size_;
 			current_element += pool_element_size_;
@@ -127,4 +139,5 @@ public:
   }
 };
 
-#endif
+#endif  // LIBPAL_PAL_POOL_ALLOCATOR_H_
+

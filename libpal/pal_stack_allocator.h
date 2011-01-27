@@ -30,16 +30,18 @@ class palStackAllocator {
   uintptr_t stack_top_;
   uintptr_t stack_cursor_;
   palSpinlock lock_;
-
+  const char* name_;
  public:
 
   palStackAllocator() : stack_bottom_(0), stack_top_(0), stack_cursor_(0) {
     palSpinlockInit(&lock_);
+    name_ = "palStackAllocator";
   }
   
   palStackAllocator(void* mem, uint32_t size) {
     palSpinlockInit(&lock_);
     Create(mem, size);
+    name_ = "palStackAllocator";
   }
 
   void Create(void* mem, uint32_t size) {
@@ -48,7 +50,7 @@ class palStackAllocator {
     stack_cursor_ = stack_bottom_;
   }
 
-  void* Malloc(uint32_t size) {
+  void* Allocate(size_t size, int flags = kPalAllocationFlagNone) {
     palSpinlockTake(&lock_);
     palAssert(stack_cursor_ + size < stack_top_);
     void* p = reinterpret_cast<void*>(stack_cursor_);
@@ -57,29 +59,41 @@ class palStackAllocator {
     return p;
   }
 
-  void* MallocAligned(uint32_t size, uint32_t alignment) {
+  void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone) {
     const int pointerSize = sizeof(void*);
     const int requestedSize = size + alignment - 1 + pointerSize;
-    void* p = Malloc(requestedSize);
+    void* p = Allocate(requestedSize, flags);
     void* aligned = palAlign(p, alignment);
     return aligned;
   }
 
-  palStackAllocatorMarker GetMarker () {
+  void  Deallocate(void* p, size_t size) {
+    palAssert(false);
+  }
+
+  const char* GetName() const {
+    return name_;
+  }
+
+  void        SetName(const char* name) {
+    name_ = name;
+  }
+
+  palStackAllocatorMarker GetMarker() {
     palSpinlockTake(&lock_);
     palStackAllocatorMarker m = stack_cursor_;
     palSpinlockRelease(&lock_);
     return m;
   }
 
-  void FreeToMarker (palStackAllocatorMarker marker) {
+  void FreeToMarker(palStackAllocatorMarker marker) {
     palAssert(marker >= stack_bottom_ && marker < stack_top_);
     palSpinlockTake(&lock_);
     stack_cursor_ = marker;
     palSpinlockRelease(&lock_);
   }
 
-  void FreeAll () {
+  void FreeAll() {
     palSpinlockTake(&lock_);
     stack_cursor_ = stack_bottom_;
     palSpinlockRelease(&lock_);

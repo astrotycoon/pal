@@ -26,15 +26,24 @@
 
 #include <new>
 #include "libpal/pal_debug.h"
+#include "libpal/pal_allocator.h"
 #include "libpal/pal_memory.h"
 #include "libpal/pal_align.h"
 
 #define kpalArrayDefaultGrowthCapacity 2.0f
 
-template <typename T>
+template <typename T, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
 class palArray
 {
+public:
+  /* Types and constants */
+  typedef palArray<T, Alignment, Allocator> this_type;
+  typedef T element_type;
+  typedef Allocator allocator_type;
+  static const uint32_t element_size = sizeof(T);
+  static const uint32_t element_alignment = Alignment; 
 protected:
+  allocator_type allocator_;
 	float growth_factor_;
 	T* buffer_;
 	int capacity_;
@@ -69,28 +78,31 @@ protected:
 	int NextCapacity(int capacity) {
 		int ncapacity = (capacity > 0 ? (int)(growth_factor_ * capacity) : 1);
     if (ncapacity <= capacity) {
+      /* At least grow by 1 */
       return capacity+1;
     }
 		return ncapacity;
 	}
 
 	void DeallocateBuffer() {
-		if (buffer_ != NULL)
-			palFreeAligned(buffer_);
+    if (buffer_ != NULL) {
+      allocator_.Deallocate(buffer_, capacity_ * this_type::element_size);
+    }
 		buffer_ = NULL;
 		capacity_ = 0;
 	}
 
 	T* AllocateBuffer(int number) {
-		return static_cast<T*>(palMallocAligned16(number * sizeof(T)));
+    return static_cast<T*>(allocator_.Allocate(number * this_type::element_size, this_type::element_alignment));
 	}
 public:
 	/* Copy constructor */
-	palArray (const palArray<T>& array) {
+	palArray(const palArray<T>& array) {
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
 		stolen_ = false;
+    allocator_ = allocator_type("palArray");
 		growth_factor_ = array.growth_factor_;
 		Reserve(array.GetCapacity());
 		Resize(array.GetSize());
@@ -110,6 +122,7 @@ public:
       DeallocateBuffer();
     }
 
+    allocator_ = array.allocator_;
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
@@ -123,11 +136,21 @@ public:
 		return *this;
 	}
 
+  palArray(const allocator_type& allocator) {
+    buffer_ = NULL;
+    capacity_ = 0;
+    size_ = 0;
+    stolen_ = false;
+    growth_factor_ = kpalArrayDefaultGrowthCapacity;
+    allocator_ = allocator;
+  }
+
 	palArray() {
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
     stolen_ = false;
+    allocator_ = allocator_type("palArray");
 		growth_factor_ = kpalArrayDefaultGrowthCapacity;
 	}
 
@@ -135,6 +158,7 @@ public:
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
+    allocator_ = allocator_type("palArray");
 		growth_factor_ = kpalArrayDefaultGrowthCapacity;
 		stolen_ = false;
 		Reserve(capacity);
@@ -278,8 +302,7 @@ public:
 			/* Growing */
 			T* new_elements = AllocateBuffer(new_capacity);
 			int i = 0;
-			for (i = 0; i < size_; i++)
-			{
+			for (i = 0; i < size_; i++) {
 				new (&new_elements[i]) T(buffer_[i]);
 			}
 			DeallocateBuffer();
@@ -293,8 +316,7 @@ public:
 			CallDestructor(new_size, size_);
 			size_ = new_size;
 		} else if (new_size > size_) {
-			if (new_size > capacity_)
-			{
+			if (new_size > capacity_) {
 				Reserve(new_size);
 			}
 			FillBuffer(size_, new_size, element);
@@ -310,20 +332,17 @@ public:
 		return size_;
 	}
 
-	bool Contains(const T& element)
-	{
+	bool Contains(const T& element) {
 		return Find(element) != size_;
 	}
 
 	template <typename CompareFuncLessThan>
-	void QuickSort(CompareFuncLessThan LessThan)
-	{
+	void QuickSort(CompareFuncLessThan LessThan) {
     palQuickSort(&buffer_[0], size_, LessThan);
 	}
 
   template <typename CompareFuncLessThan>
-  void HeapSort(CompareFuncLessThan LessThan)
-  {
+  void HeapSort(CompareFuncLessThan LessThan) {
     palHeapSort(&buffer_[0], size_, LessThan);
   }
 

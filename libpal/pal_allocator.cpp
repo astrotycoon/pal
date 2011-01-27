@@ -25,22 +25,22 @@
 
 #define kPalSystemHeapAlignedAllocatorMagic 0xf3f3dead
 
-palSystemHeapAlignedAllocator::palSystemHeapAlignedAllocator(const char* name) {
+palAllocator::palAllocator(const char* name) {
   magic_ = kPalSystemHeapAlignedAllocatorMagic;
   name_ = name;
 }
 
-palSystemHeapAlignedAllocator::palSystemHeapAlignedAllocator(const palSystemHeapAlignedAllocator& x) {
+palAllocator::palAllocator(const palAllocator& x) {
   magic_ = x.magic_;
   name_ = x.name_;
 }
 
-palSystemHeapAlignedAllocator::palSystemHeapAlignedAllocator(const palSystemHeapAlignedAllocator& x, const char* name) {
+palAllocator::palAllocator(const palAllocator& x, const char* name) {
   magic_ = x.magic_;
   name_ = name;
 }
 
-palSystemHeapAlignedAllocator& palSystemHeapAlignedAllocator::operator=(const palSystemHeapAlignedAllocator& x) {
+palAllocator& palAllocator::operator=(const palAllocator& x) {
   if (this == &x) return *this;
   name_ = x.name_;
   magic_ = x.magic_;
@@ -48,26 +48,30 @@ palSystemHeapAlignedAllocator& palSystemHeapAlignedAllocator::operator=(const pa
   return *this;
 }
 
-void* palSystemHeapAlignedAllocator::Allocate(size_t size, size_t alignment, size_t alignment_offset, int flags) {
-  return palMallocAligned(size, alignment);
+void* palAllocator::Allocate(size_t size, int flags) {
+  return palMallocAligned(size, 1, 0);
 }
 
-void  palSystemHeapAlignedAllocator::Deallocate(void* p, size_t size) {
+void* palAllocator::Allocate(size_t size, size_t alignment, size_t alignment_offset, int flags) {
+  return palMallocAligned(size, alignment, alignment_offset);
+}
+
+void  palAllocator::Deallocate(void* p, size_t size) {
   palFreeAligned(p);
 }
 
-const char* palSystemHeapAlignedAllocator::GetName() const {
+const char* palAllocator::GetName() const {
   return name_;
 }
 
-void palSystemHeapAlignedAllocator::SetName(const char* name) {
+void palAllocator::SetName(const char* name) {
   name_ = name;
 }
 
-bool operator==(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b) {
+bool operator==(const palAllocator& a, const palAllocator& b) {
   return a.magic_ == b.magic_;
 }
 
-bool operator!=(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b) {
+bool operator!=(const palAllocator& a, const palAllocator& b) {
   return a.magic_ != b.magic_;
 }

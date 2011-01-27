@@ -135,7 +135,6 @@
 
 #endif
 
-
 #ifndef NULL
 #define NULL 0
 #endif
@@ -144,47 +143,6 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
-#if defined(PAL_PLATFORM_APPLE)
-PAL_INLINE void barrier() {
-  	asm volatile("nop" : : : "memory");
-}
-
-PAL_INLINE void cpu_relax() {
-  barrier();
-}
-#endif
-
-#if defined(PAL_PLATFORM_PS3)
-PAL_INLINE void barrier() {
-	// nop with memory barrier
-#if defined(PAL_COMPILER_GNU)
-	//asm volatile("ori 0,0,0" : : : "memory");
-#else // SNC
-	sys_ppu_thread_yield();
-#endif
-}
-
-PAL_INLINE void cpu_relax() {
-	barrier();
-}
-#endif
-
-#if defined(PAL_BUILD_DEBUG)
-
-#if defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86)
-PAL_INLINE void palBreakHere() { __asm int 3 }
-#elif defined(PAL_PLATFORM_PS3) && defined(PAL_COMPILER_SN)
-PAL_INLINE void palBreakHere() { __builtin_snpause(); }
-#elif defined(PAL_PLATFORM_PS3) && defined(PAL_COMPILER_GNU)
-PAL_INLINE void palBreakHere() { }
-#elif defined(PAL_CPU_X86) && defined(PAL_COMPILER_GNU)
-PAL_INLINE void palBreakHere() { __asm {int 3} }
-#endif
-
-#else
-
-PAL_INLINE void palBreakHere() { return; }
-
-#endif
+void palBreakHere();
 
 #endif  // LIBPAL_PAL_PLATFORM_H_

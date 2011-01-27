@@ -10,27 +10,21 @@ palSimd:
 
 palAtomic:
   Finish palAtomicAddress and palAtomicInt64
+  Add Acquire and Release
 
 palAllocators:
-  Ideas from EA-STL:
-    Add support for alignment_offset to all allocators
-
-    Provide wrapper macros for new, new[], delete and delete[]. Implement them on top of a palAllocator concept.
-      Add a "default system allocator" interface?
-        Have the above macros go through it if no allocator passed in
-
-  palPoolAllocator:
-    Adapt to palAllocator interface
-
   palStackAllocator:
     Adapt to palAllocator interface
 
-  palHeapAllocator:
-    Adapt to palAllocator interface
+Events:
+  Use pool allocator with intrusive linked list to connect delegates
+  Default to 64k of memory for delegate nodes -> 4k of delegate nodes
 
-  palLinearScopedAllocator:
-    From DICE presentation. Linear allocator with support for calling destructors.
-    Adapt to palAllocator interface
+palTimerEventManager:
+  Rename to palTimerEventPool.
+  Takes a fixed size buffer.
+  Implement using pool allocator.
+  Keeps track of allocated timer events, updates them when step called..
 
 Random number generator:
   Move all random number generation into a class
@@ -40,8 +34,7 @@ Containers:
   Add alignment template parameter to all container types
   Add allocator template parameter to all container types
 
-  Export alignment, node_type, node_size and allocator from all container types
-
+  Export element_alignment, element_type, element_size and allocator from all container types
 
   Modify palListNodePool to become an allocator that is passed as a template argument
   palArray:  
@@ -67,12 +60,14 @@ Containers:
     palHashSet
     palHashMapCache  
 
-
   Benchmark for Array, HashMap container
 
 Algorithms:
   Finish binarySearch <,>,=,<=,>= API
   Unit tests
+
+palLinearScopedAllocator:
+  From DICE presentation. Linear allocator with support for calling destructors.
 
 ObjectModel:
   palObject:

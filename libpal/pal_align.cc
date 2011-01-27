@@ -30,7 +30,10 @@ void* palAlign(void* ptr, uint32_t alignment) {
 }
 
 uintptr_t palAlign(uintptr_t x, uintptr_t alignment) {
-  return (x+alignment-1) & ~(alignment-1);
+  uintptr_t step0 = x+alignment-1;
+  uintptr_t step1 = ~(alignment-1);
+  uintptr_t step2 = step0 & step1;
+  return step2;
 }
 
 
@@ -54,41 +57,3 @@ bool palIsAligned128(void* ptr) {
   return palIsAligned(ptr, 128);
 }
 
-void* palMallocAligned(uint32_t size, uint32_t alignment) {
-  const int pointerSize = sizeof(void*);
-  const int requestedSize = size + alignment - 1 + pointerSize;
-
-  void* original = malloc(requestedSize);
-
-  if (!original)
-    return NULL;
-
-  void* start = (char*)original + pointerSize;
-  void* aligned = palAlign(start, alignment);
-  *(void**)((char*)aligned-pointerSize) = original;
-
-  return aligned;
-}
-
-void* palMallocAligned4 (uint32_t size) {
-  void* ptr = palMallocAligned(size, 4);
-  palAssert (palIsAligned4(ptr));
-  return ptr;
-}
-
-void* palMallocAligned16(uint32_t size) {
-  void* ptr = palMallocAligned(size, 16);
-  palAssert (palIsAligned16(ptr));
-  return ptr;
-}
-
-void* palMallocAligned128(uint32_t size) {
-  void* ptr = palMallocAligned(size, 128);
-  palAssert (palIsAligned128(ptr));
-  return ptr;
-}
-
-void palFreeAligned(void* ptr) {
-  void* original = *(void**)((char*)ptr-sizeof(void*));
-  free (original);
-}

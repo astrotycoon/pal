@@ -41,8 +41,6 @@ struct StructForAlignOf {
 #error Cannot define PAL_ALIGN because compiler is unknown
 #endif
 
-
-
 void*     palAlign(void* ptr, uint32_t alignment);
 uintptr_t palAlign(uintptr_t x, uintptr_t alignment);
 
@@ -51,10 +49,6 @@ bool palIsAligned4(void* ptr);
 bool palIsAligned16(void* ptr);
 bool palIsAligned128(void* ptr);
 
-void* palMallocAligned(uint32_t size, uint32_t alignment);
-void* palMallocAligned4(uint32_t size);
-void* palMallocAligned16(uint32_t size);
-void* palMallocAligned128(uint32_t size);
-void  palFreeAligned(void* ptr);
+
 
 #endif  // LIBPAL_PAL_ALIGN_H_

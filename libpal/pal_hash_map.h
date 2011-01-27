@@ -30,9 +30,19 @@
 #include "libpal/pal_hash_functions.h"
 #include "libpal/pal_hash_constants.h"
 
-template <class Key, class Value, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key> >
+template <class Key, class Value, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key), uint32_t ValueAlignment = PAL_ALIGNOF(Value), typename Allocator = palAllocator>
 class palHashMap
 {
+public:
+  /* Types and constants */
+  typedef palHashMap<Key, Value, HashFunction, KeyEqual, KeyAlignment, ValueAlignment, Allocator> this_type;
+  typedef Key key_type;
+  typedef Value value_type;
+  typedef Allocator allocator_type;
+  static const uint32_t key_size = sizeof(Key);
+  static const uint32_t value_size = sizeof(Value);
+  static const uint32_t key_alignment = KeyAlignment;
+  static const uint32_t value_alignment = ValueAlignment;
 protected:
 
   /* A chaining hash table. There are four arrays used in the implementation:
@@ -70,9 +80,8 @@ protected:
    * }
    */
 	palArray<int>	chain_next_;
-	palArray<Key>   key_array_;
-	palArray<Value>	value_array_;
-
+	palArray<Key, KeyAlignment, Allocator>   key_array_;
+	palArray<Value, ValueAlignment, Allocator>	value_array_;
 
   HashFunction hash_function_;
   KeyEqual key_equal_function_;
@@ -328,7 +337,7 @@ public:
 		if (index == kPalHashNULL) {
 			return NULL;
 		}
-		return GetAtIndex(index);
+		return GetValueAtIndex(index);
 	}
 
 	Value* Find(const Key& key)

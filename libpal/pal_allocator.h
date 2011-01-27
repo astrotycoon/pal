@@ -37,82 +37,65 @@
  * so you don't inherit from this class, but just implement this
  * interface. Avoids virtual function calls.
  */
-/*
+
 class palAllocator {
-  palAllocator(const char* name = "Unnamed Allocator");
+protected:
+  uint32_t magic_;
+  const char* name_;
+public:
+  palAllocator(const char* name = "SystemHeapAlignedAllocator");
   palAllocator(const palAllocator& x);
   palAllocator(const palAllocator& x, const char* name);
 
   palAllocator& operator=(const palAllocator& x);
 
-  void* Allocate(size_t size, size_t alignment, size_t alignment_offset, int flags = kPalAllocationFlagNone);
-  void  Deallocate(void* p, size_t size);
-
-  const char* GetName() const;
-  void        SetName(const char* name);
-};
-
-bool operator==(const palAllocator& a, const palAllocator& b);
-bool operator!=(const palAllocator& a, const palAllocator& b);
-*/
-
-class palSystemHeapAlignedAllocator {
-protected:
-  uint32_t magic_;
-  const char* name_;
-public:
-  palSystemHeapAlignedAllocator(const char* name = "SystemHeapAlignedAllocator");
-  palSystemHeapAlignedAllocator(const palSystemHeapAlignedAllocator& x);
-  palSystemHeapAlignedAllocator(const palSystemHeapAlignedAllocator& x, const char* name);
-
-  palSystemHeapAlignedAllocator& operator=(const palSystemHeapAlignedAllocator& x);
-
+  void* Allocate(size_t size, int flags = kPalAllocationFlagNone);
   void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone);
   void  Deallocate(void* p, size_t size);
 
   const char* GetName() const;
   void        SetName(const char* name);
 
-  friend bool operator==(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b);
-  friend bool operator!=(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b);
+  friend bool operator==(const palAllocator& a, const palAllocator& b);
+  friend bool operator!=(const palAllocator& a, const palAllocator& b);
 };
 
-bool operator==(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b);
-bool operator!=(const palSystemHeapAlignedAllocator& a, const palSystemHeapAlignedAllocator& b);
+bool operator==(const palAllocator& a, const palAllocator& b);
+bool operator!=(const palAllocator& a, const palAllocator& b);
 
 #define PAL_CLASS_ALLOCATOR_OVERRIDE_SYSTEM_HEAP_ALIGNED_ALIGNOF(TName) \
   static void* operator new(size_t size) {                         \
-    palSystemHeapAlignedAllocator a;                     \
+    palAllocator a;                     \
     return a.Allocate(size, PAL_ALIGNOF(TName)); \
   }                                                                \
   static void operator delete(void* p) {                           \
-    palSystemHeapAlignedAllocator a;                     \
+    palAllocator a;                     \
     return a.Deallocate(p, 0);              \
   } \
   static void* operator new[](size_t size) { \
-    palSystemHeapAlignedAllocator a; \
+    palAllocator a; \
     return a.Allocate(size, PAL_ALIGNOF(TName)); \
   } \
   static void operator delete[](void* p) { \
-    palSystemHeapAlignedAllocator a; \
+    palAllocator a; \
     return a.Deallocate(p, 0); \
   }
 
 #define PAL_CLASS_ALLOCATOR_OVERRIDE_SYSTEM_HEAP_ALIGNED_FIXED_ALIGN(Alignment) \
   static void* operator new(size_t size) {                         \
-  palSystemHeapAlignedAllocator a;                     \
+  palAllocator a;                     \
   return a.Allocate(size, Alignment); \
 }                                                                \
   static void operator delete(void* p) {                           \
-  palSystemHeapAlignedAllocator a;                     \
+  palAllocator a;                     \
   return a.Deallocate(p, 0);              \
 } \
   static void* operator new[](size_t size) { \
-  palSystemHeapAlignedAllocator a; \
+  palAllocator a; \
   return a.Allocate(size, Alignment); \
 } \
   static void operator delete[](void* p) { \
-  palSystemHeapAlignedAllocator a; \
+  palAllocator a; \
   return a.Deallocate(p, 0); \
 }
 

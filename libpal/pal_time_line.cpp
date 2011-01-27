@@ -80,7 +80,7 @@ palTimeLine& palTimeLine::operator=(const palTimeLine& that) {
   return *this;
 }
 
-palEvent<void (palTimeLine*)>& palTimeLine::GetTimeLineEndEvent() {
+palTimeLine::EndEventType& palTimeLine::GetTimeLineEndEvent() {
   return end_event_;
 }
 
