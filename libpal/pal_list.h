@@ -28,12 +28,12 @@
 
 #include "libpal/pal_pool_allocator.h"
 
-
 template <typename T>
 struct palListNode {
+  // data goes first to make alignment easier
+  T data;
   palListNode<T>* next;
   palListNode<T>* prev;
-  T data;
 
   palListNode() : next(NULL), prev(NULL) {
   }
@@ -42,40 +42,17 @@ struct palListNode {
   }
 };
 
-template <typename T>
-class palListNodePool {
-  palPoolAllocator pool_;
-
- public:
-  void Create(void* memory, uint32_t memory_size, uint32_t alignment) {
-    pool_.Create(memory, memory_size, sizeof(palListNode<T>), alignment);
-  }
-  palListNode<T>* GetNode() {
-    void* node_memory = pool_.Allocate(sizeof(palListNode<T>));
-    if (!node_memory)
-      return NULL;
-    new(node_memory) palListNode<T>();
-    return static_cast<palListNode<T>*>(node_memory);
-  }
-
-  palListNode<T>* GetNode(const T& val) {
-    void* node_memory = pool_.Allocate(sizeof(palListNode<T>));
-    if (!node_memory)
-      return NULL;
-    new(node_memory) palListNode<T>(val);
-    return static_cast<palListNode<T>*>(node_memory);
-  }
-
-  void FreeNode(palListNode<T>* node) {
-    if (!node)
-      return;
-    node->~palListNode<T>();
-    pool_.Deallocate(node, sizeof(palListNode<T>));
-  }
-};
-
-template <typename T>
+template <typename T, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
 class palList {
+ public:
+   /* Types and constants */
+   typedef palList<T, Alignment, Allocator> this_type;
+   typedef T element_type;
+   typedef Allocator allocator_type;
+   static const uint32_t element_size = sizeof(palListNode<T>);
+   static const uint32_t element_alignment = Alignment; 
+ private:
+  allocator_type allocator_;
   palListNode<T> root_;
 
  public:
@@ -83,69 +60,86 @@ class palList {
     // circular
     root_.next = &root_;
     root_.prev = &root_;
-    root_.data = 360;
   }
 
-  // Add node between next and previous
-  void Add(palListNode<T>* node, palListNode<T>* prev, palListNode<T>* next) {
-    // adjust new pointers
-    node->next = next;
-    node->prev = prev;
-
-    // insert into existing list
-    next->prev = node;
-    prev->next = node;
+  ~palList() {
+    // erase all nodes
+    Erase(GetFirst(), GetLast());
   }
 
-  // Add to head of list
-  void AddHead(palListNode<T>* node) {
-    Add(node, &root_, root_.next);
+  void PushFront(const T& item) {
+    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    new (node) palListNode<T>(item);
+    AddHead(node);
   }
 
-  // Add to tail of list
-  void AddTail(palListNode<T>* node) {
-    Add(node, root_.prev, &root_);
+  void PushBack(const T& item) {
+    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    new (node) palListNode<T>(item);
+    AddTail(node);
   }
 
-  // Remove node
-  void Remove(palListNode<T>* node) {
-    // node is inserted in a list
-    palAssert(node->next != NULL);
-    palAssert(node->prev != NULL);
-    node->next->prev = node->prev;
-    node->prev->next = node->next;
-    node->next = NULL;
-    node->prev = NULL;
+  void PopFront() {
+    palListNode<T>* node = PopHead();
+    allocator_.Deallocate(node, sizeof(palListNode<T>));
   }
 
-  // Removes first node
-  palListNode<T>* PopHead() {
-    if (IsEmpty())
-      return NULL;
-
-    palListNode<T>* popped = root_.next;
-
-    Remove(popped);
-
-    return popped;
+  void PopBack() {
+    palListNode<T>* node = PopTail();
+    allocator_.Deallocate(node, sizeof(palListNode<T>));
   }
 
-  // Removes last node
-  palListNode<T>* PopTail() {
-    if (IsEmpty())
-      return NULL;
-
-    palListNode<T>* popped = root_.prev;
-
-    Remove(popped);
-
-    return popped;
+  void InsertBefore(const T& item, palListNode<T>* node) {
+    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    new (new_node) palListNode<T>(item);
+    Add(new_node, node->prev, node);
   }
 
-  // Replace the obsolete node with the replacement node
-  void Replace(palListNode<T>* obsolete, palListNode<T>* replacement) {
-    replacement->next = obsolete->next;
-    replacement->prev = obsolete->prev;
+  void InsertAfter(const T& item, palListNode<T>* node) {
+    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    new (new_node) palListNode<T>(item);
+    Add(new_node, node, node->next);
+  }
+
+  void Erase(palListNode<T>* node) {
+    RemoveNode(node);
+    allocator_.Deallocate(node, sizeof(palListNode<T>));
+  }
+
+  void Erase(palListNode<T>* begin, palListNode<T>* end) {
+    palListNode<T>* node = begin;
+    while (node != end) {
+      begin = node->next;
+      RemoveNode(node);
+      allocator_.Deallocate(node, sizeof(palListNode<T>));
+      node = begin;
+    }
+  }
+
+  void Remove(const T& item) {
+    palListNode<T>* node = GetFirst();
+
+    if (IsEmpty()) {
+      return;
+    }
+
+    do {
+
+      palListNode<T>* next = node->next;
+
+      bool over = IsLast(node);
+
+      if (node->data == item) {
+        // remove it
+        Erase(node);
+      }
+
+      if (over) {
+        break;
+      }
+
+      node = next;
+    } while(true);
   }
 
   // Get first node
@@ -157,16 +151,6 @@ class palList {
   palListNode<T>* GetLast() const {
     return root_.prev;
   }
-
-  // Is this the root (dead) node
-  bool IsRoot(const palListNode<T>* node) const {
-    return node == &root_;
-  }
-
-  palListNode<T>* GetRoot() {
-    return &root_;
-  }
-
   // Is first node
   bool IsFirst(const palListNode<T>* node) const {
     return node->prev == &root_;
@@ -191,7 +175,7 @@ class palList {
   }
 
   // Splice list after node
-  void Splice(palList<T>* list, palListNode<T>* node) {
+  void Splice(this_type* list, palListNode<T>* node) {
     palListNode<T>* first = list->GetFirst();
     palListNode<T>* last = list->GetLast();
     palListNode<T>* link = node->next;
@@ -208,21 +192,21 @@ class palList {
   }
 
   // Splices list to beginning of list
-  void SpliceHead(palList<T>* list) {
+  void SpliceHead(this_type* list) {
     if (list->IsEmpty() == false) {
       Splice(list, &root_);
     }
   }
 
   // Splices list to end of list
-  void SpliceTail(palList<T>* list) {
+  void SpliceTail(this_type* list) {
     if (list->IsEmpty() == false) {
       Splice(list, root_.prev);
     }
   }
 
   // Cuts this[first...last] out of this and puts it into sublist
-  void MakeSublist(palList<T>* sublist, palListNode<T>* first, palListNode<T>* last) {
+  void MakeSublist(this_type* sublist, palListNode<T>* first, palListNode<T>* last) {
     // cut nodes out of list
     first->prev->next = last->next;
     last->next->prev = first->prev;
@@ -234,7 +218,7 @@ class palList {
     last->next = &sublist->root_;
   }
   
-  void dumpListForwardDebug (const palList<int>& l)
+  void dumpListForwardDebug(const palList<int>& l)
   {
     palListNode<int>* current;
     
@@ -374,6 +358,80 @@ class palList {
       insize *= 2;
     }
   }
+protected:
+  // Add node between next and previous
+  void Add(palListNode<T>* node, palListNode<T>* prev, palListNode<T>* next) {
+    // adjust new pointers
+    node->next = next;
+    node->prev = prev;
+
+    // insert into existing list
+    next->prev = node;
+    prev->next = node;
+  }
+
+  // Add to head of list
+  void AddHead(palListNode<T>* node) {
+    Add(node, &root_, root_.next);
+  }
+
+  // Add to tail of list
+  void AddTail(palListNode<T>* node) {
+    Add(node, root_.prev, &root_);
+  }
+
+  // Remove node
+  void RemoveNode(palListNode<T>* node) {
+    // node is inserted in a list
+    palAssert(node->next != NULL);
+    palAssert(node->prev != NULL);
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
+    node->next = NULL;
+    node->prev = NULL;
+  }
+
+  // Removes first node
+  palListNode<T>* PopHead() {
+    if (IsEmpty())
+      return NULL;
+
+    palListNode<T>* popped = root_.next;
+
+    RemoveNode(popped);
+
+    return popped;
+  }
+
+  // Removes last node
+  palListNode<T>* PopTail() {
+    if (IsEmpty())
+      return NULL;
+
+    palListNode<T>* popped = root_.prev;
+
+    RemoveNode(popped);
+
+    return popped;
+  }
+
+  // Replace the obsolete node with the replacement node
+  void Replace(palListNode<T>* obsolete, palListNode<T>* replacement) {
+    replacement->next = obsolete->next;
+    replacement->prev = obsolete->prev;
+  }
+
+
+  // Is this the root (dead) node
+  bool IsRoot(const palListNode<T>* node) const {
+    return node == &root_;
+  }
+
+  palListNode<T>* GetRoot() {
+    return &root_;
+  }
+
+
 };
 
 #endif  // LIBPAL_PAL_LIST_H__

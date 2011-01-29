@@ -495,12 +495,11 @@ bool verifyListSort(const palList<int>& il) {
   return true;
 }
 
-int64_t runListSortBenchmark(palListNodePool<int>* node_pool, int benchmark_size) {
+int64_t runListSortBenchmark(int benchmark_size) {
   palList<int> il;
   
   for (int i = 0; i < benchmark_size; i++) {
-    palListNode<int>* node = node_pool->GetNode(palGenerateRandom());
-    il.AddHead(node);
+    il.PushFront(palGenerateRandom());
   }
   
   palTimer t;
@@ -512,21 +511,10 @@ int64_t runListSortBenchmark(palListNodePool<int>* node_pool, int benchmark_size
     dumpListForward(il);
   }
   
-  for (int i = 0; i < benchmark_size; i++) {
-    palListNode<int>* node_to_free = il.PopHead();
-    node_pool->FreeNode(node_to_free);
-  }
-  
   return t.GetDeltaTime();
 }
 
 bool palListSortBenchmark() {
-  unsigned char* node_pool_memory = NULL;
-  const int num_nodes = 64 * 1024;
-  node_pool_memory = (unsigned char*)palMalloc(sizeof(palListNode<int>) * num_nodes);
-  palListNodePool<int> il_node_pool;
-  il_node_pool.Create(node_pool_memory, sizeof(palListNode<int>) * num_nodes, 4);
-
   int64_t dt;
   
   int benchmark_size = 1; 
@@ -534,7 +522,7 @@ bool palListSortBenchmark() {
   palSeedRandom(7);
   
   for (int i = 0; i < 17; i++) {
-    dt = runListSortBenchmark(&il_node_pool, benchmark_size);
+    dt = runListSortBenchmark(benchmark_size);
     printf("%d %lld\n", benchmark_size, dt);
     benchmark_size *= 2;
   }
@@ -542,25 +530,14 @@ bool palListSortBenchmark() {
 }
 
 bool palListSortTest() {
-  static unsigned char node_pool_memory[sizeof(palListNode<int>) * 100];
   palList<int> il;
-  palListNodePool<int> il_node_pool;
-  il_node_pool.Create(&node_pool_memory[0], sizeof(palListNode<int>) * 100, 1);
-  palListNode<int>* i_4 = new palListNode<int>(4);
-  palListNode<int>* i_5 = new palListNode<int>(5);
-  palListNode<int>* i_6 = new palListNode<int>(6);
-  palListNode<int>* p_9 = il_node_pool.GetNode(9);
-  palListNode<int>* p_13 = il_node_pool.GetNode(13);
-  palListNode<int>* p_21 = il_node_pool.GetNode(21);
-  palListNode<int>* p_99 = il_node_pool.GetNode(99);
-  
-  il.AddHead(i_4);
-  il.AddHead(i_6);
-  il.AddHead(p_99);
-  il.AddHead(p_21);
-  il.AddHead(i_5);
-  il.AddHead(p_9);
-  il.AddHead(p_13);
+  il.PushFront(4);
+  il.PushFront(6);
+  il.PushFront(99);
+  il.PushFront(21);
+  il.PushFront(5);
+  il.PushFront(9);
+  il.PushFront(13);
   
   //dumpListForward(il);
   il.Sort(CompareIntNode);
@@ -635,43 +612,33 @@ bool palIListSortTest() {
 
 bool palListTest()
 {
-  static unsigned char node_pool_memory[sizeof(palListNode<int>) * 100];
   palList<int> il;
-  palListNodePool<int> il_node_pool;
-  il_node_pool.Create(&node_pool_memory[0], sizeof(palListNode<int>) * 100, 1);
-  palListNode<int>* i_4 = new palListNode<int>(4);
-  palListNode<int>* i_5 = new palListNode<int>(5);
-  palListNode<int>* i_6 = new palListNode<int>(6);
-  palListNode<int>* p_9 = il_node_pool.GetNode(9);
-  palListNode<int>* p_13 = il_node_pool.GetNode(13);
-  palListNode<int>* p_21 = il_node_pool.GetNode(21);
-  palListNode<int>* p_99 = il_node_pool.GetNode(99);
 
   dumpList(il);
 
-  il.AddHead(i_4);
+  il.PushFront(4);
   dumpList(il);
-  il.AddHead(i_5);
+  il.PushFront(5);
   dumpList(il);
-  il.AddHead(i_6);
+  il.PushFront(6);
   dumpList(il);
-  il.AddHead(p_9);
+  il.PushFront(9);
   dumpList(il);
-  il.AddTail(p_13);
+  il.PushFront(13);
   dumpList(il);
-  il.PopHead();
+  il.PopFront();
   dumpList(il);
-  il.PopTail();
+  il.PopBack();
   dumpList(il);
-  il.Remove(i_5);
+  il.Remove(6);
   dumpList(il);
 
   palList<int> il_spliced_head;
-  il_spliced_head.AddHead(p_9);
-  il_spliced_head.AddTail(p_21);
+  il_spliced_head.PushFront(9);
+  il_spliced_head.PushBack(21);
   palList<int> il_spliced_tail;
-  il_spliced_tail.AddHead(p_99);
-  il_spliced_tail.AddTail(p_13);
+  il_spliced_tail.PushFront(99);
+  il_spliced_tail.PushBack(13);
 
   printf("head:\n");
   dumpList(il_spliced_head);
@@ -683,6 +650,7 @@ bool palListTest()
   il.SpliceTail(&il_spliced_tail);
   dumpList(il);
 
+#if 0
   palList<int> sublist;
 
   il.MakeSublist(&sublist, p_21, p_99);
@@ -691,6 +659,7 @@ bool palListTest()
   dumpList(il);
   printf("sublist:\n");
   dumpList(sublist);
+#endif
   return true;
 }
 

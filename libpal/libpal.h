@@ -16,6 +16,9 @@ palAllocators:
   palStackAllocator:
     Adapt to palAllocator interface
 
+  ! Make sure all allocators take a string name in the constructor
+  ! Make a fixed array allocator, plug it into palArray... dun dun dun.
+
 Events:
   Use pool allocator with intrusive linked list to connect delegates
   Default to 64k of memory for delegate nodes -> 4k of delegate nodes
@@ -27,16 +30,11 @@ palTimerEventManager:
   Keeps track of allocated timer events, updates them when step called..
 
 Random number generator:
-  Move all random number generation into a class
+  Create new github project SFMTOO, import unmodified SFMT, port it to a class. 
+  Move all random number generation into a class, look at c# for reference
   Expose "extern palRandom g_palRandomNumberGenerator" for people who don't care
 
 Containers:
-  Add alignment template parameter to all container types
-  Add allocator template parameter to all container types
-
-  Export element_alignment, element_type, element_size and allocator from all container types
-
-  Modify palListNodePool to become an allocator that is passed as a template argument
   palArray:  
   palArray<T> CopySlice(int start, int end);
   palArray<T> CutSlice(int start, int end);

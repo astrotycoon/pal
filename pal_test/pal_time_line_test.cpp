@@ -66,6 +66,6 @@ bool PalTimeLineTest() {
   tline.Step(0.25f);
   tline.Step(0.25f);
 
-  palBreakHere();
+  //palBreakHere();
   return true;
 }

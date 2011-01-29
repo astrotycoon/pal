@@ -28,10 +28,16 @@
 #include "libpal/pal_array.h"
 #include "libpal/pal_hash_functions.h"
 
-template <class Key, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key> >
+template <class Key, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key), typename Allocator = palAllocator >
 class palHashSet
 {
-
+public:
+  /* Types and constants */
+  typedef palHashSet<Key, HashFunction, KeyEqual, KeyAlignment, Allocator> this_type;
+  typedef Key key_type;
+  typedef Allocator allocator_type;
+  static const uint32_t key_size = sizeof(Key);
+  static const uint32_t key_alignment = KeyAlignment;
   /* A chaining hash table. There are four arrays used in the implementation:
    * hash_bucket_list_head_ holds the head of each hash index list. If nothing is hashed at
    * hash_bucket_list_head_[hash_index] than it contains pal_object_hash_null. 
@@ -55,7 +61,7 @@ class palHashSet
    */
   int hash_size_configuration_;
 
-	palArray<int>	hash_bucket_list_head_;
+	palArray<int, PAL_ALIGNOF(int), Allocator>	hash_bucket_list_head_;
 
 
   /* These three could be thought of as:
@@ -66,8 +72,8 @@ class palHashSet
    *     Value value;
    * }
    */
-	palArray<int>	chain_next_;
-	palArray<Key>   key_array_;
+	palArray<int, PAL_ALIGNOF(int), Allocator>	chain_next_;
+	palArray<Key, key_alignment, Allocator>   key_array_;
 
   HashFunction hash_function_;
   KeyEqual key_equal_function_;

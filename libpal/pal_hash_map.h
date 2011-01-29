@@ -68,7 +68,7 @@ protected:
    */
   int hash_size_configuration_;
 
-	palArray<int>	hash_bucket_list_head_;
+	palArray<int, 4, Allocator>	hash_bucket_list_head_;
 
 
   /* These three could be thought of as:
@@ -79,7 +79,7 @@ protected:
    *     Value value;
    * }
    */
-	palArray<int>	chain_next_;
+	palArray<int, PAL_ALIGNOF(int), Allocator>	chain_next_;
 	palArray<Key, KeyAlignment, Allocator>   key_array_;
 	palArray<Value, ValueAlignment, Allocator>	value_array_;
 
