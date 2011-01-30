@@ -163,7 +163,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pal_align.cc"
+				RelativePath=".\pal_align.cpp"
 				>
 			</File>
 			<File
@@ -171,7 +171,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pal_console.cc"
+				RelativePath=".\pal_console.cpp"
 				>
 			</File>
 			<File
@@ -179,7 +179,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pal_file.cc"
+				RelativePath=".\pal_file.cpp"
 				>
 			</File>
 			<File
@@ -207,7 +207,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pal_random.cc"
+				RelativePath=".\pal_random.cpp"
 				>
 			</File>
 			<File
