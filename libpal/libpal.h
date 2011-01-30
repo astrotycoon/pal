@@ -18,12 +18,6 @@ palAllocators:
   ! Make sure all allocators take a string name in the constructor
   ! Make a fixed array allocator, plug it into palArray.
 
-palTimerEventManager:
-  Rename to palTimerEventPool.
-  Takes a fixed size buffer.
-  Implement using pool allocator.
-  Keeps track of allocated timer events, updates them when step called..
-
 Random number generator:
   Create new github project SFMTOO, import unmodified SFMT, port it to a class
   Move all random number generation into a class, look at c# for reference

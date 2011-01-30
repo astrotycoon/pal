@@ -66,3 +66,31 @@ void palTimerEvent::Step(palTimerTick ticks) {
 palTimerEvent::TimerEvent& palTimerEvent::GetTimerEvent() {
   return event_;
 }
+
+palTimerEventManager::palTimerEventManager() {
+
+}
+
+palTimerEventManager::~palTimerEventManager() {
+
+}
+
+void palTimerEventManager::Register(palTimerEvent* timer) {
+  list_head.AddTail(&timer->list_node);
+}
+
+void palTimerEventManager::Unregister(palTimerEvent* timer) {
+  list_head.Remove(&timer->list_node);
+}
+
+void palTimerEventManager::StepTimers(palTimerTick tick) {
+  palIListForeachDeclare(palTimerEvent, list_node) fe(&list_head);
+
+  while (fe.Finished() == false) {
+    palTimerEvent* event = fe.GetListEntry();
+    if (event->IsEnabled()) {
+      event->Step(tick);
+    }
+    fe.Next();
+  }
+}

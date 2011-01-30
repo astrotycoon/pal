@@ -40,8 +40,7 @@
 
 #define palIListNodeDeclare(Type, MemberName)\
 	static size_t offset_##MemberName(void) { return palIListNode_offsetof(Type, MemberName); }\
-	palIListNode MemberName;
-
+	palIListNode MemberName
 
 #define palIListForeachDeclare(Type, MemberName) palIListForeach<Type , Type::offset_##MemberName>
 
@@ -363,19 +362,25 @@ class palIListForeach {
 		return reinterpret_cast<T*>((size_t)node - offset());
 	}
 public:
-	palIListForeach (palIList* list) : list_(list) {
+	palIListForeach(palIList* list) : list_(list) {
 		current = list_->GetFirst();
 	}
   
-	T* GetListEntry () { return list_entry(current); }
+	T* GetListEntry() { return list_entry(current); }
   
-	bool Finished () const {
+	bool Finished() const {
 		return list_->IsRoot(current);
 	}
   
-  void AddAfter (palIListNode* node) {
+  void AddAfter(palIListNode* node) {
     palIListNode* next = current->next;
     list_->Add(node, current, next);
+  }
+
+  void Remove() {
+    palIListNode* safe_next = current->next;
+    list_->Remove(current);
+    current = safe_next;
   }
 
   void First() {

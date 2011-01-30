@@ -24,6 +24,7 @@ distribution.
 #ifndef LIBPAL_PAL_TIMER_EVENT_H_
 #define LIBPAL_PAL_TIMER_EVENT_H_
 
+#include "libpal/pal_ilist.h"
 #include "libpal/pal_timer.h"
 #include "libpal/pal_event.h"
 
@@ -51,6 +52,8 @@ private:
   palTimerTick interval_;
   palTimerTick elapsed_;
   bool enabled_;
+public:
+  palIListNodeDeclare(palTimerEvent, list_node);
 };
 
 class palTimerEventManager {
@@ -58,11 +61,12 @@ public:
   palTimerEventManager();
   ~palTimerEventManager();
 
-  palTimerEvent* AllocateTimer();
-  void FreeTimer(palTimerEvent* timer);
+  void Register(palTimerEvent* timer);
+  void Unregister(palTimerEvent* timer);
 
   void StepTimers(palTimerTick tick);
 private:
+  palIList list_head;
 };
 
 #endif  // LIBPAL_PAL_TIMER_EVENT_H_
