@@ -25,6 +25,7 @@
 #define LIBPAL_PAL_POOL_ALLOCATOR_H_
 
 #include "libpal/pal_platform.h"
+#include "libpal/pal_debug.h"
 #include "libpal/pal_align.h"
 #include "libpal/pal_spinlock.h"
 #include "libpal/pal_allocator.h"

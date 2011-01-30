@@ -27,11 +27,18 @@
 #include "libpal/pal_array.h"
 #include "libpal/pal_algorithms.h"
 
-template <typename T, typename CompareFuncLessThan = palCompareFuncLessThan<T> >
+template <typename T, typename CompareFuncLessThan = palCompareFuncLessThan<T>, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
 class palMinHeap
 {
+public:
+  /* Types and constants */
+  typedef palMinHeap<T, CompareFuncLessThan, Alignment, Allocator> this_type;
+  typedef T element_type;
+  typedef Allocator allocator_type;
+  static const uint32_t element_size = sizeof(T);
+  static const uint32_t element_alignment = Alignment; 
 protected:
-  palArray<T> array_;
+  palArray<T, Alignment, Allocator> array_;
   CompareFuncLessThan LessThan_;
 
   /* Heap helpers */

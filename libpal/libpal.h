@@ -10,18 +10,13 @@ palSimd:
 
 palAtomic:
   Finish palAtomicAddress and palAtomicInt64
-  Add Acquire and Release
+  Add Acquire and Release operations
 
 palAllocators:
   palStackAllocator:
     Adapt to palAllocator interface
-
   ! Make sure all allocators take a string name in the constructor
-  ! Make a fixed array allocator, plug it into palArray... dun dun dun.
-
-Events:
-  Use pool allocator with intrusive linked list to connect delegates
-  Default to 64k of memory for delegate nodes -> 4k of delegate nodes
+  ! Make a fixed array allocator, plug it into palArray.
 
 palTimerEventManager:
   Rename to palTimerEventPool.
@@ -30,9 +25,9 @@ palTimerEventManager:
   Keeps track of allocated timer events, updates them when step called..
 
 Random number generator:
-  Create new github project SFMTOO, import unmodified SFMT, port it to a class. 
+  Create new github project SFMTOO, import unmodified SFMT, port it to a class
   Move all random number generation into a class, look at c# for reference
-  Expose "extern palRandom g_palRandomNumberGenerator" for people who don't care
+  Expose "extern palRandom g_palRandomNumberGenerator" for code that doesn't care
 
 Containers:
   palArray:  

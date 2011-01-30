@@ -24,8 +24,34 @@ distribution.
 #ifndef LIBPAL_PAL_EVENT_H_
 #define LIBPAL_PAL_EVENT_H_
 
-#include "libpal/pal_array.h"
+#include "libpal/pal_list.h"
 #include "libpal/pal_delegate.h"
+
+struct palEventDelegate {
+  /*
+   IMPORTANT: Make sure that PAL_DELEGATE_SIZE
+   is correct for your compiler/platform
+  */
+  char buffer[PAL_DELEGATE_SIZE];
+  template <typename DT>
+  DT* Cast() {
+    return reinterpret_cast<DT*>(&buffer[0]);
+  }
+
+  bool operator==(const palEventDelegate& b) {
+    return buffer[0] == b.buffer[0] &&
+          buffer[1] == b.buffer[1] &&
+          buffer[2] == b.buffer[2] &&
+          buffer[3] == b.buffer[3] &&
+          buffer[4] == b.buffer[4] &&
+          buffer[5] == b.buffer[5] &&
+          buffer[6] == b.buffer[6] &&
+          buffer[7] == b.buffer[7];
+  }
+};
+
+extern palPoolAllocator defualt_event_delegate_pool_allocator;
+typedef palList<palEventDelegate, 8, palPoolAllocator> palEventDelegateList;
 
 template<typename Signature>
 class palEvent;
@@ -35,11 +61,12 @@ class palEvent<R ( ) > {
 public:
   typedef palDelegate<R ()> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
-
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -57,7 +84,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -75,10 +104,16 @@ public:
   }
 
   void Fire() const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del();
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)();
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -87,11 +122,13 @@ class palEvent<R ( Param1 ) > {
 public:
   typedef palDelegate<R (Param1)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -109,7 +146,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -127,10 +166,16 @@ public:
   }
 
   void Fire(Param1 p1) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -139,11 +184,13 @@ class palEvent<R ( Param1, Param2 ) > {
 public:
   typedef palDelegate<R (Param1, Param2)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -161,7 +208,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -179,10 +228,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -191,11 +246,13 @@ class palEvent<R ( Param1, Param2, Param3 ) > {
 public:
   typedef palDelegate<R (Param1, Param2, Param3)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -213,7 +270,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -231,10 +290,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -243,11 +308,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4 ) > {
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -265,7 +332,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -283,10 +352,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -295,11 +370,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4, Param5 ) > {
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4, Param5)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -317,7 +394,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -335,10 +414,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4, p5);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4, p5);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -347,11 +432,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4, Param5, Param6 ) > {
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4, Param5, Param6)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -369,7 +456,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -387,10 +476,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4, p5, p6);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4, p5, p6);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -399,11 +494,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7 ) > {
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4, Param5, Param6, Param7)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -421,7 +518,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -439,10 +538,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4, p5, p6, p7);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4, p5, p6, p7);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -451,11 +556,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -473,7 +580,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -491,10 +600,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4, p5, p6, p7, p8);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4, p5, p6, p7, p8);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 
@@ -503,11 +618,13 @@ class palEvent<R ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param
 public:
   typedef palDelegate<R (Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8, Param9)> DelegateType;
 protected:
-  palArray<DelegateType> delegates_;
+  palList<palEventDelegate> delegates_;
 public:
 
   void Register(DelegateType del) {
-    delegates_.push_back(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.PushBack(ped);
   }
 
   template<typename X, typename Y>
@@ -525,7 +642,9 @@ public:
   }
 
   void Unregister(DelegateType del) {
-    delegates_.Erase(del);
+    palEventDelegate ped;
+    *(ped.Cast<DelegateType>()) = del;
+    delegates_.RemoveFirst(ped);
   }
 
   template<typename X, typename Y>
@@ -543,10 +662,16 @@ public:
   }
 
   void Fire(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8, Param9 p9) const {
-    for (int i = 0; i < delegates_.GetSize(); i++) {
-      const DelegateType& del = delegates_[i];
-      del(p1, p2, p3, p4, p5, p6, p7, p8, p9);
-    }
+    palListNode<palEventDelegate>* node = delegates_.GetFirst();
+    do 
+    {
+      DelegateType* del = node->data.Cast<DelegateType>();
+      (*del)(p1, p2, p3, p4, p5, p6, p7, p8, p9);
+      if (delegates_.IsLast(node)) {
+        break;
+      }
+      node = node->next;
+    } while (true);
   }
 };
 

@@ -26,6 +26,7 @@ bool PalEventTest() {
   typedef palDelegate<int ()> GetDelegate;
   typedef palDelegate<int (int, float)> StrangeDelegate;
 
+  //printf("%d %d %d\n", sizeof(IncrementDelegate), sizeof(AddDelegate), sizeof(StrangeDelegate));
   typedef palEvent<void ()> SimpleEvent;
   typedef palEvent<void (int)> IntEvent;
 

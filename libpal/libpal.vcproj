@@ -310,6 +310,14 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="delegate"
+				>
+				<File
+					RelativePath=".\pal_event.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"

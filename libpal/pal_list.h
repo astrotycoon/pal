@@ -60,6 +60,14 @@ class palList {
     // circular
     root_.next = &root_;
     root_.prev = &root_;
+    allocator_ = allocator_type("palList");
+  }
+
+  palList(const allocator_type& allocator) {
+    // circular
+    root_.next = &root_;
+    root_.prev = &root_;
+    allocator_ = allocator;
   }
 
   ~palList() {
@@ -114,6 +122,28 @@ class palList {
       allocator_.Deallocate(node, sizeof(palListNode<T>));
       node = begin;
     }
+  }
+
+  void RemoveFirst(const T& item) {
+    palListNode<T>* node = GetFirst();
+
+    if (IsEmpty()) {
+      return;
+    }
+
+    do {
+      palListNode<T>* next = node->next;
+      bool over = IsLast(node);
+      if (node->data == item) {
+        // remove it
+        Erase(node);
+        break;
+      }
+      if (over) {
+        break;
+      }
+      node = next;
+    } while(true);
   }
 
   void Remove(const T& item) {

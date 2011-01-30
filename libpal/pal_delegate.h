@@ -26,6 +26,14 @@ distribution.
 
 #include "libpal/pal_delegate_internal.h"
 
+#if defined(PAL_ARCH_32BIT) && defined(PAL_PLATFORM_WINDOWS)
+#define PAL_DELEGATE_SIZE 8
+#elif defined(PAL_ARCH_64BIT) && defined(PAL_PLATFORM_WINDOWS)
+#define PAL_DELEGATE_SIZE 16
+#else
+#error Figure out platform delegate size
+#endif
+
 // Declare delegate as a class template.  It will be specialized
 // later for all number of arguments.
 template <typename Signature>
