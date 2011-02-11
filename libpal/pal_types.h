@@ -9,6 +9,7 @@
 #include "MSVCfixes/stdbool.h"
 #else
 #include <stdint.h>
+#include <stddef.h>
 #endif
 
 #endif

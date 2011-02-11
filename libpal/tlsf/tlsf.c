@@ -731,7 +731,7 @@ tlsf_pool tlsf_create(void* mem, size_t bytes)
 
 	if (pool_bytes < block_size_min || pool_bytes > block_size_max)
 	{
-		printf("tlsf_create: Pool size must be between %d and %d bytes.\n", 
+		printf("tlsf_create: Pool size must be between %d and %lu bytes.\n", 
 			pool_overhead + block_size_min, pool_overhead + block_size_max);
 		return 0;
 	}

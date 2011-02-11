@@ -21,16 +21,13 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_SIMD_INL_H_
-#define LIBPAL_PAL_SIMD_INL_H_
+#ifndef LIBPAL_PAL_SIMD_TYPES_H_
+#define LIBPAL_PAL_SIMD_TYPES_H_
 
 #if defined(PAL_CPU_X86)
-#include <xmmintrin.h>
-#include <smmintrin.h>
-typedef __m128 palSimd;
-#include "libpal/x86/pal_simd_sse.h"
+#include "libpal/x86/pal_simd_sse_types.h"
 #else
 #error No simd implementation for your CPU
 #endif
 
-#endif  // LIBPAL_PAL_SIMD_INL_H_
+#endif  // LIBPAL_PAL_SIMD_TYPES_H_

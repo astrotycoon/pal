@@ -27,8 +27,7 @@
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
 
-// include implementation
-#include "libpal/pal_simd-inl.h"
+#include "libpal/pal_simd_types-inl.h"
 
 extern const palSimd palSimd_UNIT_X;
 extern const palSimd palSimd_UNIT_Y;
@@ -153,5 +152,8 @@ PAL_INLINE palSimd palSimdLength2(palSimd a);
 PAL_INLINE palSimd palSimdLength(palSimd a);
 
 PAL_INLINE void palSimdMatrixTranspose(palSimd* a, palSimd* b, palSimd* c, palSimd* d);
+
+// include implementation
+#include "libpal/pal_simd_impl-inl.h"
 
 #endif

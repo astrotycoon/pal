@@ -31,7 +31,7 @@ void palBreakHere() {
 }
 #elif defined(PAL_CPU_X86) && defined(PAL_COMPILER_GNU)
 void palBreakHere() {
-    __asm {int 3}
+  asm("int $0x3");
 }
 #endif
 

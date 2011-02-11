@@ -175,7 +175,7 @@ public:
   }
 
   /* Copy constructor */
-  palHashSet (const palHashMap<Key,HashFunction, KeyEqual>& map) : hash_size_configuration_(hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_), chain_next_(map.chain_next_), key_array_(map.key_array_), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
+  palHashSet (const palHashSet<Key,HashFunction, KeyEqual>& set) : hash_size_configuration_(set.hash_size_configuration_), hash_bucket_list_head_(set.hash_bucket_list_head_), chain_next_(set.chain_next_), key_array_(set.key_array_), hash_function_(set.hash_function_), key_equal_function_(set.key_equal_function_) {
   }
 
   bool Insert(const Key& key) {
@@ -368,6 +368,7 @@ public:
     return sum_diff_squared/population_size;
   }
 
+#if 0
   void dumpBucketLength(const char* file) {
     FILE* fp = fopen(file, "wb");
     if (!fp) {
@@ -379,6 +380,7 @@ public:
     }
     fclose(fp);
   }
+#endif
 };
 
 #endif  // LIBPAL_PAL_HASH_SET_H__

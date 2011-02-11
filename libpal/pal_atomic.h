@@ -79,7 +79,7 @@ struct palAtomicFlag {
 private:
   // disable copying
   palAtomicFlag(const palAtomicFlag&) {}
-  palAtomicFlag& operator=(const palAtomicFlag&) {}
+  palAtomicFlag& operator=(const palAtomicFlag&) { return *this; }
 public:
   PAL_INLINE palAtomicFlag();
   /* Initialization: */

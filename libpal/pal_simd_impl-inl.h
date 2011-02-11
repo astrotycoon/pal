@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,9 +21,13 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ATOMIC_APPLE_H_
-#define LIBPAL_PAL_ATOMIC_APPLE_H_
+#ifndef LIBPAL_PAL_SIMD_INL_H_
+#define LIBPAL_PAL_SIMD_INL_H_
 
-#include <libkern/OSAtomic.h>
+#if defined(PAL_CPU_X86)
+#include "libpal/x86/pal_simd_sse_impl.h"
+#else
+#error No simd implementation for your CPU
+#endif
 
-#endif  // LIBPAL_PAL_ATOMIC_APPLE_H_
+#endif  // LIBPAL_PAL_SIMD_INL_H_
