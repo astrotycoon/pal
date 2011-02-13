@@ -10,9 +10,11 @@
 #include "pal_simd_test.h"
 #include "pal_event_test.h"
 #include "pal_time_line_test.h"
+#include "pal_json_test.h"
 
 int main (int argc, char** argv)
 {
+  PalJsonTest();
   PalPoolAllocTest();
   PalTimeLineTest();
   PalEventTest();

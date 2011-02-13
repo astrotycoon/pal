@@ -8,6 +8,17 @@ Entire library:
 palSimd:
   Test and/or implement true SIMD versions of Sin, Cos, Tan, Acos, Asin, Atan, Atan2, Pow, Log and Exp.
 
+palObjectIDManager:
+  Template for type safety
+  An ID -> object tracker
+  Look at Terrance Cohen's component system and http://altdevblogaday.com/managing-decoupling
+
+palJSONDecoder:
+  JSON decorer, simple, no allocations, etc.
+
+palJSONEncoder:
+  Simple, stateful, no allocations, etc.
+
 palAtomic:
   Finish palAtomicAddress and palAtomicInt64
   Add Acquire and Release operations

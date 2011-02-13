@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_json.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_memory.cpp"
 				>
 			</File>
@@ -354,6 +358,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_image.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_json.h"
 				>
 			</File>
 			<File
