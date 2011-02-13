@@ -35,6 +35,7 @@
 */
 
 #include "libpal/pal_debug.h"
+#include "libpal/pal_types.h"
 
 #define palIListNode_offsetof(Type, MemberName) (reinterpret_cast<size_t>(&reinterpret_cast<char &>(reinterpret_cast<Type *> (1)->MemberName))- 1)
 

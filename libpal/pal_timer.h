@@ -33,6 +33,8 @@
 
 #if defined(PAL_PLATFORM_WINDOWS)
 #include "libpal/windows/pal_timer_windows.h"
+#elif defined(PAL_PLATFORM_APPLE)
+#include "libpal/apple/pal_timer_apple.h"
 #else
 #error no palTimer for your platform
 #endif

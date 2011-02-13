@@ -27,6 +27,7 @@
 #include "libpal/pal_debug.h"
 #include "libpal/pal_random.h"
 #include "libpal/pal_array.h"
+#include "libpal/pal_allocator.h"
 #include "libpal/pal_hash_functions.h"
 #include "libpal/pal_hash_constants.h"
 
@@ -186,7 +187,7 @@ public:
 	}
 
 	/* Copy constructor */
-	palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map) : hash_size_configuration_(hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_), chain_next_(map.chain_next_), key_array_(map.key_array_), value_array_(map.value_array_), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
+	palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map) : hash_size_configuration_(map.hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_), chain_next_(map.chain_next_), key_array_(map.key_array_), value_array_(map.value_array_), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
 	}
 
 	bool Insert(const Key& key, const Value& value) {
@@ -415,6 +416,7 @@ public:
     return sum_diff_squared/population_size;
   }
 
+#if 0
   void dumpBucketLength(const char* file) {
     FILE* fp = fopen(file, "wb");
     if (!fp) {
@@ -426,6 +428,7 @@ public:
     }
     fclose(fp);
   }
+#endif
 };
 
 #endif  // LIBPAL_PAL_HASH_MAP_H__

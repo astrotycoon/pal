@@ -43,6 +43,8 @@ enum palFileSeek
 
 #if defined(PAL_PLATFORM_WINDOWS)
 #include "libpal/windows/pal_file_windows.h"
+#elif defined(PAL_PLATFORM_APPLE)
+#include "libpal/apple/pal_file_apple.h"
 #else
 #warning no file implementation for your platform
 #endif

@@ -25,10 +25,12 @@
 #define LIBPAL_PAL_COMPACTING_ALLOCATOR_H_
 
 #include "libpal/pal_platform.h"
-#include "libpal/pal_atomic.h"
 #include "libpal/pal_hash_map.h"
+
 #include "libpal/pal_types.h"
 #include "libpal/pal_ilist.h"
+
+#include "libpal/pal_atomic.h"
 
 typedef uint32_t palGCAHandle;
 

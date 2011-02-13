@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,9 +21,20 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ATOMIC_APPLE_H_
-#define LIBPAL_PAL_ATOMIC_APPLE_H_
+#ifndef LIBPAL_PAL_TIMER_APPLE_H_
+#define LIBPAL_PAL_TIMER_APPLE_H_
 
-#include <libkern/OSAtomic.h>
+#include <mach/mach_time.h>
+typedef uint64_t palTimerTick;
 
-#endif  // LIBPAL_PAL_ATOMIC_APPLE_H_
+PAL_INLINE palTimerTick palTimerGetTicks() {
+  return mach_absolute_time();
+}
+
+PAL_INLINE float palTimerGetSeconds(palTimerTick ticks) {
+  struct mach_timebase_info tbi;
+  mach_timebase_info(&tbi);
+  return (float)(ticks * tbi.numer)/(float)(tbi.denom);
+}
+
+#endif  // LIBPAL_PAL_TIMER_APPLE_H_

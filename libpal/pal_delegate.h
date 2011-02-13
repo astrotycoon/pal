@@ -30,6 +30,10 @@ distribution.
 #define PAL_DELEGATE_SIZE 8
 #elif defined(PAL_ARCH_64BIT) && defined(PAL_PLATFORM_WINDOWS)
 #define PAL_DELEGATE_SIZE 16
+#elif defined(PAL_ARCH_32BIT) && defined(PAL_PLATFORM_APPLE)
+#define PAL_DELEGATE_SIZE 8
+#elif defined(PAL_ARCH_64BIT) && defined(PAL_PLATFORM_APPLE)
+#define PAL_DELEGATE_SIZE 16
 #else
 #error Figure out platform delegate size
 #endif
