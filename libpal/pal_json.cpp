@@ -24,24 +24,118 @@
 #include "libpal/pal_string.h"
 #include "libpal/pal_json.h"
 
-bool palJSONToken::NameMatch(const char* name) {
+const char* json_token_type_strings[NUM_palJSONTokenType] = {
+  "parse error",
+  "map",
+  "map entry",
+  "array",
+  "value string",
+  "value number",
+  "value true",
+  "value false",
+  "value null"
+};
+
+palTokenizerKeyword JSON_keywords[] = {
+  {"true", kJSONTokenTypeValueTrue},
+  {"false", kJSONTokenTypeValueFalse},
+  {"null", kJSONTokenTypeValueNull},
+  NULL, 0
+};
+
+palJSONTokenType palJSONToken::GetTypeOfValue() const {
+  char ch = *(JSON_str+value_first_index);
+
+  if (ch == 't') {
+    return kJSONTokenTypeValueTrue;
+  } else if (ch == 'f') {
+    return kJSONTokenTypeValueFalse;
+  } else if (ch == 'n') {
+    return kJSONTokenTypeValueNull;
+  } else if (ch == '[') {
+    return kJSONTokenTypeArray;
+  } else if (ch == '{') {
+    return kJSONTokenTypeMap;
+  } else if (ch == '\"') {
+    return kJSONTokenTypeValueString;
+  } else if (palIsDigit(ch) || ch == '-') {
+    return kJSONTokenTypeValueNumber;
+  }
+
+  return kJSONTokenTypeParseError;
+}
+
+bool palJSONToken::NameMatch(const char* name) const {
   return false;
 }
 
-float palJSONToken::GetAsFloat() {
-  return 0.0f;
+float palJSONToken::GetAsFloat() const {
+  return (float)atof(JSON_str+value_first_index);
 }
 
-int palJSONToken::GetAsInt() {
-  return 0;
+int palJSONToken::GetAsInt() const {
+  return atoi(JSON_str+value_first_index);
 }
 
-bool palJSONToken::GetAsBool() {
-  return false;
+bool palJSONToken::GetAsBool() const {
+  return (type == kJSONTokenTypeValueTrue);
 }
 
-void* palJSONToken::GetAsPointer() {
+void* palJSONToken::GetAsPointer() const {
   return NULL;
+}
+
+void palJSONToken::DebugPrintf() const {
+  palString<> debug_str;
+
+  switch (type) {
+  case kJSONTokenTypeValueFalse:
+    palPrintf("false\n");
+    break;
+  case kJSONTokenTypeValueTrue:
+    palPrintf("true\n");
+    break;
+  case kJSONTokenTypeValueNull:
+    palPrintf("null\n");
+    break;
+  case kJSONTokenTypeArray:
+    palPrintf("[ array\n");
+    break;
+  case kJSONTokenTypeMap:
+    palPrintf("{ map\n");
+    break;
+  case kJSONTokenTypeMapEntry:
+    debug_str.AppendLength(JSON_str+name_first_index, name_length);
+    if (GetTypeOfValue() == kJSONTokenTypeValueFalse) {
+      palPrintf("%s : false\n", debug_str.C());
+    } else if (GetTypeOfValue() == kJSONTokenTypeValueTrue) {
+      palPrintf("%s : true\n", debug_str.C());
+    } else if (GetTypeOfValue() == kJSONTokenTypeValueNull) {
+      palPrintf("%s : null\n", debug_str.C());
+    } else if (GetTypeOfValue() == kJSONTokenTypeValueNumber) {
+      palPrintf("%s : %f\n", debug_str.C(), GetAsFloat());
+    } else if (GetTypeOfValue() == kJSONTokenTypeValueString) {
+      palPrintf("%s : ", debug_str.C());
+      debug_str.Clear();
+      debug_str.AppendLength(JSON_str+value_first_index, value_length);
+      palPrintf("%s\n", debug_str.C());
+    } else {
+      palPrintf("%s : [%s]\n", debug_str.C(), json_token_type_strings[GetTypeOfValue()]);
+    }
+    break;
+  case kJSONTokenTypeValueNumber:
+    palPrintf("%f\n", GetAsFloat());
+    break;
+  case kJSONTokenTypeValueString:
+    palPrintf("\"string\"\n");
+    break;
+  case kJSONTokenTypeParseError:
+    palPrintf("parsing error\n");
+    break;
+  default:
+    palBreakHere();
+    break;
+  }
 }
 
 palJSONToken* palJSONFindTokenWithName(palJSONToken* token_buffer, int token_buffer_length, const char* name) {
@@ -53,6 +147,7 @@ palJSONParser::palJSONParser() {
   JSON_str_len_ = 0;
   parse_current_index_ = 0;
   parse_end_index_ = 0;
+  tokenizer_.SetKeywordArray(&JSON_keywords[0]);
 }
 
 void palJSONParser::Init(const char* JSON_str) {
@@ -63,30 +158,186 @@ void palJSONParser::Init(const char* JSON_str) {
 }
 
 void palJSONParser::StartParse() {
+  buffer_offset_ = 0;
   parse_current_index_ = 0;
   parse_end_index_ = JSON_str_len_+1;
+  tokenizer_.UseReadOnlyBuffer(JSON_str_, JSON_str_len_);
 }
   
-void palJSONParser::StartParse(int start_index, int end_index) {
+void palJSONParser::StartParse(int start_index, int length) {
+  buffer_offset_ = start_index;
   parse_current_index_ = start_index;
-  parse_end_index_ = end_index;
+  parse_end_index_ = start_index+length;
+  tokenizer_.UseReadOnlyBuffer(JSON_str_+start_index, length);
+}
+
+palJSONTokenType palJSONParser::SkipValue(int* start_index, int* length) {
+  if (!start_index || !length) {
+    return;
+  }
+
+  palToken token;
+
+  tokenizer_.FetchNextToken(&token);
+
+  *start_index = buffer_offset_ + token.start_index;
+
+  int nest_count = 0;
+  if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_OPEN) {
+    // handle map value
+    nest_count = 1;
+    while (nest_count > 0) {
+      tokenizer_.FetchNextToken(&token);
+      if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_OPEN) {
+        nest_count++;
+      } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_CLOSE) {
+        nest_count--;
+      }
+    }
+    *length = token.start_index + token.length - *start_index;
+    return kJSONTokenTypeMap;
+  } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_OPEN) {
+    // handle array value
+    nest_count = 1;
+    while (nest_count > 0) {
+      tokenizer_.FetchNextToken(&token);
+      if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_OPEN) {
+        nest_count++;
+      } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_CLOSE) {
+        nest_count--;
+      }
+    }
+
+    *length = token.start_index + token.length - *start_index;
+    return kJSONTokenTypeArray;
+  } else {
+    *length = token.length;
+  }
+}
+
+int palJSONParser::ParseMapEntries(palJSONToken* token_buffer, int token_buffer_size) {
+  int token_buffer_insert_index = 0;
+  int brace_count = 1;
+
+  palToken token;
+  while (brace_count > 0) {  
+    tokenizer_.FetchNextToken(&token);
+
+    /* map entries look like:
+       "string" : value...,
+       "string2" : value...,
+     */
+
+    if (token.type == kTokenEOL) {
+      continue;
+    }
+    if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_CLOSE) {
+      brace_count--;
+      break;
+    }
+
+    if (token.type == kTokenPunctuation || token.type_flags == kPunctuationCOMMA) {
+      // next token.
+      continue;
+    }
+
+    if (token.type != kTokenString) {
+      // the first token must be a string
+      break;
+    }
+
+    // we have a map entry
+    token_buffer[token_buffer_insert_index].type = kJSONTokenTypeMapEntry;
+    token_buffer[token_buffer_insert_index].JSON_str = NULL;
+
+    token_buffer[token_buffer_insert_index].first_index = buffer_offset_ + token.start_index;
+
+    token_buffer[token_buffer_insert_index].name_first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].name_length = token.length;
+
+    tokenizer_.FetchNextToken(&token);
+
+    if (token.type != kTokenPunctuation || token.type_flags != kPunctuationCOLON) {
+      // after the name, we require a colon.
+      break;
+    }
+
+    // skip over the value for this map entry, recording the first index and length of the value
+    SkipValue(&token_buffer[token_buffer_insert_index].value_first_index, &token_buffer[token_buffer_insert_index].value_length);
+
+    token_buffer_insert_index++;
+    if (token_buffer_insert_index == token_buffer_size) {
+      // we have filled up the token buffer, return.
+      return token_buffer_insert_index;
+    }
+  }
+
+  if (brace_count) {
+    // add parse error token
+    palBreakHere();
+  }
+
+  return token_buffer_insert_index;
+}
+
+int palJSONParser::ParseArrayEntries(palJSONToken* token_buffer, int token_buffer_size) {
+  int token_buffer_insert_index = 0;
+  int brace_count = 1;
+
+  palToken token;
+  while (brace_count > 0) {  
+    tokenizer_.FetchNextToken(&token);
+
+    /* array entries look like
+      value1, value2, value3
+     */
+
+    if (token.type == kTokenEOL) {
+      continue;
+    }
+    if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_CLOSE) {
+      brace_count--;
+      break;
+    }
+
+    if (token.type == kTokenPunctuation || token.type_flags == kPunctuationCOMMA) {
+      // next value
+      continue;
+    }
+
+    // we are ready to parse the value
+    // push the last read token onto this buffer
+    tokenizer_.PushToken(&token);
+
+    token_buffer[token_buffer_insert_index].type = kJSONTokenTypeParseError;
+    token_buffer[token_buffer_insert_index].JSON_str = NULL;
+
+    token_buffer[token_buffer_insert_index].first_index = buffer_offset_ + token.start_index;
+
+    token_buffer[token_buffer_insert_index].name_first_index = -1;
+    token_buffer[token_buffer_insert_index].name_length = -1;
+
+    // skip over the value
+    SkipValue(&token_buffer[token_buffer_insert_index].value_first_index, &token_buffer[token_buffer_insert_index].value_length);
+
+    token_buffer_insert_index++;
+
+    if (token_buffer_insert_index == token_buffer_size) {
+      // we have filled up the token buffer, return.
+      return token_buffer_insert_index;
+    }
+  }
+
+  if (brace_count) {
+    // add parse error token
+    palBreakHere();
+  }
+
+  return token_buffer_insert_index;
 }
 
 int palJSONParser::Parse(palJSONToken* token_buffer, int token_buffer_size) {
   int token_buffer_insert_index = 0;
-
-  const char kLBrace = '{';
-  const char kRBrace = '}';
-  const char kLBracket = '[';
-  const char kRBracket = ']';
-  const char kColon = ':';
-  const char kComma = ',';
-  const char kQuote = '\"';
-  const char kDot = '.';
-  const char kN = 'n';
-  const char kT = 't';
-  const char kF = 'f';
-  const char kMinus = '-';
 
   const int kStateStart = 1;
 
@@ -103,101 +354,74 @@ int palJSONParser::Parse(palJSONToken* token_buffer, int token_buffer_size) {
   int lbrace_count = 0;
   int lbracket_count = 0;
 
-  while (parse_current_index_ < parse_end_index_) {
-    if (token_buffer_insert_index == token_buffer_size) {
-      // we have filled up the buffer, quit.
-      return token_buffer_insert_index;
-    }
+  palToken token;
 
-    char ch = JSON_str_[parse_current_index_];
+  tokenizer_.FetchNextToken(&token);
 
-    switch (state) {
-    case kStateStart:
-      {
-        // determine what we are parsing by the first character
-        if (ch == kLBrace) {
-          state = kStateObject;
-          lbrace_count++;
-          last_ch = kRBrace;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeMap;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kLBracket) {
-          state = kStateArray;
-          lbracket_count++;
-          last_ch = kRBracket;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeArray;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kT) {
-          // true
-          state = kStateValueTrue;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueTrue;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kF) {
-          // false
-          state = kStateValueFalse;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueFalse;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kN) {
-          // null
-          state = kStateValueNull;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueNull;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kMinus || palIsDigit(ch)) {
-          // a number
-          state = kStateValueNumber;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueNumber;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        } else if (ch == kQuote) {
-          // a string
-          state = kStateValueString;
-
-          token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueString;
-          token_buffer[token_buffer_insert_index].first_index = parse_current_index_;
-        }
-        break;
-      }
-    case kStateObject:
-      {
-        // parsing an object(map)
-        // need to parse all top level items of the map and stuff them into tokens
-        break;
-      }
-    case kStateArray:
-      {
-        // parsing an array
-        // need to parse all top level items of the array and stuff them into tokens
-        break;
-      }
-    case kStateValueFalse:
-      {
-        break;
-      }
-    case kStateValueTrue:
-      {
-        break;
-      }
-    case kStateValueNull:
-      {
-        break;
-      }
-    case kStateValueNumber:
-      {
-        break;
-      }
-    case kStateValueString:
-      {
-        break;
-      }
-    }
-
-    parse_current_index_++;
+  if (token.type == kTokenEOS || token.type == kTokenERROR) {
+    // handle error
+    return 0;
   }
 
-  return token_buffer_insert_index;
+  if (token.type == kTokenKeyword) {
+    // we parsed a keyword
+    token_buffer[token_buffer_insert_index].JSON_str = JSON_str_;
+    token_buffer[token_buffer_insert_index].first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].length = token.length;
+    token_buffer[token_buffer_insert_index].value_first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].value_length = token.length;
+    token_buffer[token_buffer_insert_index].type = (palJSONTokenType)token.type_flags;
+    token_buffer[token_buffer_insert_index].name_first_index = -1;
+    token_buffer[token_buffer_insert_index].name_length = -1;
+    token_buffer_insert_index++;
+    return token_buffer_insert_index;
+  }
+
+  if (token.type == kTokenString) {
+    // we parsed a string
+    token_buffer[token_buffer_insert_index].JSON_str = JSON_str_;
+    token_buffer[token_buffer_insert_index].first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].length = token.length;
+    token_buffer[token_buffer_insert_index].value_first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].value_length = token.length;
+    token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueString;
+    token_buffer[token_buffer_insert_index].name_first_index = -1;
+    token_buffer[token_buffer_insert_index].name_length = -1;
+    token_buffer_insert_index++;
+    return token_buffer_insert_index;
+  }
+
+  if (token.type == kTokenNumber) {
+    // we parsed a number
+    token_buffer[token_buffer_insert_index].JSON_str = JSON_str_;
+    token_buffer[token_buffer_insert_index].first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].length = token.length;
+    token_buffer[token_buffer_insert_index].value_first_index = buffer_offset_ + token.start_index;
+    token_buffer[token_buffer_insert_index].value_length = token.length;
+    token_buffer[token_buffer_insert_index].type = kJSONTokenTypeValueNumber;
+    token_buffer[token_buffer_insert_index].name_first_index = -1;
+    token_buffer[token_buffer_insert_index].name_length = -1;
+    token_buffer_insert_index++;
+    return token_buffer_insert_index;    
+  }
+
+  /* There are only two JSON types left, the map and the array */
+  if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_OPEN) {
+    /* First token is a "{", each token we return will be a MAP_ENTRY token. */
+    int parsed_tokens = ParseMapEntries(token_buffer, token_buffer_size);
+    for (int i = 0; i < parsed_tokens; i++) {
+      token_buffer[i].JSON_str = JSON_str_;
+    }
+    return parsed_tokens;
+  } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_OPEN) {
+    /* First token is a "[", each token we return will be an array entry */
+    int parsed_tokens = ParseArrayEntries(token_buffer, token_buffer_size);
+    for (int i = 0; i < parsed_tokens; i++) {
+      token_buffer[i].JSON_str = JSON_str_;
+    }
+    return parsed_tokens;
+  } else {
+    palBreakHere();
+    return -1;
+  }
 }

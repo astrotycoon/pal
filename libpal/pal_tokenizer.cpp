@@ -223,6 +223,16 @@ int palTokenizer::GetStatus() {
 	return status_;
 }
 
+int palTokenizer::GetStreamIndex() {
+  if (pf_.IsOpen()) {
+    uint64_t position;
+    position = pf_.GetPosition();
+    return (int)position;
+  } else {
+    return buffer_p_ - buffer_start_;
+  }
+}
+
 bool palTokenizer::DoublePeekNextCh(char& ch) {
 	if (pf_.IsOpen()) {
 		uint64_t position;
@@ -276,6 +286,8 @@ bool palTokenizer::PeekNextCh(char& ch) {
 		return true;
 	}
 }
+
+
 
 void palTokenizer::SkipNextCh() {
 	if (pf_.IsOpen()) {
@@ -450,6 +462,8 @@ void palTokenizer::ReadNextToken(palToken* token) {
 	token->value_string.Clear(); // clear the string
 	token->type = kTokenEOS; 
 	token->type_flags = 0;
+  token->start_index = GetStreamIndex();
+  token->length = 0;
 	char ch;
 	char dpch;
 
@@ -459,8 +473,13 @@ void palTokenizer::ReadNextToken(palToken* token) {
 	if (lineCrossCount > 0) {
 		token->type = kTokenEOL;
 		token->type_flags = lineCrossCount;
+    token->length = GetStreamIndex() - token->start_index;
 		return;
 	}
+
+  // reset start_index after skipping whitespace
+  token->start_index = GetStreamIndex();
+  token->length = 0;
 
 	if (PeekNextCh(ch) == false) {
 		// keep returning EOS if we can't read anything.
@@ -472,7 +491,7 @@ void palTokenizer::ReadNextToken(palToken* token) {
 	if (palIsAlpha(ch)) {
     // name
 		ReadName(token);
-	} else if (palIsDigit(ch) || (disable_float_parsing_ == false && ch == '.' && palIsDigit(dpch))) {
+	} else if (palIsDigit(ch) || (ch == '-' && palIsDigit(dpch)) || (disable_float_parsing_ == false && ch == '.' && palIsDigit(dpch))) {
     // number
 		ReadNumber(token);
 	} else if (ch == '\"') {
@@ -493,6 +512,7 @@ void palTokenizer::ReadNextToken(palToken* token) {
 			ReadPunctuation(token);
 		}	
 	}
+  token->length = GetStreamIndex() - token->start_index;
 }
 
 void palTokenizer::ReadWhiteSpace(int* whitespace_count, int* newline_count) {
@@ -528,7 +548,7 @@ void palTokenizer::ReadString(palToken* token) {
 
 	while (PeekNextCh(ch)) {
 		SkipNextCh();
-		if (ch == '\0' || ch == '\n' || ch == '\"') {
+		if (ch == '\0' || ch == '\"') {
 			break;
 		}
     token->value_string.AppendChar(ch);
@@ -613,6 +633,11 @@ void palTokenizer::ReadNumber(palToken* token) {
 		}
 	} else {
 		bool float_number = false;
+    if (ch == '-') {
+      // handle the negative outside the loop
+      token->value_string.AppendChar(ch);
+      SkipNextCh();
+    }
 		while (PeekNextCh(ch)) {
 			if (palIsDigit(ch)) {
         token->value_string.AppendChar(ch);

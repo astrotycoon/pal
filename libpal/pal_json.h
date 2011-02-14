@@ -24,6 +24,8 @@
 #ifndef LIBPAL_PAL_JSON_H_
 #define LIBPAL_PAL_JSON_H_
 
+#include "libpal/pal_tokenizer.h"
+
 enum palJSONTokenType {
   kJSONTokenTypeParseError = 0,
   kJSONTokenTypeMap,
@@ -34,6 +36,7 @@ enum palJSONTokenType {
   kJSONTokenTypeValueTrue,
   kJSONTokenTypeValueFalse,
   kJSONTokenTypeValueNull,
+  NUM_palJSONTokenType,
 };
 
 struct palJSONToken {
@@ -55,26 +58,33 @@ struct palJSONToken {
   int value_first_index;
   int value_length;
 
-  /* If this token represents an object(map) or an array,
-     this count tells you how many children there are
-   */
-  int num_children;
+  palJSONTokenType GetTypeOfValue() const;
 
-  bool NameMatch(const char* name);
+  bool NameMatch(const char* name) const;
 
-  float GetAsFloat();
-  int GetAsInt();
-  bool GetAsBool();
-  void* GetAsPointer();
+  float GetAsFloat() const;
+  int GetAsInt() const;
+  bool GetAsBool() const;
+  void* GetAsPointer() const;
+
+
+  void DebugPrintf() const;
 };
 
 palJSONToken* palJSONFindTokenWithName(palJSONToken* token_buffer, int token_buffer_length, const char* name);
 
 class palJSONParser {
   const char* JSON_str_;
+  int buffer_offset_;
   int JSON_str_len_;
   int parse_current_index_;
   int parse_end_index_;
+  palTokenizer tokenizer_;
+
+  palJSONTokenType SkipValue(int* start_index, int* length);
+
+  int ParseMapEntries(palJSONToken* token_buffer, int token_buffer_size);
+  int ParseArrayEntries(palJSONToken* token_buffer, int token_buffer_size);
 public:
   palJSONParser();
 
@@ -83,8 +93,8 @@ public:
 
   /* Start parsing the whole string */
   void StartParse();
-  /* Start parsing at start_index and parse until end_index */
-  void StartParse(int start_index, int end_index);
+  /* Start parsing at start_index for length bytes */
+  void StartParse(int start_index, int length);
 
   /* Returns the number of tokens detected,
    * if the return is the size of the tokens buffer,

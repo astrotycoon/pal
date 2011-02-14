@@ -639,7 +639,11 @@
 					Name="x86"
 					>
 					<File
-						RelativePath=".\x86\pal_simd_sse.h"
+						RelativePath=".\x86\pal_simd_sse_impl.h"
+						>
+					</File>
+					<File
+						RelativePath=".\x86\pal_simd_sse_types.h"
 						>
 					</File>
 				</Filter>

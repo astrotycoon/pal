@@ -105,6 +105,9 @@ struct palToken
 	uint64_t GetIntegerValue();
 	float    GetFloatValue();
 
+  int start_index;
+  int length;
+
 	// values
 	uint64_t value_integer;
 	float value_float;
@@ -152,6 +155,7 @@ protected:
 	void ReadNumber(palToken* token);
 	void ReadColour(palToken* token);
 	void ReadPunctuation(palToken* token);
+  int GetStreamIndex();
 	bool DoublePeekNextCh(char& ch);
 	bool PeekNextCh(char& ch);
 	void SkipNextCh();
