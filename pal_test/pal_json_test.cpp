@@ -6,7 +6,7 @@
 bool PalJsonTest() {
   palFile f;
 
-  bool r = f.OpenForReading("test2.json");
+  bool r = f.OpenForReading("test.json");
 
   if (!r) {
     // couldn't open file
@@ -17,6 +17,7 @@ bool PalJsonTest() {
   unsigned char* buf = f.CopyContentsAsString(&buf_len);
   f.Close();
 
+#if 0
   palJSONParser parser;
 
   parser.Init((const char*)buf);
@@ -58,5 +59,9 @@ bool PalJsonTest() {
       tokens[i].DebugPrintf();
     }
   }
+#endif
+
+  palJSONPrettyPrint((const char*)buf);
+
   return true;
 }

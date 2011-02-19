@@ -117,4 +117,6 @@ public:
   int Parse(palJSONToken* token_buffer, int token_buffer_size);
 };
 
+void palJSONPrettyPrint(const char* JSON_str);
+
 #endif  // LIBPAL_PAL_JSON_H_

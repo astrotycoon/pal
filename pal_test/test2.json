@@ -1,0 +1,14 @@
+{
+ "foo" : "poo",
+ "shit" : 4.5,
+ "tara" : -3.14159,
+ "funk" : {
+	"zip" : true,
+	"per" : false
+	},
+ "arrayboy" : [ 1, 2, 3, 4, "shit,fuck", 
+ 
+ false,
+ 
+ true, null ]
+}

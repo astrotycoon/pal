@@ -513,6 +513,14 @@ void palTokenizer::ReadNextToken(palToken* token) {
 		}	
 	}
   token->length = GetStreamIndex() - token->start_index;
+#if 0
+  if (token->type == kTokenString) {
+    // string starts after opening "
+    token->start_index++;
+    // string ends before closing "
+    token->length -= 2;
+  }
+#endif
 }
 
 void palTokenizer::ReadWhiteSpace(int* whitespace_count, int* newline_count) {
@@ -544,7 +552,8 @@ void palTokenizer::ReadWhiteSpace(int* whitespace_count, int* newline_count) {
 void palTokenizer::ReadString(palToken* token) {
 	char ch;
 
-	ReadNextCh(ch); // skip over the quote character
+  // skip over the quote character
+	ReadNextCh(ch);
 
 	while (PeekNextCh(ch)) {
 		SkipNextCh();
