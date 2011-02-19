@@ -13,9 +13,6 @@ palObjectIDManager:
   An ID -> object tracker
   Look at Terrance Cohen's component system and http://altdevblogaday.com/managing-decoupling
 
-palJSONDecoder:
-  JSON decorer, simple, no allocations, etc.
-
 palJSONEncoder:
   Simple, stateful, no allocations, etc.
 

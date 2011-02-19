@@ -90,44 +90,43 @@ void palJSONToken::DebugPrintf() const {
 
   switch (type) {
   case kJSONTokenTypeValueFalse:
-    palPrintf("false\n");
+    palPrintf("false");
     break;
   case kJSONTokenTypeValueTrue:
-    palPrintf("true\n");
+    palPrintf("true");
     break;
   case kJSONTokenTypeValueNull:
-    palPrintf("null\n");
+    palPrintf("null");
     break;
   case kJSONTokenTypeArray:
-    palPrintf("[ array\n");
     break;
   case kJSONTokenTypeMap:
-    palPrintf("{ map\n");
     break;
   case kJSONTokenTypeMapEntry:
     debug_str.AppendLength(JSON_str+name_first_index, name_length);
     if (GetTypeOfValue() == kJSONTokenTypeValueFalse) {
-      palPrintf("%s : false\n", debug_str.C());
+      palPrintf("%s : false", debug_str.C());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueTrue) {
-      palPrintf("%s : true\n", debug_str.C());
+      palPrintf("%s : true", debug_str.C());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueNull) {
-      palPrintf("%s : null\n", debug_str.C());
+      palPrintf("%s : null", debug_str.C());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueNumber) {
-      palPrintf("%s : %f\n", debug_str.C(), GetAsFloat());
+      palPrintf("%s : %f", debug_str.C(), GetAsFloat());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueString) {
       palPrintf("%s : ", debug_str.C());
       debug_str.Clear();
       debug_str.AppendLength(JSON_str+value_first_index, value_length);
-      palPrintf("%s\n", debug_str.C());
+      palPrintf("%s", debug_str.C());
     } else {
-      palPrintf("%s : [%s]\n", debug_str.C(), json_token_type_strings[GetTypeOfValue()]);
+      palPrintf("%s : \n", debug_str.C());
     }
     break;
   case kJSONTokenTypeValueNumber:
-    palPrintf("%f\n", GetAsFloat());
+    palPrintf("%f", GetAsFloat());
     break;
   case kJSONTokenTypeValueString:
-    palPrintf("\"string\"\n");
+    debug_str.AppendLength(JSON_str+value_first_index, value_length);
+    palPrintf("%s", debug_str.C());
     break;
   case kJSONTokenTypeParseError:
     palPrintf("parsing error\n");
@@ -173,7 +172,7 @@ void palJSONParser::StartParse(int start_index, int length) {
 
 palJSONTokenType palJSONParser::SkipValue(int* start_index, int* length) {
   if (!start_index || !length) {
-    return;
+    return kJSONTokenTypeParseError;
   }
 
   palToken token;
@@ -192,9 +191,11 @@ palJSONTokenType palJSONParser::SkipValue(int* start_index, int* length) {
         nest_count++;
       } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationBRACE_CLOSE) {
         nest_count--;
+      } else if (token.type == kTokenEOS) {
+        return kJSONTokenTypeParseError;
       }
     }
-    *length = token.start_index + token.length - *start_index;
+    *length = token.start_index + token.length - *start_index + buffer_offset_;
     return kJSONTokenTypeMap;
   } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_OPEN) {
     // handle array value
@@ -205,13 +206,24 @@ palJSONTokenType palJSONParser::SkipValue(int* start_index, int* length) {
         nest_count++;
       } else if (token.type == kTokenPunctuation && token.type_flags == kPunctuationSQUARE_BRACKET_CLOSE) {
         nest_count--;
+      } else if (token.type == kTokenEOS) {
+        return kJSONTokenTypeParseError;
       }
     }
 
-    *length = token.start_index + token.length - *start_index;
+    *length = token.start_index + token.length - *start_index + buffer_offset_;
     return kJSONTokenTypeArray;
   } else {
     *length = token.length;
+    if (token.type == kTokenNumber) {
+      return kJSONTokenTypeValueNumber;
+    } else if (token.type == kTokenString) {
+      return kJSONTokenTypeValueString;
+    } else if (token.type == kTokenKeyword) {
+      return (palJSONTokenType)token.type_flags;
+    }
+
+    return kJSONTokenTypeParseError;
   }
 }
 
@@ -300,7 +312,7 @@ int palJSONParser::ParseArrayEntries(palJSONToken* token_buffer, int token_buffe
       break;
     }
 
-    if (token.type == kTokenPunctuation || token.type_flags == kPunctuationCOMMA) {
+    if (token.type == kTokenPunctuation && token.type_flags == kPunctuationCOMMA) {
       // next value
       continue;
     }
@@ -318,7 +330,7 @@ int palJSONParser::ParseArrayEntries(palJSONToken* token_buffer, int token_buffe
     token_buffer[token_buffer_insert_index].name_length = -1;
 
     // skip over the value
-    SkipValue(&token_buffer[token_buffer_insert_index].value_first_index, &token_buffer[token_buffer_insert_index].value_length);
+    token_buffer[token_buffer_insert_index].type = SkipValue(&token_buffer[token_buffer_insert_index].value_first_index, &token_buffer[token_buffer_insert_index].value_length);
 
     token_buffer_insert_index++;
 
@@ -424,4 +436,61 @@ int palJSONParser::Parse(palJSONToken* token_buffer, int token_buffer_size) {
     palBreakHere();
     return -1;
   }
+}
+
+void indent(int depth) {
+  for (int i = 0; i < depth; i++) {
+    palPrintf("  ");
+  }
+}
+
+void palJSONPrettyPrintInternal(const char* str, int depth, int start_index, int length) {
+  palJSONParser parser;
+  parser.Init(str);
+  parser.StartParse(start_index, length);
+
+  const int num_json_tokens = 50;
+  palJSONToken tokens[num_json_tokens];
+  int num_json_tokens_parsed = 0;
+
+  num_json_tokens_parsed = parser.Parse(&tokens[0], num_json_tokens);
+
+  if (num_json_tokens_parsed > 0 && tokens[0].type == kJSONTokenTypeMapEntry) {
+    indent(depth);
+    palPrintf("{\n");
+    depth++;
+  }
+  for (int i = 0; i < num_json_tokens_parsed; i++) {
+    bool need_comma = i < num_json_tokens_parsed-1;
+    indent(depth);
+    tokens[i].DebugPrintf();
+    if (depth >= 0) {
+      if (tokens[i].GetTypeOfValue() == kJSONTokenTypeMap) {
+        palJSONPrettyPrintInternal(str, depth+1, tokens[i].value_first_index, tokens[i].value_length);
+      } else if (tokens[i].GetTypeOfValue() == kJSONTokenTypeArray) {
+        indent(depth);
+        palPrintf("[\n");
+        palJSONPrettyPrintInternal(str, depth+1, tokens[i].value_first_index, tokens[i].value_length);
+        indent(depth);
+        palPrintf("]");
+      } 
+    }
+    
+    if (need_comma) {
+      palPrintf(",\n");
+    } else {
+      palPrintf("\n");
+    }
+  }
+
+  if (num_json_tokens_parsed > 0 && tokens[0].type == kJSONTokenTypeMapEntry) {
+    depth--;
+    indent(depth);
+    palPrintf("}\n");
+  }
+}
+
+void palJSONPrettyPrint(const char* JSON_str) {
+  int len = palStrlen(JSON_str);
+  palJSONPrettyPrintInternal(JSON_str, 0, 0, len);
 }
