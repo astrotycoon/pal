@@ -108,5 +108,6 @@ Threading:
 #include "libpal/pal_event.h"
 #include "libpal/pal_time_line.h"
 #include "libpal/pal_json.h"
+#include "libpal/pal_object_id_table.h"
 
 #endif

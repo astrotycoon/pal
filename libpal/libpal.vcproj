@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_object_id_table.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_pair.h"
 				>
 			</File>

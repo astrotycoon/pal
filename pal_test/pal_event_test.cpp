@@ -116,6 +116,8 @@ bool PalEventTest() {
     palAssertBreak(cc.GetCount() == 0);
   }
   
+  palObjectIdTable<char> table;
+
   //palBreakHere();
   return true;
 }

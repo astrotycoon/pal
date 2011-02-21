@@ -11,13 +11,15 @@
 #include "pal_event_test.h"
 #include "pal_time_line_test.h"
 #include "pal_json_test.h"
+#include "pal_object_id_table_test.h"
 
 int main (int argc, char** argv)
 {
+  PalObjectIdTableTest();
+  PalEventTest();
   PalJsonTest();
   PalPoolAllocTest();
   PalTimeLineTest();
-  PalEventTest();
   PalAlgorithmsTest();
   PalSimdTest();
   PalCompactingAllocatorTest();

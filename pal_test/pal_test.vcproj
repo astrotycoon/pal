@@ -201,6 +201,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_object_id_table_test.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_pool_alloc_test.cpp"
 				>
 			</File>
@@ -256,6 +260,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_json_test.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_object_id_table_test.h"
 				>
 			</File>
 			<File
