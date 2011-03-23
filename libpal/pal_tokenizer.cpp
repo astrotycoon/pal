@@ -70,6 +70,20 @@ static palLexerPunctuation default_pal_lexer_punctuation[] = {
 	{"]", kPunctuationSQUARE_BRACKET_CLOSE}
 };
 
+const char* default_name_splitters = " -=!@#$%^&*()_+.,<>?/:;";
+
+static bool IsNameSplitter(char ch, const char* name_splitters) {
+  const char* p = name_splitters;
+
+  while (*p != '\0') {
+    if (*p == ch)
+      return true;
+    p++;
+  }
+
+  return false;
+}
+
 bool palToken::IsValueComputed() {
   return (type_flags & kTokenNumberValueComputed) != 0;
 }
@@ -133,7 +147,10 @@ palTokenizer::palTokenizer() {
 	buffer_p_saved_ = NULL;
 	status_ = kTokenizerErrorNONE;
 	keyword_array_ = NULL;
+  name_splitters_ = default_name_splitters;
 	disable_float_parsing_ = false;
+  disable_number_parsing_ = false;
+  disable_punctuation_parsing_ = false;
 }
 
 palTokenizer::~palTokenizer() {
@@ -177,6 +194,10 @@ void palTokenizer::SetKeywordArray(const palTokenizerKeyword* keywords) {
 	keyword_array_ = keywords;
 }
 
+void  palTokenizer::SetNameSplitCharacters(const char* name_splitters) {
+  name_splitters_ = name_splitters;
+}
+
 void palTokenizer::UseReadOnlyBuffer(const char* buffer, int length) {
 	own_buffer_ = false;
 	buffer_start_ = const_cast<char*>(buffer);
@@ -188,6 +209,14 @@ void palTokenizer::UseReadOnlyBuffer(const char* buffer, int length) {
 void palTokenizer::UseFile(palFile pf) {
   pf_ = pf;
 	Reset();
+}
+
+void palTokenizer::SetPunctuationParsing(bool on) {
+  disable_punctuation_parsing_ = !on;
+}
+
+void palTokenizer::SetNumberParsing(bool on) {
+  disable_number_parsing_ = !on;
 }
 
 void palTokenizer::SetFloatParsing(bool on) {
@@ -407,6 +436,29 @@ bool palTokenizer::FetchFloat(float* value) {
 	return true;
 }
 
+bool palTokenizer::ReadRestOfLineAsString(palString<>* result) {
+  result->Clear();
+  char ch;
+  while (true) {
+    bool r = PeekNextCh(ch);
+    if (r == false) {
+      return r;
+    }
+    if (ch == '\r') {
+      SkipNextCh();
+      PeekNextCh(ch);
+      if (ch == '\n') {
+        SkipNextCh();
+      }
+      break;
+    } else {
+      SkipNextCh();
+      result->AppendChar(ch);
+    }
+  }
+  return true;
+}
+
 bool palTokenizer::SkipRestOfLine() {
 	palToken token;
 	while (true) {
@@ -488,10 +540,12 @@ void palTokenizer::ReadNextToken(palToken* token) {
 
 	DoublePeekNextCh(dpch);
 
-	if (palIsAlpha(ch)) {
+	if ( palIsAlpha(ch) ||
+      (disable_number_parsing_ == true && palIsDigit(ch)) ||
+      (disable_number_parsing_ == true && disable_punctuation_parsing_ == true)) {
     // name
 		ReadName(token);
-	} else if (palIsDigit(ch) || (ch == '-' && palIsDigit(dpch)) || (disable_float_parsing_ == false && ch == '.' && palIsDigit(dpch))) {
+	} else if (disable_number_parsing_ == false && (palIsDigit(ch) || (ch == '-' && palIsDigit(dpch)) || (disable_float_parsing_ == false && ch == '.' && palIsDigit(dpch)))) {
     // number
 		ReadNumber(token);
 	} else if (ch == '\"') {
@@ -500,7 +554,7 @@ void palTokenizer::ReadNextToken(palToken* token) {
 	} else if (ch == '#') {
     // colour
 		ReadColour(token);
-	} else {
+	} else if (disable_punctuation_parsing_ == false) {
     // punctuation
 		if (ch == '.')
 		{
@@ -577,7 +631,7 @@ void palTokenizer::ReadName(palToken* token)
 {
 	char ch;
 	while (PeekNextCh(ch)) {
-		if (palIsAlpha(ch) || palIsDigit(ch) || ch == '_') {
+		if (palIsAlpha(ch) || palIsDigit(ch) || IsNameSplitter(ch, name_splitters_) == false) {
 			SkipNextCh();
       token->value_string.AppendChar(ch);
 		} else {

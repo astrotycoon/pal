@@ -12,9 +12,12 @@
 #include "pal_time_line_test.h"
 #include "pal_json_test.h"
 #include "pal_object_id_table_test.h"
+#include "pal_web_socket_server_test.h"
 
-int main (int argc, char** argv)
-{
+int main(int argc, char** argv) {
+  palSocketInit();
+
+  palWebSocketServerTest();
   PalObjectIdTableTest();
   PalEventTest();
   PalJsonTest();
@@ -29,5 +32,8 @@ int main (int argc, char** argv)
   PalThreadTest();
   PalAtomicTest();
   PalContainerTest();
+
+  palSocketFini();
+
   return 0;
 }

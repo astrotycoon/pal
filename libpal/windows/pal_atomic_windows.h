@@ -24,6 +24,7 @@
 #ifndef LIBPAL_PAL_ATOMIC_WINDOWS_H_
 #define LIBPAL_PAL_ATOMIC_WINDOWS_H_
 
+#define _WINSOCKAPI_
 #include <Windows.h>
 #include <intrin.h>
 

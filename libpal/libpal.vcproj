@@ -199,6 +199,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_md5.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_memory.cpp"
 				>
 			</File>
@@ -322,6 +326,26 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="net"
+				>
+				<File
+					RelativePath=".\pal_socket.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_tcp_client.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_tcp_listener.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_web_socket_server.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -353,6 +377,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_endian.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_file.h"
 				>
 			</File>
@@ -366,6 +394,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_limits.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_md5.h"
 				>
 			</File>
 			<File
@@ -657,6 +689,26 @@
 				>
 				<File
 					RelativePath=".\stb\stb_image.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="net"
+				>
+				<File
+					RelativePath=".\pal_socket.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_tcp_client.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_tcp_listener.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_web_socket_server.h"
 					>
 				</File>
 			</Filter>

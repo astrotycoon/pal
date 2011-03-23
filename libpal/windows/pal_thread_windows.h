@@ -27,6 +27,7 @@
 #if defined(PAL_PLATFORM_WINDOWS)
 /* Interesting article: http://locklessinc.com/articles/pthreads_on_windows/ */
 
+#define _WINSOCKAPI_
 #include <windows.h>
 #include <process.h>
 

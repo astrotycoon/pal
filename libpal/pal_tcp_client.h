@@ -1,5 +1,7 @@
+#pragma once
+
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,29 +23,29 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_TIMER_WINDOWS_H_
-#define LIBPAL_PAL_TIMER_WINDOWS_H_
+#include "libpal/pal_socket.h"
 
-#define _WINSOCKAPI_
-#include <windows.h>
-typedef LONGLONG palTimerTick;
 
-PAL_INLINE palTimerTick palTimerGetFrequency() {
-  palTimerTick frequency;
-  QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
-  return frequency;
-}
+class palTcpClient {
+  palSocket socket_;
+  bool connected_;
+public:
+  palTcpClient();
+  palTcpClient(palSocket socket);
+  ~palTcpClient();
 
-PAL_INLINE palTimerTick palTimerGetTicks() {
-  palTimerTick t;
-  QueryPerformanceCounter((LARGE_INTEGER*)&t);
-  return t;
-}
+  int Connect(palIpv4Address address, int port);
+  int Close();
 
-PAL_INLINE float palTimerGetSeconds(palTimerTick ticks) {
-  static palTimerTick frequency = palTimerGetFrequency();
-  float dt_s = static_cast<float>(ticks)/static_cast<float>(frequency);
-  return dt_s;
-}
+  bool Active() const; // active?
+  bool Connected() const; // connected?
+  bool CanBeRead() const; // can be read?
 
-#endif  // LIBPAL_PAL_TIMER_WINDOWS_H_
+  void MakeNonBlocking();
+
+  int Send(const unsigned char* buff, int buff_size);
+  int Receive(unsigned char* buff, int* num_bytes_to_read);
+
+  void SetSocket(palSocket socket); // sets the underlying socket
+  palSocket GetSocket() const; // underlying socket
+};

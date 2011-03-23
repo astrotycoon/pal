@@ -120,17 +120,24 @@ struct palTokenizerKeyword {
 	uint32_t keyword_id;
 };
 
+
 class palTokenizer {
 public:
 	palTokenizer();
 	~palTokenizer();
 
 	void  SetKeywordArray(const palTokenizerKeyword* keywords);
+  // by default, most punctuation characters will break a name apart
+  void  SetNameSplitCharacters(const char* name_splitters);
+
 	void	UseReadOnlyBuffer(const char* buffer, int length);
   void  UseFile(palFile pf);
 	void	CopyBuffer(const char* buffer);
-	void	SetFloatParsing(bool on);
-
+  
+  void SetPunctuationParsing(bool on);
+  void SetNumberParsing(bool on);
+	void SetFloatParsing(bool on);
+  
 	bool	FetchNextToken(palToken* token);
 	bool	FetchNextTokenTypeCheck(palTokenType type, palToken* token);
 
@@ -139,6 +146,8 @@ public:
 	bool	FetchFloat(float* value);
 
 	void	PushToken(palToken* token); // pushes a token so that next call to FetchNextToken will return it.
+
+  bool ReadRestOfLineAsString(palString<>* result);
 
 	bool	SkipRestOfLine();
 	bool	SkipUntilKeyword(const char* keyword);
@@ -180,10 +189,13 @@ protected:
 
   // tokenizer state
 	palToken* pushed_token_;
+  bool disable_number_parsing_;
+  bool disable_punctuation_parsing_;
 	bool disable_float_parsing_;
 	char* buffer_p_saved_;
 	uint32_t status_;
 	const palTokenizerKeyword* keyword_array_;
+  const char* name_splitters_;
 };
 
 #endif  // LIBPAL_PAL_TOKENIZER_H_

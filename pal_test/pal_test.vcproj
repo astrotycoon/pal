@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -134,6 +135,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -228,6 +230,10 @@
 				RelativePath=".\pal_time_line_test.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\pal_web_socket_server_test.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -284,6 +290,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_time_line_test.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_web_socket_server_test.h"
 				>
 			</File>
 		</Filter>

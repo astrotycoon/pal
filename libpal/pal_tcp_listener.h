@@ -1,5 +1,7 @@
+#pragma once
+
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,29 +23,32 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_TIMER_WINDOWS_H_
-#define LIBPAL_PAL_TIMER_WINDOWS_H_
+#include "libpal/pal_platform.h"
+#include "libpal/pal_socket.h"
+#include "libpal/pal_tcp_client.h"
 
-#define _WINSOCKAPI_
-#include <windows.h>
-typedef LONGLONG palTimerTick;
+#define kTcpListenerOk 0
+#define kTCPListenerError -1
 
-PAL_INLINE palTimerTick palTimerGetFrequency() {
-  palTimerTick frequency;
-  QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
-  return frequency;
-}
+class palTcpListener {
+  palSocket socket_;
+  palIPPort port_;
 
-PAL_INLINE palTimerTick palTimerGetTicks() {
-  palTimerTick t;
-  QueryPerformanceCounter((LARGE_INTEGER*)&t);
-  return t;
-}
+public:
+  palTcpListener(palIPPort port);
+  palTcpListener();
 
-PAL_INLINE float palTimerGetSeconds(palTimerTick ticks) {
-  static palTimerTick frequency = palTimerGetFrequency();
-  float dt_s = static_cast<float>(ticks)/static_cast<float>(frequency);
-  return dt_s;
-}
+  ~palTcpListener();
 
-#endif  // LIBPAL_PAL_TIMER_WINDOWS_H_
+  int StartListening(int pending_connection_queue_size = 1);
+  int StopListening();
+
+  bool Active(); // is this listener active?
+  bool PendingConnections(); // any pending connections?
+
+  int AcceptTcpClient(palTcpClient* client);
+
+  palSocket GetSocket() const;  // get raw socket
+  palIPPort GetPort() const; // get port
+};
+

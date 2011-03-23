@@ -4,7 +4,8 @@
 /* TODO:
 Entire library:
   Switch to copy-and-swap: http://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom and http://www.gmannickg.com/?p=95
-
+  Make palAllocator into a virtual interface, all containers take one as a constructor.
+  
 palSimd:
   Test and/or implement true SIMD versions of Sin, Cos, Tan, Acos, Asin, Atan, Atan2, Pow, Log and Exp.
 
@@ -84,6 +85,7 @@ Threading:
 #include "libpal/pal_random.h"
 #include "libpal/pal_thread.h"
 #include "libpal/pal_file.h"
+#include "libpal/pal_endian.h"
 #include "libpal/pal_algorithms.h"
 #include "libpal/pal_pool_allocator.h"
 #include "libpal/pal_heap_allocator.h"
@@ -109,5 +111,10 @@ Threading:
 #include "libpal/pal_time_line.h"
 #include "libpal/pal_json.h"
 #include "libpal/pal_object_id_table.h"
+#include "libpal/pal_socket.h"
+#include "libpal/pal_tcp_client.h"
+#include "libpal/pal_tcp_listener.h"
+#include "libpal/pal_web_socket_server.h"
+#include "libpal/pal_md5.h"
 
 #endif

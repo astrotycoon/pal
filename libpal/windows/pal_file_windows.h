@@ -25,6 +25,7 @@
 #define LIBPAL_PAL_FILE_WINDOWS_H_
 
 #if defined(PAL_PLATFORM_WINDOWS)
+#define _WINSOCKAPI_
 #include <windows.h>
 
 class palFile
