@@ -51,24 +51,31 @@ public:
   int Startup(palIPPort port);
   void Shutdown();
 
-  bool Connected();
+  // these functions are cleared by calling Update
+  bool HasOpen() const;
+  bool HasClose() const;
+  bool HasError() const;
+
+  bool Connected() const;
 
   int ConnectionError();
 
   // 1) accept/disconnect a connection
   // 2) send any pending messages
   // 3) receive any pending messages
-  // returns 0 on success
-  // returns < 0 if an error occurs
-  int Update();
+  // 4) sets HasOpen, Close, Error flags
+  void Update();
 
   int SendMessage(const char* msg);
   int SendMessage(const char* msg, int msg_length);
 
   typedef palDelegate<void (const char* msg, int msg_length)> OnMessageDelegate;
 
-  void ProcessMessages(OnMessageDelegate del);
+  
+  int PendingMessageCount() const;
 
+  void ProcessMessages(OnMessageDelegate del);
+  
   void ClearMessages();
 protected:
   void ClientDisconnect();
@@ -79,6 +86,9 @@ protected:
     int msg_length;
   };
   bool handshake_okay_;
+  bool has_open_;
+  bool has_close_;
+  bool has_error_;
   palTcpListener listener_;
   palTcpClient client_;
   palArray<message_header> messages_;
@@ -90,5 +100,6 @@ protected:
   int outgoing_buffer_length_;
   int outgoing_buffer_cursor_;
 
+  bool HasCompleteHandshake(const char* s, int s_len);
   int ProcessHandshake(const char* s, int s_len);
 };

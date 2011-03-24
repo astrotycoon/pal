@@ -171,7 +171,7 @@ int palSocketSend(palSocket socket, const unsigned char* buf, int* bytes_to_send
 
   r = send(socket, (char*)buf, *bytes_to_send, 0);
   if (r < 0) {
-    palSocketPrintErrorNo();
+    return r;
   }
   if (r > 0) {
     *bytes_to_send = r;

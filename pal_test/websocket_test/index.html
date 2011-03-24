@@ -10,25 +10,29 @@
 var wsUri = "ws://localhost:8080/service";
 
 var output;
-
+var counter = 0;
 
 function init() {
-output = document.getElementById("output");
-testWebSocket();
+	output = document.getElementById("output");
+	testWebSocket();
 }
 
 
 function testWebSocket() {
-websocket = new WebSocket(wsUri);
-websocket.onopen = function(evt) { onOpen(websocket,evt) };
-websocket.onclose = function(evt) { onClose(websocket,evt) };
-websocket.onmessage = function(evt) { onMessage(websocket,evt) };
-websocket.onerror = function(evt) { onError(websocket,evt) };
+	websocket = new WebSocket(wsUri);
+	websocket.onopen = function(evt) { onOpen(websocket,evt) };
+	websocket.onclose = function(evt) { onClose(websocket,evt) };
+	websocket.onmessage = function(evt) { onMessage(websocket,evt) };
+	websocket.onerror = function(evt) { onError(websocket,evt) };
 }
 
 function onOpen(websocket,evt) {
 	writeToScreen("CONNECTED");
+	counter = 0;
 	doSend("WebSocket rocks");
+	doSend("SPAM 1");
+	doSend("SPAM 2");
+	doSend("SPAM 3");
 }
 
 function onClose(websocket,evt) {
@@ -39,7 +43,12 @@ function onClose(websocket,evt) {
 
 function onMessage(websocket, evt) {
 	writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
-	websocket.close();
+	doSend("Counter " + counter);
+	counter++;
+	if (counter == 10) {
+		websocket.close();
+	}
+	
 }
 
 function onError(websocket, evt) {
@@ -55,7 +64,11 @@ function doSend(message) {
 	writeToScreen(websocket.bufferedAmount);
 }
 
-function writeToScreen(message) { var pre = document.createElement("p"); pre.style.wordWrap = "break-word"; pre.innerHTML = message; output.appendChild(pre); }
+function writeToScreen(message) {
+	var pre = document.createElement("p");
+	pre.style.wordWrap = "break-word";
+	pre.innerHTML = message; output.appendChild(pre);
+}
 
 window.addEventListener("load", init, false);
 
@@ -65,6 +78,4 @@ window.addEventListener("load", init, false);
 
 <div id="output"></div>
 
-
 </html> 
-

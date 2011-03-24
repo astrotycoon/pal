@@ -48,7 +48,7 @@ int palTcpClient::Connect(palIpv4Address address, int port) {
 
 int palTcpClient::Close() {
   palSocketClose(socket_);
-  socket_ = kpalSocketInitializer;
+  SetSocket(kpalSocketInitializer);
   return 0;
 }
 
@@ -62,6 +62,9 @@ bool palTcpClient::Connected() const {
 }
 
 bool palTcpClient::CanBeRead() const {
+  if (connected_ == false) {
+    return false;
+  }
   palSocketSet readable;
   readable.Clear();
   readable.Add(socket_);
