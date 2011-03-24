@@ -85,43 +85,77 @@ void palWebSocketServer::Shutdown() {
   handshake_okay_ = false;
 }
 
-bool palWebSocketServer::Connected() {
+bool palWebSocketServer::HasOpen() const {
+  return has_open_;
+}
+bool palWebSocketServer::HasClose() const {
+  return has_close_;
+}
+bool palWebSocketServer::HasError() const {
+  return has_error_;
+}
+
+
+bool palWebSocketServer::Connected() const {
   return client_.Connected();
 }
 
 // 1) accept/disconnect a connection
 // 2) send any pending messages
 // 3) receive any pending messages
-int palWebSocketServer::Update() {
+void palWebSocketServer::Update() {
   int r;
+  // clear flags
+  has_open_ = false;
+  has_close_ = false;
+  has_error_ = false;
+
   if (client_.Connected() == false) {
     // no connection
     if (handshake_okay_ == true) {
       // we had been connected.
+      has_close_ = true;
       handshake_okay_ = false;
+      ClientDisconnect();
     }
     if (listener_.PendingConnections()) {
       r = listener_.AcceptTcpClient(&client_);
-      if (r == 0) {
-        client_.MakeNonBlocking();
-      }
     }
   } else if (handshake_okay_ == false) {
     // still need to handle handshake    
     if (client_.CanBeRead()) {
       int bytes_to_read = 512;
-      r = client_.Receive(incoming_buffer_, &bytes_to_read);
-      if (bytes_to_read > 0) {
-        palString<> s;   
-        s.AppendLength((const char*)incoming_buffer_, bytes_to_read);
-        r = ProcessHandshake(s.C(), bytes_to_read);
-        if (r == 0) {
-          SendMessage("HELLO WORLD");
-          handshake_okay_ = true;
-        } else {
-          client_.Close();
+      if (incoming_buffer_cursor_ >= incoming_buffer_length_) {
+        // we have filled our entire buffer without finding a valid handshake
+        // kick this client off
+        has_error_ = true;
+        client_.Close();
+        incoming_buffer_cursor_ = 0;
+      } else {
+        r = client_.Receive(&incoming_buffer_[incoming_buffer_cursor_], &bytes_to_read);
+        if (bytes_to_read > 0) {
+          incoming_buffer_cursor_ += bytes_to_read;
+          palString<> s;
+          s.AppendLength((const char*)incoming_buffer_, incoming_buffer_cursor_);
+          if (HasCompleteHandshake(s.C(), bytes_to_read)) {
+            r = ProcessHandshake(s.C(), bytes_to_read);
+            if (r == 0) {
+              handshake_okay_ = true;
+              has_open_ = true;
+              incoming_buffer_cursor_ = 0;
+            } else {
+              has_error_ = true;
+              client_.Close();
+              incoming_buffer_cursor_ = 0;
+            }
+          }
         }
-      }
+      } 
+    } else if (incoming_buffer_cursor_ > 0) {
+      // if we can't read from the socket and we've read part of a handshake, quit.
+      has_error_ = true;
+      client_.Close();
+      incoming_buffer_cursor_ = 0;
     }
   } else {
     // have an active connection
@@ -139,7 +173,6 @@ int palWebSocketServer::Update() {
     if (client_.CanBeRead()) {
       r = client_.Receive(&incoming_buffer_[incoming_buffer_cursor_], &num_bytes_to_read);
       if (r < 0) {
-        // connection lost
         ClientDisconnect();
       } else {
         if (num_bytes_to_read > 0) {
@@ -149,14 +182,13 @@ int palWebSocketServer::Update() {
       } 
     }
   }
-
-  return 0;
 }
 
 int palWebSocketServer::SendMessage(const char* msg) {
   int len = palStrlen(msg);
   return SendMessage(msg, len);
 }
+
 int palWebSocketServer::SendMessage(const char* msg, int msg_length) {
   if (2 + msg_length + outgoing_buffer_cursor_ >= outgoing_buffer_length_) {
     return -1;
@@ -171,7 +203,15 @@ int palWebSocketServer::SendMessage(const char* msg, int msg_length) {
   return 0;
 }
 
+int palWebSocketServer::PendingMessageCount() const {
+  return messages_.GetSize();
+}
+
 void palWebSocketServer::ProcessMessages(OnMessageDelegate del) {
+  for (int i = 0; i < messages_.GetSize(); i++) {
+    message_header* msg = &messages_[i];
+    del((const char*)msg->msg, msg->msg_length);
+  }
 }
 
 void palWebSocketServer::ClearMessages() {
@@ -221,6 +261,8 @@ int palWebSocketServer::ParseMessages() {
         message_header msg;
         msg.msg = &incoming_buffer_[last_message_cursor_+1];
         msg.msg_length = cursor - last_message_cursor_;
+        // subtract the 0x00 and 0xff bytes
+        msg.msg_length = msg.msg_length - 2;
         messages_.push_back(msg);
 
         state = 0;
@@ -305,9 +347,47 @@ static palTokenizerKeyword handshake_keywords[] = {
   { NULL, -1 }
 };
 
+bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
+  // super simple test for a complete handshake
+  const char* first = s;
+  if (s_len < 12) {
+    return false;
+  }
+
+  if (*first != 'G') {
+    return false;
+  }
+  first++;
+  if (*first != 'E') {
+    return false;
+  }
+  first++;
+  if (*first != 'T') {
+    return false;
+  }
+  const char* final_bytes = &s[s_len-12];
+  // two cr+lf pairs
+  if (*final_bytes != '\r') {
+    return false;
+  }
+  final_bytes++;
+  if (*final_bytes != '\n') {
+    return false;
+  }
+  final_bytes++;
+  if (*final_bytes != '\r') {
+    return false;
+  }
+  final_bytes++;
+  if (*final_bytes != '\n') {
+    return false;
+  }
+  return true;
+}
+
 int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   palTokenizer tokenizer;
-  if (s_len < 0xc0) {
+  if (s_len < 0xb0) {
     // not likely
     return -1;
   }
@@ -324,11 +404,11 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   // parsing GET /resource HTTP/1.1
   r = tokenizer.FetchNextToken(&token);
   if (!r || token.type_flags != kKW_GET) {
-    return -1;
+    return -2;
   }
   r = tokenizer.FetchNextToken(&token);
   if (!r || token.type != kTokenName) {
-    return -1;
+    return -3;
   }
   palString<> resource_name(token.value_string);
   tokenizer.SkipRestOfLine();
@@ -340,7 +420,7 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   do {
     r = tokenizer.FetchNextToken(&token);
     if (!r || token.type != kTokenKeyword) {
-      return -1;
+      return -4;
     }
     switch (token.type_flags) {
       case kKW_UpgradeColon:
@@ -362,13 +442,13 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
       case kKW_key1:
         key1 = ParseKey(&tokenizer);
         if (key1 == 0) {
-          return -1;
+          return -5;
         }
       break;
       case kKW_key2:
         key2 = ParseKey(&tokenizer);
         if (key2 == 0) {
-          return -1;
+          return -6;
         }
       break;
     }
@@ -379,19 +459,19 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   const char* final_bytes = &s[s_len-12];
   // two cr+lf pairs
   if (*final_bytes != '\r') {
-    return -1;
+    return -7;
   }
   final_bytes++;
   if (*final_bytes != '\n') {
-    return -1;
+    return -8;
   }
   final_bytes++;
   if (*final_bytes != '\r') {
-    return -1;
+    return -9;
   }
   final_bytes++;
   if (*final_bytes != '\n') {
-    return -1;
+    return -10;
   }
   final_bytes++;
   key3[0] = *final_bytes;
