@@ -46,10 +46,10 @@ void* palMallocAligned4(uint32_t size);
 void* palMallocAligned16(uint32_t size);
 void* palMallocAligned128(uint32_t size);
 
-void* pal_memmove(void* destination, const void* source, int bytes);
-void* pal_memcopy(void* destination, const void* source, int bytes);
-void* pal_memset(void* destination, unsigned char byte, int bytes);
-void* pal_memzero(void* destination, int bytes);
+void palMemoryCopyBytes(void* destination, const void* source, int bytes);
+void palMemoryZeroBytes(void* destination, int bytes);
+void palMemorySetBytes(void* destination, unsigned char byte, int bytes);
+
 int   pal_next_power_of_two(int x);
 
 #endif

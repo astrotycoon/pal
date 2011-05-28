@@ -281,7 +281,7 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::InsertChar(int position, const char
    * moving the tail (read: string->str_len_ - position) of the original string str_len_ bytes forward
    */
   if (position < str_len_) {
-    pal_memmove(str_ + position + 1, str_ + position, str_len_ - position);
+    palMemoryCopyBytes(str_ + position + 1, str_ + position, str_len_ - position);
   }
 
   str_[position] = ch;
@@ -306,7 +306,7 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::InsertLength(int position, const ch
    * moving the tail (read: str_len_ - position) of the original string str_len_ bytes forward
    */
   if (position < str_len_) {
-    pal_memmove(str_ + position + insert_length, str_ + position, str_len_ - position);
+    palMemoryCopyBytes(str_ + position + insert_length, str_ + position, str_len_ - position);
   }
 
   /* insert new string */
@@ -315,7 +315,7 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::InsertLength(int position, const ch
     str_[position] = *insert_str;
   } else {
     // > 1 character
-    pal_memcopy(str_ + position, insert_str, insert_length);
+    palMemoryCopyBytes(str_ + position, insert_str, insert_length);
   }
 
   str_len_ += insert_length;

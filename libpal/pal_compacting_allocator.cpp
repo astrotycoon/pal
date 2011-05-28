@@ -246,7 +246,7 @@ void palCompactingAllocator::Compact(uint32_t chunks_to_compact) {
       palGCAHandle moved_chunk_handle = next_chunk->handle;
 
       // move the actual data store in next chunk down into target chunk
-      pal_memmove(reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk), 
+      palMemoryCopyBytes(reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk), 
                   reinterpret_cast<unsigned char*>(next_chunk) + sizeof(chunk),
                   next_chunk->GetSize());
 

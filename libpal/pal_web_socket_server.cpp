@@ -196,10 +196,10 @@ int palWebSocketServer::SendMessage(const char* msg, int msg_length) {
   // copy message into outgoing buffer
   outgoing_buffer_[outgoing_buffer_cursor_] = 0x00;
   outgoing_buffer_cursor_++;
-  pal_memcopy(&outgoing_buffer_[outgoing_buffer_cursor_], msg, msg_length);
+  palMemoryCopyBytes(&outgoing_buffer_[outgoing_buffer_cursor_], msg, msg_length);
   outgoing_buffer_cursor_ += msg_length;
   outgoing_buffer_[outgoing_buffer_cursor_] = 0xFF;
-  outgoing_buffer_cursor_++;
+  outgoing_buffer_cursor_++;  
   return 0;
 }
 
@@ -219,7 +219,7 @@ void palWebSocketServer::ClearMessages() {
   int bytes_to_parse = incoming_buffer_cursor_ - last_message_cursor_;
   if (bytes_to_parse > 0) {
     // move rest of messages down
-    pal_memmove(&incoming_buffer_[0], &incoming_buffer_[last_message_cursor_], bytes_to_parse);
+    palMemoryCopyBytes(&incoming_buffer_[0], &incoming_buffer_[last_message_cursor_], bytes_to_parse);
     incoming_buffer_cursor_ -= last_message_cursor_;
     last_message_cursor_ = 0;
   }

@@ -45,78 +45,102 @@ template<class Key> struct palHashEqualDereference
 };
 
 
-/* We use MurmurHash by Austin Appleby */
-
-#if defined(PAL_PLATFORM_WINDOWS)
-// this version is faster, but may not work on some architectures
-#define mmix(h,k) { k *= m; k ^= k >> r; k *= m; h *= m; h ^= k; }
-PAL_INLINE unsigned int palMurmurHashSeed ( const void * key, int len, unsigned int seed) {
-  const unsigned int m = 0x5bd1e995;
-  const int r = 24;
-  unsigned int l = len;
-  const unsigned char * data = (const unsigned char *)key;
-  unsigned int h = seed;
-  while(len >= 4) {
-    unsigned int k = *(unsigned int*)data;
-    mmix(h,k);
-    data += 4;
-    len -= 4;
-  }
-  unsigned int t = 0;
-  switch(len) {
-  case 3: t ^= data[2] << 16;
-  case 2: t ^= data[1] << 8;
-  case 1: t ^= data[0];
-  };
-
-  mmix(h,t);
-  mmix(h,l);
-  h ^= h >> 13;
-  h *= m;
-  h ^= h >> 15;
-  return h;
+PAL_INLINE uint32_t rotl32( uint32_t x, int8_t r ) {
+  return (x << r) | (x >> (32 - r));
 }
-#undef mmix
-#else
-PAL_INLINE unsigned int palMurmurHashSeed( const void* key, int len, unsigned int seed) {
-  const unsigned int m = 0x5bd1e995;
-  const int r = 24;
-  unsigned int h = seed ^ len;
-  const unsigned char * data = (const unsigned char *)key;
-  while(len >= 4) {
-    unsigned int k;
 
-    k  = data[0];
-    k |= data[1] << 8;
-    k |= data[2] << 16;
-    k |= data[3] << 24;
+PAL_INLINE uint64_t rotl64( uint64_t x, int8_t r ) {
+  return (x << r) | (x >> (64 - r));
+}
 
-    k *= m; 
-    k ^= k >> r; 
-    k *= m;
+PAL_INLINE uint32_t rotr32( uint32_t x, int8_t r ) {
+  return (x >> r) | (x << (32 - r));
+}
 
-    h *= m;
-    h ^= k;
+PAL_INLINE uint64_t rotr64( uint64_t x, int8_t r ) {
+  return (x >> r) | (x << (64 - r));
+}
 
-    data += 4;
-    len -= 4;
+#define	ROTL32(x,y)	rotl32(x,y)
+#define ROTL64(x,y)	rotl64(x,y)
+#define	ROTR32(x,y)	rotr32(x,y)
+#define ROTR64(x,y)	rotr64(x,y)
+
+/* We use MurmurHash3 by Austin Appleby */
+PAL_INLINE uint32_t mh3_getblock(const uint32_t * p, int i) {
+  return p[i];
+}
+
+PAL_INLINE void mh3_bmix32( uint32_t & h1, uint32_t & k1, uint32_t & c1, uint32_t & c2 ) {
+  c1 = c1*5+0x7b7d159c;
+  c2 = c2*5+0x6bce6396;
+
+  k1 *= c1; 
+  k1 = ROTL32(k1,11); 
+  k1 *= c2;
+
+  h1 = ROTL32(h1,13);
+  h1 = h1*5+0x52dce729;
+  h1 ^= k1;
+}
+
+//----------
+
+PAL_INLINE unsigned int palMurmurHashSeed(const void * key, int len, uint32_t seed)
+{
+  uint32_t out;
+  const uint8_t * data = (const uint8_t*)key;
+  const int nblocks = len / 4;
+
+  uint32_t h1 = 0x971e137b ^ seed;
+
+  uint32_t c1 = 0x95543787;
+  uint32_t c2 = 0x2ad7eb25;
+
+  //----------
+  // body
+
+  const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+
+  for(int i = -nblocks; i; i++)
+  {
+    uint32_t k1 = mh3_getblock(blocks,i);
+
+    mh3_bmix32(h1,k1,c1,c2);
   }
 
-  switch(len) {
-  case 3: h ^= data[2] << 16;
-  case 2: h ^= data[1] << 8;
-  case 1: h ^= data[0];
-          h *= m;
-  };
-  h ^= h >> 13;
-  h *= m;
-  h ^= h >> 15;
-  return h;
-} 
-#endif
+  //----------
+  // tail
 
-PAL_INLINE unsigned int palMurmurHash (const void* key, int len)
-{
+  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
+
+  uint32_t k1 = 0;
+
+  switch(len & 3)
+  {
+  case 3: k1 ^= tail[2] << 16;
+  case 2: k1 ^= tail[1] << 8;
+  case 1: k1 ^= tail[0];
+    mh3_bmix32(h1,k1,c1,c2);
+  };
+
+  //----------
+  // finalization
+
+  h1 ^= len;
+
+  h1 *= 0x85ebca6b;
+  h1 ^= h1 >> 13;
+  h1 *= 0xc2b2ae35;
+  h1 ^= h1 >> 16;
+
+  h1 ^= seed;
+
+  out = h1;
+  return out;
+}
+
+PAL_INLINE unsigned int palMurmurHash(const void* key, int len) {
   return palMurmurHashSeed(key, len, 0xc58f1a7b);
 }
 

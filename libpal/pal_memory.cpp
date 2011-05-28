@@ -100,20 +100,26 @@ void palFreeAligned(void* ptr) {
   free(original);
 }
 
-void* pal_memmove(void* destination, const void* source, int bytes) {
-	return memmove(destination, source, bytes);
+void palMemoryCopyBytes(void* destination, const void* source, int bytes) {
+  intptr_t d_start = reinterpret_cast<intptr_t>(destination);
+  intptr_t d_end = d_start + bytes;
+  intptr_t s_start = reinterpret_cast<intptr_t>(source);
+  intptr_t s_end = s_start + bytes;
+  if ((s_start >= d_start && s_start < d_end) ||
+    (d_start >= s_start && d_start < s_end)) {
+    // regions overlap
+    memmove(destination, source, bytes);
+  } else {
+    memcpy(destination, source, bytes);
+  }
 }
 
-void* pal_memcopy(void* destination, const void* source, int bytes) {
-	return memcpy(destination, source, bytes);
+void palMemoryZeroBytes(void* destination, int bytes) {
+  memset(destination, 0, bytes);
 }
 
-void* pal_memset(void* destination, unsigned char byte, int bytes) {
-	return memset(destination, byte, bytes);
-}
-
-void* pal_memzero(void* destination, int bytes) {
-	return pal_memset(destination, 0, bytes);
+void palMemorySetBytes(void* destination, unsigned char byte, int bytes) {
+  memset(destination, byte, bytes);
 }
 
 int pal_next_power_of_two(int x) {

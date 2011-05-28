@@ -167,6 +167,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_atom.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_command_buffer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_compacting_allocator.cpp"
 				>
 			</File>
@@ -366,6 +374,14 @@
 			</File>
 			<File
 				RelativePath=".\pal_align.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_atom.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_command_buffer.h"
 				>
 			</File>
 			<File
