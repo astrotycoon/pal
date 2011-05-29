@@ -314,10 +314,10 @@ static uint32_t ParseKey(palTokenizer* tokenizer) {
     return 0;
   }
 #if 0
-  printf("Number = %d\n", key);
-  printf("Spaces = %d\n", spaces);
-  printf("Number mod Spaces = %d\n", key % spaces);
-  printf("number / spaces = %d\n", key / spaces);
+  palPrintf("Number = %d\n", key);
+  palPrintf("Spaces = %d\n", spaces);
+  palPrintf("Number mod Spaces = %d\n", key % spaces);
+  palPrintf("number / spaces = %d\n", key / spaces);
 #endif
   return key/spaces;
 }
@@ -523,16 +523,16 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   md5.GetMD5((unsigned char*)&response[0]);
 
 #if 0
-  printf("IN : ");
+  palPrintf("IN : ");
   for (int i = 0; i < 16; i++) {
     int ch = challenge[16-i];
-    printf("%02x", ch);
+    palPrintf("%02x", ch);
   }
-  printf("\n");
-  printf("OUT: ");
+  palPrintf("\n");
+  palPrintf("OUT: ");
   for (int i = 0; i < 16; i++) {
     int ch = response[i];
-    printf("%02x", ch);
+    palPrintf("%02x", ch);
   }
 #endif
 

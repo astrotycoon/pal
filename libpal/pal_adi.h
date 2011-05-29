@@ -24,45 +24,42 @@
 #ifndef LIBPAL_PAL_ADI_H_
 #define LIBPAL_PAL_ADI_H_
 
+#include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
 #include "libpal/pal_adi_keyboard_symbols.h"
 #include "libpal/pal_adi_mouse_symbols.h"
 #include "libpal/pal_timer.h"
 
-struct palKeyboardEvent
-{
-	palTimerTick	time;
-	bool		down;
-	kb_mod_t	mod;
-	kb_sym_t	key;
-	char		ascii;
+struct palKeyboardEvent {
+	palTimerTick time;
+	bool down;
+	kb_mod_t mod;
+	kb_sym_t key;
+	char ascii;
 };
 
-struct palMouseButtonEvent
-{
-	palTimerTick	time;
-	bool		down;
-	uint8_t		button_index;
-	uint16_t	x;
-	uint16_t	y;
+struct palMouseButtonEvent {
+	palTimerTick time;
+	bool down;
+	uint8_t button_index;
+	uint16_t x;
+	uint16_t y;
 };
 
-struct palMouseMoveEvent
-{
+struct palMouseMoveEvent {
 	palTimerTick	time;
 	uint8_t		button_mask;
 	uint16_t	x;
 	uint16_t	y;
-	uint16_t	dx;
-	uint16_t	dy;
+	int16_t	dx;
+	int16_t	dy;
 };
 
 typedef void (*keyboard_event_cb)(palKeyboardEvent event, void* userdata);
 typedef void (*mouse_button_event_cb)(palMouseButtonEvent event, void* userdata);
 typedef void (*mouse_move_event_cb)(palMouseMoveEvent event, void* userdata);
 
-
-int			palAdiInitialize();
+int			palAdiInitialize(void* a, void* b, int c);
 void		palAdiShutdown();
 
 void		palAdiProcessEvents();
@@ -77,6 +74,7 @@ bool		palAdiIsMouseGrabbed();
 void		palAdiWarpMouse(uint16_t x, uint16_t y);
 
 int			palAdiConfigureDisplay(int width, int height, bool fullscreen = false);
+void*   palAdiGetDisplayHandle();
 int			palAdiOpenDisplay();
 int     palAdiDisplayWidth();
 int     palAdiDisplayHeight();

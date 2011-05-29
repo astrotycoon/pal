@@ -21,19 +21,19 @@
   distribution.
 */
 
+#include "libpal/pal_platform.h"
+#include "libpal/pal_console.h"
+
 #if defined(PAL_PLATFORM_WINDOWS)
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
+#include <Windows.h>
 #else
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #endif
-
-#include "libpal/pal_platform.h"
-#include "libpal/pal_console.h"
-
 
 static void
 default_console_print_function(int level, const char* message) {
@@ -52,7 +52,7 @@ default_console_print_function(int level, const char* message) {
   fflush(stdout);
 }
 
-static console_print_function _console_print = default_console_print_function;
+static palConsolePrintFunction _console_print = default_console_print_function;
 
 void palPrintf(const char* fmt, ...) {
   char message[1024];
@@ -94,6 +94,22 @@ void palAbortPrintf(const char* fmt, ...) {
   abort();
 }
 
-void set_console_print_callback(console_print_function callback) {
+void palConsoleSetPrintFunction(palConsolePrintFunction callback) {
   _console_print = callback;
 }
+
+#if defined(PAL_PLATFORM_WINDOWS)
+void windows_debugger_print_function(int level, const char* message) {
+  switch (level) {
+    case 0:
+      break;
+    case 1:
+      OutputDebugString("ERROR: ");
+      break;
+    case 2:
+      OutputDebugString("BUG: ");
+      break;
+  }
+  OutputDebugString(message);
+}
+#endif

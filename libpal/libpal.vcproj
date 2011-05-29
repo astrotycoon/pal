@@ -369,6 +369,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_adi_sdl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_adi_win32.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_algorithms.h"
 				>
 			</File>

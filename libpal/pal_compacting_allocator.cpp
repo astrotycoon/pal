@@ -281,38 +281,37 @@ void palCompactingAllocator::Compact(uint32_t chunks_to_compact) {
   return;
 }
 
-#include <stdio.h>
 void palCompactingAllocator::DiagnosticDump() {
   palIListForeachDeclare(gcaMemoryChunkHeader, chunk_list) chunks_iterator(&chunk_list_head);
-  printf("Memory Base Address = %p\n", memory_);
-  printf("Memory size = %x\n", memory_size_);
-  printf("sizeof(gcaMemoryChunkHeader) = %zx\n", sizeof(gcaMemoryChunkHeader));
+  palPrintf("Memory Base Address = %p\n", memory_);
+  palPrintf("Memory size = %x\n", memory_size_);
+  palPrintf("sizeof(gcaMemoryChunkHeader) = %zx\n", sizeof(gcaMemoryChunkHeader));
 
   int chunk_id = 0;
   while (chunks_iterator.Finished() == false) {
     gcaMemoryChunkHeader* chunk = chunks_iterator.GetListEntry();
-    printf("Chunk [%d]\n", chunk_id);
-    printf("&header = %p\n", chunk);
-    printf("&user = %p\n", reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk));
+    palPrintf("Chunk [%d]\n", chunk_id);
+    palPrintf("&header = %p\n", chunk);
+    palPrintf("&user = %p\n", reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk));
     if (chunk->IsAllocated()) {
-      printf("Allocated\n");
+      palPrintf("Allocated\n");
     } else {
-      printf("Free\n");
+      palPrintf("Free\n");
     }
-    printf("Handle = %d\n", chunk->handle);
-    printf("Size = %x\n", chunk->GetSize());
+    palPrintf("Handle = %d\n", chunk->handle);
+    palPrintf("Size = %x\n", chunk->GetSize());
     uintptr_t next_header = (uintptr_t)reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk) + chunk->GetSize();
-    printf("&next_header = %zx\n", next_header);
+    palPrintf("&next_header = %zx\n", next_header);
     chunks_iterator.Next();
     chunk_id++;
     if (chunks_iterator.Finished() == false) {
       gcaMemoryChunkHeader* next_chunk = chunks_iterator.GetListEntry();
       if (next_header != (uintptr_t)next_chunk)
       {
-        printf("*** BROKEN LINKED LIST\n");
+        palPrintf("*** BROKEN LINKED LIST\n");
       }
     }
     
   }
-  printf("====\n");
+  palPrintf("====\n");
 }

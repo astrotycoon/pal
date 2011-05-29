@@ -258,12 +258,12 @@ class palList {
     current = l.GetFirst();
     do 
     {
-      printf("%d\n", current->data);
+      palPrintf("%d\n", current->data);
       if (l.IsLast(current))
         break;
       current = current->next;
     } while (true);
-    printf("--\n");
+    palPrintf("--\n");
   }
   
   template <typename CF>
