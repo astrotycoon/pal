@@ -23,8 +23,16 @@
 
 #pragma once
 
+
+// DX11, Windows
 #include <windows.h>
 #include <windowsx.h>
+#include <dxgi.h>
+#pragma comment(lib, "dxgi.lib")
+#include <d3d11.h>
+#pragma comment(lib, "d3d11.lib")
+
+#include "libpal/pal_memory.h"
 
 static bool __display_fullscreen = false;
 static uint32_t __display_width = 0;
@@ -32,6 +40,10 @@ static uint32_t __display_height = 0;
 static const int __display_bpp = 32;
 
 static HWND __window;
+static IDXGIAdapter1* __adapter;
+static IDXGISwapChain* __swap_chain;
+static ID3D11Device* __device;
+static ID3D11DeviceContext* _device_context;
 
 static void null_keyboard_callback(palKeyboardEvent event, void* userdata) {
   return;
@@ -330,11 +342,112 @@ int palAdiConfigureDisplay(int width, int height, bool fullscreen) {
     hInstance,
     NULL);
 
+  if (__window == NULL) {
+    palPrintf("Could not create window 0x%08x\n", GetLastError());
+    return -1;
+  }
+  IDXGIFactory1 * pFactory;
+  HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+  if (hr != S_OK) {
+    palPrintf("Could not create DXGI Factory1 0x%08x\n", hr);
+    return hr;
+  }
+
+  hr = pFactory->EnumAdapters1(0, (IDXGIAdapter1**)(&__adapter));
+  if (hr != S_OK) {
+    palPrintf("Could not enumerate Adapter 0 0x%08x\n", hr);
+    return hr;
+  }
+
+  DXGI_ADAPTER_DESC1 desc1;
+  hr = __adapter->GetDesc1(&desc1);
+  if (hr != S_OK) {
+    palPrintf("Could not get description of Adapter 0 0x%08x\n", hr);
+    return hr;
+  }
+
+  // wchar_t for fucks sake.
+  char description[128];
+  for (int i = 0; i < 128; i++) {
+    if ((desc1.Description[i] & 0xff) == 0) {
+      description[i] = '\0';
+      break;
+    }
+    description[i] = (desc1.Description[i] & 0xff);
+  }
+  
+
+  const D3D_FEATURE_LEVEL requested_level = D3D_FEATURE_LEVEL_11_0;
+  D3D_FEATURE_LEVEL actual_level;
+
+  DXGI_SWAP_CHAIN_DESC scd;
+  palMemoryZeroBytes(&scd, sizeof(scd));
+  scd.BufferCount = 2;
+  scd.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+  scd.OutputWindow = __window;
+  scd.BufferDesc.Height = __display_height;
+  scd.BufferDesc.Width = __display_width;
+  scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  scd.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
+  scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+  // any refresh rate will do
+  scd.BufferDesc.RefreshRate.Numerator = 0;
+  scd.BufferDesc.RefreshRate.Denominator = 1;
+  if (fullscreen) {
+    scd.Windowed = FALSE;
+  } else {
+    scd.Windowed = TRUE;
+  }
+  scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+  // automatic switch between fullscreen and windowed with alt+enter
+  scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+  // multisampling disabled
+  scd.SampleDesc.Count = 1;
+  scd.SampleDesc.Quality = 0;
+
+
+  hr = D3D11CreateDevice(__adapter,
+                         D3D_DRIVER_TYPE_UNKNOWN,
+                         NULL,
+                         0,
+                         NULL,
+                         0,
+                         D3D11_SDK_VERSION,
+                         &__device,
+                         &actual_level,
+                         &_device_context);
+  if (hr != S_OK) {
+    palPrintf("Could not create device 0x%08x\n", hr);
+    return -1;
+  }
+  if (requested_level != actual_level) {
+    palPrintf("Device does not support Direct3D 11 feature level. Exiting...\n");
+    return -2;
+  }
+  hr = pFactory->CreateSwapChain(__device, &scd, &__swap_chain);
+  if (hr != S_OK) {
+    palPrintf("Could not create swap chain 0x%08x\n", hr);
+    return -3;
+  }
+  palPrintf("D3D11: Using adapter - %s\n", description);
+  palPrintf("D3D11: Device supports Direct3D 11 feature level.\n");
+  palPrintf("Device @ %p\n", __device);
+  palPrintf("DeviceContext @ %p\n", _device_context);
+  palPrintf("SwapChain @ %p\n", __swap_chain);
+  palPrintf("Display configured for (%d x %d)\n", __display_width, __display_height);
   return 0;
 }
 
 void* palAdiGetDisplayHandle() {
   return __window;
+}
+
+void*   palAdiGetSwapChainHandle() {
+  return __swap_chain;
+}
+
+void*   palAdiGetDeviceHandle() {
+  return __device;
 }
 
 int palAdiOpenDisplay() {

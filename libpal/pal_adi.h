@@ -74,7 +74,6 @@ bool		palAdiIsMouseGrabbed();
 void		palAdiWarpMouse(uint16_t x, uint16_t y);
 
 int			palAdiConfigureDisplay(int width, int height, bool fullscreen = false);
-void*   palAdiGetDisplayHandle();
 int			palAdiOpenDisplay();
 int     palAdiDisplayWidth();
 int     palAdiDisplayHeight();
@@ -83,5 +82,10 @@ int			palAdiCloseDisplay();
 bool		palAdiSetFullscreen(bool fullscreen);
 bool		palAdiIsFullscreen();
 void		palAdiSwapBuffers();
+
+void*   palAdiGetDisplayHandle();
+void*   palAdiGetSwapChainHandle();
+void*   palAdiGetDeviceHandle();
+
 
 #endif  // LIBPAL_PAL_ADI_H__
