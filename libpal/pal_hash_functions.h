@@ -199,7 +199,7 @@ struct palHashFunction<const char*>
 {
 	unsigned int operator()(const char* const& key) const
 	{
-    return palMurmurHash(key, palStrlen(key));
+    return palMurmurHash(key, palStringLength(key));
 	}
 };
 

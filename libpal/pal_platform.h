@@ -93,6 +93,8 @@
 #define PAL_PLATFORM_WINDOWS
 #define PAL_ARCH_32BIT
 #define PAL_CPU_X86
+// this is needed so that when <windows.h> is included, it doesn't include winsock.h
+#define _WINSOCKAPI_
 #elif defined(_WIN64)
 #define PAL_PLATFORM_WINDOWS
 #define PAL_ARCH_64BIT

@@ -185,7 +185,7 @@ void palWebSocketServer::Update() {
 }
 
 int palWebSocketServer::SendMessage(const char* msg) {
-  int len = palStrlen(msg);
+  int len = palStringLength(msg);
   return SendMessage(msg, len);
 }
 

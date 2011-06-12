@@ -21,6 +21,7 @@
 	distribution.
 */
 
+#include "libpal/pal_array.h"
 #include "libpal/pal_string.h"
 #include "libpal/pal_json.h"
 
@@ -138,6 +139,16 @@ void palJSONToken::DebugPrintf() const {
 }
 
 palJSONToken* palJSONFindTokenWithName(palJSONToken* token_buffer, int token_buffer_length, const char* name) {
+  for (int i = 0; i < token_buffer_length; i++) {
+    if (token_buffer[i].name_first_index == -1) {
+      break;
+    }
+    const char* name_string = token_buffer[i].JSON_str+(token_buffer[i].name_first_index+1);
+    if (palStringEqualsN(name, name_string, (token_buffer[i].name_length-2))) {
+      return &token_buffer[i];
+    }
+  }
+
   return NULL;
 }
 
@@ -151,7 +162,7 @@ palJSONParser::palJSONParser() {
 
 void palJSONParser::Init(const char* JSON_str) {
   JSON_str_ = JSON_str;
-  JSON_str_len_ = palStrlen(JSON_str_);
+  JSON_str_len_ = palStringLength(JSON_str_);
   parse_current_index_ = 0;
   parse_end_index_ = 0;
 }
@@ -491,6 +502,162 @@ void palJSONPrettyPrintInternal(const char* str, int depth, int start_index, int
 }
 
 void palJSONPrettyPrint(const char* JSON_str) {
-  int len = palStrlen(JSON_str);
+  int len = palStringLength(JSON_str);
   palJSONPrettyPrintInternal(JSON_str, 0, 0, len);
 }
+
+palJSONReader::palJSONReader() {
+}
+
+void palJSONReader::Init(const char* JSON_str) {
+  _parser.Init(JSON_str);
+}
+
+struct QueryNode {
+  palString<> name;
+  // or
+  int array_index;
+  QueryNode() {
+    array_index = -1;
+  }
+};
+
+void BuildQueryNodes(const char* expr, palArray<QueryNode>* nodes) {
+  if (expr == NULL || *expr == '\0') {
+    return;
+  }
+
+  if (*expr == '[') {
+    QueryNode& node = nodes->AddTail();
+    node.array_index = palStringToInteger(expr+1);
+    int first_rsquare = palStringFindCh(expr, ']');
+    BuildQueryNodes(&expr[first_rsquare+1], nodes);
+    return;
+  } else if (*expr == '.') {
+    //QueryNode& node = nodes->AddTail();
+    //node.array_index = 0;
+    BuildQueryNodes(expr+1, nodes);
+    return;
+  }
+
+  int first_dot = palStringFindCh(expr, '.');
+  int first_lsquare = palStringFindCh(expr, '[');
+
+  if (first_dot >= 0 && first_lsquare >= 0) {
+    if (first_dot < first_lsquare) {
+      first_lsquare = -1;
+    } else {
+      first_dot = -1;
+    }
+  }
+
+  if (first_dot > 0) {
+    QueryNode& node = nodes->AddTail();
+    node.name.AppendLength(expr, first_dot);
+    BuildQueryNodes(&expr[first_dot], nodes);
+    return;
+  }
+
+  if (first_lsquare > 0) {
+    QueryNode& node = nodes->AddTail();
+    node.name.AppendLength(expr, first_lsquare);
+    BuildQueryNodes(&expr[first_lsquare], nodes);
+    return;
+  }
+
+  QueryNode& node = nodes->AddTail();
+  node.name.AppendLength(expr, palStringLength(expr));
+
+  return;
+}
+
+int palJSONReader::GetPointerToValue(const char* expr, palJSONReaderPointer* pointer) {
+  pointer->elements = NULL;
+  pointer->size = 0;
+
+  palArray<QueryNode> nodes;
+
+  BuildQueryNodes(expr, &nodes);
+
+#if 0
+  for (int i = 0; i < nodes.GetSize(); i++) {
+    const QueryNode& node = nodes[i];
+    int j = 0;
+    while (j < i) {
+      palPrintf(" ");
+      j++;
+    }
+    if (node.array_index >= 0) {
+      palPrintf("[%d]", node.array_index);
+    } else {
+      palPrintf("%s", node.name.C());
+    }
+    palPrintf("\n");
+  }
+#endif
+
+  const int max_tokens = 32;
+  palJSONToken tokens[max_tokens];
+  palJSONToken* found_token = NULL;
+
+  _parser.StartParse();
+  for (int i = 0; i < nodes.GetSize(); i++) {
+    const QueryNode& node = nodes[i];
+    int num_tokens = _parser.Parse(&tokens[0], max_tokens);
+    if (node.array_index >= 0) {
+      // array query
+      if (node.array_index >= num_tokens) {
+        found_token = NULL;
+        break;
+      }
+      found_token = &tokens[node.array_index];
+    } else {
+      // name query
+      found_token = palJSONFindTokenWithName(&tokens[0], num_tokens, node.name.C());
+      if (found_token == NULL) {
+        break;
+      }
+    }
+    _parser.StartParse(found_token->value_first_index, found_token->value_length);
+  }
+
+  if (found_token) {
+    // fill in pointer data
+    pointer->elements = found_token->JSON_str+found_token->value_first_index;
+    pointer->size = found_token->value_length;
+    return 0;
+  }
+
+  return -1;
+}
+
+
+
+#if 0
+{
+  const char* j_i_name = "c:/temp/blah.json";
+  uint64_t len;
+  unsigned char* contents = palCopyFileContentsAsString(j_i_name, &len);
+  if (!contents) {
+    return -1;
+  }
+  palJSONReader j_reader;
+  j_reader.Init((const char*)contents);
+
+  char input[512];
+  palStringPrintf(&input[0], 512, "menu.items[1].label");
+  while (1) {
+    palJSONReaderPointer pointer;
+    int r = j_reader.GetPointerToValue(input, &pointer);
+    if (r) {
+      palPrintf("Error: could not find %s\n", input);
+    } else {
+      palPrintf("%.*s\n", pointer.size, pointer.elements);
+    }
+
+    continue;
+  }
+  palFree(contents);
+  return 0;
+}
+#endif

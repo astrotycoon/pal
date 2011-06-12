@@ -24,6 +24,7 @@
 #include "libpal/pal_platform.h"
 #include "libpal/pal_debug.h"
 #include "libpal/pal_memory.h"
+#include "libpal/pal_mem_blob.h"
 #include "libpal/pal_file.h"
 
 unsigned char *palCopyFileContentsAsString(const char *filename, uint64_t* size_out) {
@@ -48,4 +49,20 @@ unsigned char* palCopyFileContents(const char *filename, uint64_t* size_out) {
   unsigned char* b = pf.CopyContents(size_out);
   pf.Close();
   return b;
+}
+
+int palCopyFileContents(const char* filename, palMemBlob* blob) {
+  palFile pf;
+  bool r;
+  blob->buffer = NULL;
+  blob->buffer_size = 0;
+  r = pf.OpenForReading(filename);
+  if (!r) {
+    return -1;
+  }
+  uint64_t len;
+  blob->buffer = pf.CopyContents(&len);
+  blob->buffer_size = len;
+  pf.Close();
+  return 0;
 }

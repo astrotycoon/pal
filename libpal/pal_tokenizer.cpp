@@ -225,8 +225,8 @@ void palTokenizer::SetFloatParsing(bool on) {
 
 void	palTokenizer::CopyBuffer(const char* buffer) {
 	own_buffer_ = true;
-	buffer_start_ = palStrdup(buffer);
-	buffer_length_ = palStrlen(buffer);
+	buffer_start_ = palStringDuplicate(buffer);
+	buffer_length_ = palStringLength(buffer);
 	buffer_end_ = buffer_start_+buffer_length_;
 	Reset();
 }

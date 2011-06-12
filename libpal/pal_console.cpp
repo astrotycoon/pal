@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+  Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages

@@ -64,13 +64,13 @@ int palHexDigitValue(char ch) {
   return 0;
 }
 
-int palStrlen(const char* str) {
+int palStringLength(const char* str) {
   if (!str || *str == '\0')
     return 0;
   return strlen(str);
 }
 
-char* palStrdup(const char* str) {
+char* palStringDuplicate(const char* str) {
   if (!str)
     return NULL;
 
@@ -81,23 +81,31 @@ char* palStrdup(const char* str) {
 #endif
 }
 
-char* palStrcpy(char* dest, const char* src) {
+void palStringCopy(char* dest, const char* src) {
 #if defined(PAL_COMPILER_MICROSOFT)
 #pragma warning(push)
 #pragma warning(disable : 4996)
-  return strcpy(dest, src);
+  strcpy(dest, src);
 #pragma warning(pop)
 #else
-  return strcpy(dest, src);
+  strcpy(dest, src);
 #endif
 }
 
-int palStrcmp(const char* a, const char* b) {
+int palStringCompare(const char* a, const char* b) {
   return strcmp(a, b);
 }
 
-int palStrncmp(const char* a, const char* b, int n) {
+int palStringCompareN(const char* a, const char* b, int n) {
   return strncmp(a, b, n);
+}
+
+bool palStringEquals(const char* a, const char* b) {
+  return palStringCompare(a, b) == 0;
+}
+
+bool palStringEqualsN(const char* a, const char* b, int n) {
+  return palStringCompareN(a, b, n) == 0;
 }
 
 int internal_pal_printf_upper_bound(const char* format, va_list args) {
@@ -119,23 +127,23 @@ int pal_printf_upper_bound(const char* format, ...) {
   return n;
 }
 
-char* palAsprintfInternal(const char* format, va_list args) {
+char* palStringAllocatingPrintfInternal(const char* format, va_list args) {
   int len = internal_pal_printf_upper_bound(format, args)+1;
   palAssert(len >= 0);
   char* str = static_cast<char*>(malloc(len+1));
-  int n = palSnprintfInternal(str, len, format, args);
+  int n = palStringPrintfInternal(str, len, format, args);
   return str;
 }
 
-char* palAsprintf(const char* format, ...) {
+char* palStringAllocatingPrintf(const char* format, ...) {
   va_list args;
   va_start(args, format);
-  char* str = palAsprintfInternal(format, args);
+  char* str = palStringAllocatingPrintfInternal(format, args);
   va_end(args);
   return str;
 }
 
-int palSnprintfInternal(char* str, uint32_t size, const char* format, va_list args) {
+int palStringPrintfInternal(char* str, uint32_t size, const char* format, va_list args) {
 #if defined(PAL_COMPILER_MICROSOFT)
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -148,15 +156,15 @@ int palSnprintfInternal(char* str, uint32_t size, const char* format, va_list ar
   return n;
 }
 
-int palSnprintf(char* str, uint32_t size, const char* format, ...) {
+int palStringPrintf(char* str, uint32_t size, const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  int n = palSnprintfInternal(str, size, format, ap);
+  int n = palStringPrintfInternal(str, size, format, ap);
   va_end(ap);
   return n;
 }
 
-int palFindch(const char* str, char ch) {
+int palStringFindCh(const char* str, char ch) {
   if (!str)
     return -1;
 
@@ -171,16 +179,16 @@ int palFindch(const char* str, char ch) {
   return -1;
 }
 
-bool palFindStr(const char* str, const char* findstr, int* start_out, int* end_out) {
-  int str_len = palStrlen(str);
-  int findstr_len = palStrlen(findstr);
+bool palStringFindString(const char* str, const char* findstr, int* start_out, int* end_out) {
+  int str_len = palStringLength(str);
+  int findstr_len = palStringLength(findstr);
   int start;
   int end;
 
   if (findstr_len > str_len) {
     return false;
   } else if (findstr_len == str_len) {
-    if (palStrncmp(str, findstr, findstr_len) == 0) {
+    if (palStringCompareN(str, findstr, findstr_len) == 0) {
       start = 0;
       end = str_len;
       if (start_out)
@@ -194,7 +202,7 @@ bool palFindStr(const char* str, const char* findstr, int* start_out, int* end_o
 
   const char* search_point = str;
   for (int i = 0; i <= str_len - findstr_len; i++) {
-    if (palStrncmp(search_point, findstr, findstr_len) == 0) {
+    if (palStringCompareN(search_point, findstr, findstr_len) == 0) {
       start = search_point - str;
       end = start + findstr_len;
       if (start_out)
@@ -206,4 +214,10 @@ bool palFindStr(const char* str, const char* findstr, int* start_out, int* end_o
     search_point++;
   }
   return false;
+}
+
+
+int palStringToInteger(const char* str) {
+  int r = atoi(str);
+  return r;
 }

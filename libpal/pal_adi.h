@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ADI_H_
-#define LIBPAL_PAL_ADI_H_
+#pragma once
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
@@ -47,10 +46,10 @@ struct palMouseButtonEvent {
 };
 
 struct palMouseMoveEvent {
-	palTimerTick	time;
-	uint8_t		button_mask;
-	uint16_t	x;
-	uint16_t	y;
+	palTimerTick time;
+	uint8_t	button_mask;
+	uint16_t x;
+	uint16_t y;
 	int16_t	dx;
 	int16_t	dy;
 };
@@ -83,9 +82,8 @@ bool		palAdiSetFullscreen(bool fullscreen);
 bool		palAdiIsFullscreen();
 void		palAdiSwapBuffers();
 
+// DX11 interface
 void*   palAdiGetDisplayHandle();
 void*   palAdiGetSwapChainHandle();
 void*   palAdiGetDeviceHandle();
 
-
-#endif  // LIBPAL_PAL_ADI_H__

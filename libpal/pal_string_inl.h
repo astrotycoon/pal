@@ -21,13 +21,15 @@
   distribution.
 */
 
-#ifndef LIBPAL_PAL_STRING_INL_H_
-#define LIBPAL_PAL_STRING_INL_H_
+#pragma once
 
+#include "libpal/pal_platform.h"
 #include <stdarg.h>
 #include "libpal/pal_memory.h"
 #include "libpal/pal_algorithms.h"
 #include "libpal/pal_debug.h"
+
+
 
 template<int PAL_STRING_DEFAULT_CAPACITY>
 palString<PAL_STRING_DEFAULT_CAPACITY>::palString(const palString<PAL_STRING_DEFAULT_CAPACITY>& that) {
@@ -35,10 +37,10 @@ palString<PAL_STRING_DEFAULT_CAPACITY>::palString(const palString<PAL_STRING_DEF
   str_len_ = that.str_len_;
   if (that.str_ == &that.default_buffer_[0]) {
     str_ = &default_buffer_[0];
-    palStrcpy(&default_buffer_[0], &that.default_buffer_[0]);
+    palStringCopy(&default_buffer_[0], &that.default_buffer_[0]);
   } else {
     str_ = static_cast<char*>(palMalloc(str_capacity_));
-    palStrcpy(str_, that.str_);
+    palStringCopy(str_, that.str_);
   }
 }
 
@@ -54,10 +56,10 @@ palString<PAL_STRING_DEFAULT_CAPACITY>& palString<PAL_STRING_DEFAULT_CAPACITY>::
     str_len_ = that.str_len_;
     if (that.str_ == &that.default_buffer_[0]) {
       str_ = &default_buffer_[0];
-      palStrcpy(&default_buffer_[0], &that.default_buffer_[0]);
+      palStringCopy(&default_buffer_[0], &that.default_buffer_[0]);
     } else {
       str_ = static_cast<char*>(palMalloc(str_capacity_));
-      palStrcpy(str_, that.str_);
+      palStringCopy(str_, that.str_);
     }
   }
   return *this;
@@ -187,7 +189,7 @@ bool palString<PAL_STRING_DEFAULT_CAPACITY>::Equals(const char* test) const {
   if (!test)
     return false;
 
-  int test_len = palStrlen(test);
+  int test_len = palStringLength(test);
   if (str_len_ != test_len) {
     return false;
   }
@@ -219,7 +221,7 @@ template<int PAL_STRING_DEFAULT_CAPACITY>
 void palString<PAL_STRING_DEFAULT_CAPACITY>::AppendPrintf(const char* format, ...) {
   va_list args;
   va_start(args, format);
-  char* temp_string = palAsprintfInternal(format, args);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(-1, temp_string);
   palFree(temp_string);
   va_end(args);
@@ -240,7 +242,7 @@ template<int PAL_STRING_DEFAULT_CAPACITY>
 void palString<PAL_STRING_DEFAULT_CAPACITY>::PrependPrintf(const char* format, ...) {
   va_list args;
   va_start(args, format);
-  char* temp_string = palAsprintfInternal(format, args);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(0, temp_string);
   palFree(temp_string);
   va_end(args);
@@ -255,13 +257,13 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::PrependLength(const char* prepend_s
 }
 template<int PAL_STRING_DEFAULT_CAPACITY>
 void palString<PAL_STRING_DEFAULT_CAPACITY>::Insert(int position, const char* insert_str) {
-  InsertLength(position, insert_str, palStrlen(insert_str));
+  InsertLength(position, insert_str, palStringLength(insert_str));
 }
 template<int PAL_STRING_DEFAULT_CAPACITY>
 void palString<PAL_STRING_DEFAULT_CAPACITY>::InsertPrintf(int position, const char* format, ...) {
   va_list args;
   va_start(args, format);
-  char* temp_string = palAsprintfInternal(format, args);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(position, temp_string);
   palFree(temp_string);
   va_end(args);
@@ -334,7 +336,7 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::resize(int newSize) {
   str_capacity_ = newSize;
   char* newbuff = static_cast<char*>(palMalloc(str_capacity_));
   str_[str_len_] = 0;  // make sure it is zero filled
-  palStrcpy(newbuff, str_);  // copy old str_ into newbuffer
+  palStringCopy(newbuff, str_);  // copy old str_ into newbuffer
   if (str_ != &default_buffer_[0]) {
     palFree(str_);
   }
@@ -350,10 +352,8 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::Remove(int position, int remove_len
       return;
 
     if (position + remove_length < str_len_)
-      pal_memmove(str_ + position, str_ + position + remove_length, str_len_ - (position + remove_length));
+      palMemoryCopyBytes(str_ + position, str_ + position + remove_length, str_len_ - (position + remove_length));
   }
   str_len_ -= remove_length;
   str_[str_len_] = 0;
 }
-
-#endif // LIBPAL_PAL_STRING_INL_H_

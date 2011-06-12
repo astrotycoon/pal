@@ -50,13 +50,13 @@ void palAtomMemoryManager::Init() {
 }
 
 char* palAtomMemoryManager::CopyString(const char* str) {
-  uint32_t length = palStrlen(str) + 1;
+  uint32_t length = palStringLength(str) + 1;
 
   if (length >= PAL_ATOM_PAGE_SIZE) {
     // very large string, won't fit in page
     total_large_strings++;
     total_allocated_memory += length;
-    return palStrdup(str);
+    return palStringDuplicate(str);
   }
   if (page == NULL) {
     // initial run

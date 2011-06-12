@@ -21,9 +21,9 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_JSON_H_
-#define LIBPAL_PAL_JSON_H_
+#pragma once
 
+#include "libpal/pal_mem_blob.h"
 #include "libpal/pal_tokenizer.h"
 
 enum palJSONTokenType {
@@ -119,4 +119,15 @@ public:
 
 void palJSONPrettyPrint(const char* JSON_str);
 
-#endif  // LIBPAL_PAL_JSON_H_
+typedef palTypeBlob<const char> palJSONReaderPointer;
+
+class palJSONReader {
+  palJSONParser _parser;
+public:
+
+  palJSONReader();
+
+  void Init(const char* JSON_str);
+
+  int GetPointerToValue(const char* expr, palJSONReaderPointer* pointer);
+};

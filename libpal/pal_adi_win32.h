@@ -383,7 +383,7 @@ int palAdiConfigureDisplay(int width, int height, bool fullscreen) {
   DXGI_SWAP_CHAIN_DESC scd;
   palMemoryZeroBytes(&scd, sizeof(scd));
   scd.BufferCount = 2;
-  scd.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+  scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
   scd.OutputWindow = __window;
   scd.BufferDesc.Height = __display_height;
   scd.BufferDesc.Width = __display_width;
@@ -421,7 +421,7 @@ int palAdiConfigureDisplay(int width, int height, bool fullscreen) {
     return -1;
   }
   if (requested_level != actual_level) {
-    palPrintf("Device does not support Direct3D 11 feature level. Exiting...\n");
+    palPrintf("Device %s does not support Direct3D 11 feature level. Exiting...\n", description);
     return -2;
   }
   hr = pFactory->CreateSwapChain(__device, &scd, &__swap_chain);
@@ -435,6 +435,7 @@ int palAdiConfigureDisplay(int width, int height, bool fullscreen) {
   palPrintf("DeviceContext @ %p\n", _device_context);
   palPrintf("SwapChain @ %p\n", __swap_chain);
   palPrintf("Display configured for (%d x %d)\n", __display_width, __display_height);
+
   return 0;
 }
 

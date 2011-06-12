@@ -26,12 +26,13 @@
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
+#include "libpal/pal_mem_blob.h"
 
-// guarantees that there is a NULL character at the end
+// guarantees that there is a '\0' character at the end
 unsigned char* palCopyFileContentsAsString(const char* filename, uint64_t* string_length);
 
-// does not append a NULL character to end of file stream
 unsigned char* palCopyFileContents(const char* filename, uint64_t* length);
+int palCopyFileContents(const char* filename, palMemBlob* blob);
 
 enum palFileSeek
 {

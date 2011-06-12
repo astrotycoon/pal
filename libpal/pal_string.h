@@ -21,15 +21,10 @@
   distribution.
 */
 
-#ifndef LIBPAL_PAL_STRING_H_
-#define LIBPAL_PAL_STRING_H_
+#pragma once
 
-#include <stdarg.h>
 #include "libpal/pal_types.h"
 #include "libpal/pal_memory.h"
-
-char* palAsprintfInternal(const char* format, va_list args);
-int palSnprintfInternal(char* str, uint32_t size, const char* format, va_list args);
 
 bool  palIsAlpha(char ch);
 bool  palIsDigit(char ch);
@@ -37,16 +32,24 @@ bool  palIsHexDigit(char ch);
 bool  palIsWhiteSpace(char ch);
 int   palDigitValue(char ch);
 int   palHexDigitValue(char ch);
-int   palStrlen(const char* str);
-char* palStrdup(const char* str);
-char* palStrcpy(char* dest, const char* src);
-int   palStrcmp(const char* a, const char* b);
-int   palStrncmp(const char* a, const char* b, int n);
-int   palSnprintf(char* str, uint32_t size, const char* format, ...);
-char* palAsprintf(const char* format, ...);
-int   palFindch(const char* str, char ch);
-bool  palFindStr(const char* str, const char* findstr, int* start, int* end);
 
+int   palStringLength(const char* str);
+char* palStringDuplicate(const char* str);
+void  palStringCopy(char* dest, const char* src);
+int   palStringCompare(const char* a, const char* b);
+int   palStringCompareN(const char* a, const char* b, int n);
+bool  palStringEquals(const char* a, const char* b);
+bool  palStringEqualsN(const char* a, const char* b, int n);
+int   palStringPrintf(char* str, uint32_t size, const char* format, ...);
+char* palStringAllocatingPrintf(const char* format, ...);
+
+char* palStringAllocatingPrintfInternal(const char* format, va_list args);
+int palStringPrintfInternal(char* str, uint32_t size, const char* format, va_list args);
+
+int   palStringFindCh(const char* str, char ch);
+bool  palStringFindString(const char* str, const char* findstr, int* start, int* end);
+
+int palStringToInteger(const char* str);
 
 // ideally palString should be 64 bytes
 // on 32-bit architectures the struct adds up to: 12 bytes (52 bytes to spare)
@@ -54,7 +57,7 @@ bool  palFindStr(const char* str, const char* findstr, int* start, int* end);
 // sizeof(palString) = PAL_STRING_DEFAULT_CAPACITY + (12 or 16)
 
 
-template<int PAL_STRING_DEFAULT_CAPACITY = 48>
+template<int PAL_STRING_DEFAULT_CAPACITY = 52>
 class palString {
  public:
   palString() {
@@ -117,7 +120,7 @@ class palString {
   void Remove(int position, int length);
 
   int capacity() { return str_capacity_; };
- protected:
+protected:
   void expandIfNeeded(int extraLength);
   void resize(int newSize);
 
@@ -129,5 +132,3 @@ class palString {
 
 #include "pal_string_inl.h"  // template implementation of palString class
 
-
-#endif  // LIBPAL_PAL_STRING_H_

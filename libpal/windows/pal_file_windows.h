@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_FILE_WINDOWS_H_
-#define LIBPAL_PAL_FILE_WINDOWS_H_
+#pragma once
 
 #if defined(PAL_PLATFORM_WINDOWS)
 #define _WINSOCKAPI_
@@ -45,6 +44,8 @@ public:
   uint64_t Seek(palFileSeek p, int64_t offset);
   uint64_t Read(void* buffer, uint64_t num_bytes);
   uint64_t Write(const void* buffer, uint64_t num_bytes);
+  uint64_t Write(const char* str);
+  uint64_t WritePrintf(const char* str, ...);
   uint64_t GetPosition();
   uint64_t GetSize();
 
@@ -75,5 +76,3 @@ protected:
 };
 
 #endif // defined(PAL_PLATFORM_WINDOWS)
-
-#endif  // LIBPAL_PAL_FILE_WINDOWS_H_

@@ -38,6 +38,7 @@
 #include "libpal/pal_debug.h"
 #include "libpal/pal_memory.h"
 #include "libpal/pal_file.h"
+#include "libpal/pal_string.h"
 
 palFile::palFile() {
   handle_ = INVALID_HANDLE_VALUE;
@@ -135,6 +136,21 @@ uint64_t palFile::Write(const void* buffer, uint64_t num_bytes) {
   r = WriteFile(handle_, buffer, (DWORD)num_bytes, (LPDWORD)&bytes_written, NULL);
 
   return bytes_written;
+}
+
+
+uint64_t palFile::Write(const char* str) {
+  return Write(str, palStringLength(str));
+}
+
+uint64_t palFile::WritePrintf(const char* str, ...) {
+  va_list argptr;
+  va_start(argptr, str);
+  char* to_write = palStringAllocatingPrintfInternal(str, argptr);
+  va_end(argptr);
+  uint64_t r = Write(to_write);
+  palFree(to_write);
+  return r;
 }
 
 uint64_t palFile::GetPosition() {
