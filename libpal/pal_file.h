@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_FILE_H_
-#define LIBPAL_PAL_FILE_H_
+#pragma once
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
@@ -49,5 +48,3 @@ enum palFileSeek
 #else
 #warning no file implementation for your platform
 #endif
-
-#endif  // LIBPAL_PAL_FILE_H_

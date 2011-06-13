@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ATOMIC_H_
-#define LIBPAL_PAL_ATOMIC_H_
+#pragma once
 
 #include "libpal/pal_types.h"
 #include "libpal/pal_platform.h"
@@ -123,4 +122,4 @@ PAL_INLINE void palAtomicMemoryBarrier();
 
 #include "libpal/pal_atomic_inl.h"
 
-#endif  // LIBPAL_PAL_ATOMIC_H_
+

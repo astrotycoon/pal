@@ -69,7 +69,7 @@ bool palFile::OpenForWritingTruncate(const char* filename) {
   return fileh != INVALID_HANDLE_VALUE;
 }
 
-void palFile::Close () {
+void palFile::Close() {
   if (handle_ != INVALID_HANDLE_VALUE) {
     CloseHandle(handle_);
     handle_ = INVALID_HANDLE_VALUE;

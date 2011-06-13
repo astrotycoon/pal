@@ -23,6 +23,7 @@
 	distribution.
 */
 
+#include "libpal/pal_memory.h"
 
 struct palMemBlob {
   void* buffer;
@@ -36,6 +37,11 @@ struct palMemBlob {
   palMemBlob(void* buffer, int buffer_len) {
     this->buffer = buffer;
     this->buffer_size = buffer_len;
+  }
+
+  void* GetPtr(uint32_t offset) {
+    uintptr_t addr = reinterpret_cast<uintptr_t>(buffer);
+    return reinterpret_cast<void*>(addr+offset);
   }
 };
 
@@ -52,5 +58,90 @@ struct palTypeBlob {
   palTypeBlob<T>(T* e, int num_e) {
     elements = e;
     size = num_e;
+  }
+};
+
+struct palGrowingMemoryBlob {
+  void* buffer;
+  uint32_t buffer_capacity;
+  uint32_t buffer_size;
+
+  palGrowingMemoryBlob() {
+    buffer = NULL;
+    buffer_capacity = 0;
+    buffer_size = 0;
+  }
+
+  palGrowingMemoryBlob(uint32_t initial_capacity) {
+    buffer = NULL;
+    buffer_capacity = 0;
+    buffer_size = 0;
+  }
+
+  ~palGrowingMemoryBlob() {
+    palFree(buffer);
+  }
+
+  void IncreaseCapacity(uint32_t new_capacity) {
+    if (buffer_capacity == 0) {
+      // initial growth
+      buffer = palMalloc(64);
+      buffer_capacity = 64;
+    } else if (new_capacity > buffer_capacity) {
+      // create new buffer
+      void* new_buffer = palMalloc(new_capacity);
+      // copy old buffer into new buffer
+      palMemoryCopyBytes(new_buffer, buffer, buffer_size);
+      // free old buffer
+      palFree(buffer);
+
+      buffer = new_buffer;
+      buffer_capacity = new_capacity;
+    }
+  }
+
+  uint32_t Append(void* data, uint32_t data_size) {
+    if (buffer_size + data_size >= buffer_capacity) {
+      // need more room in buffer
+      uint32_t new_capacity = 2*buffer_capacity;
+      if (new_capacity == 0) {
+        new_capacity = 64;
+      }
+      while (new_capacity <= (buffer_size+data_size)) {
+        new_capacity *= 2;
+      }
+      IncreaseCapacity(new_capacity);
+    }
+    uintptr_t target_address = reinterpret_cast<uintptr_t>(buffer) + buffer_size;
+    palMemoryCopyBytes((void*)target_address, data, data_size);
+    buffer_size += data_size;
+    uintptr_t base_address = reinterpret_cast<uintptr_t>(buffer);
+    return target_address - base_address;
+  }
+
+  void Clear() {
+    buffer_size = 0;
+  }
+
+  void Reset() {
+    if (buffer) {
+      palFree(buffer);
+    }
+    buffer = NULL;
+    buffer_capacity = 0;
+    buffer_size = 0;
+  }
+
+  void* GetPtr(uint32_t offset) {
+    uintptr_t byte_address = reinterpret_cast<uintptr_t>(buffer);
+    return reinterpret_cast<void*>(byte_address+offset);
+  }
+
+  uint32_t GetSize() {
+    return buffer_size;
+  }
+
+  void* GetPtr() {
+    return buffer;
   }
 };
