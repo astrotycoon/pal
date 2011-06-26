@@ -82,8 +82,6 @@ bool		palAdiSetFullscreen(bool fullscreen);
 bool		palAdiIsFullscreen();
 void		palAdiSwapBuffers();
 
-// DX11 interface
 void*   palAdiGetDisplayHandle();
 void*   palAdiGetSwapChainHandle();
 void*   palAdiGetDeviceHandle();
-
