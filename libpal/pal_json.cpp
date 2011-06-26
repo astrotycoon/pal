@@ -513,22 +513,22 @@ void palJSONReader::Init(const char* JSON_str) {
   _parser.Init(JSON_str);
 }
 
-struct QueryNode {
+struct JsonQueryNode {
   palString<> name;
   // or
   int array_index;
-  QueryNode() {
+  JsonQueryNode() {
     array_index = -1;
   }
 };
 
-void BuildQueryNodes(const char* expr, palArray<QueryNode>* nodes) {
+static void BuildQueryNodes(const char* expr, palArray<JsonQueryNode>* nodes) {
   if (expr == NULL || *expr == '\0') {
     return;
   }
 
   if (*expr == '[') {
-    QueryNode& node = nodes->AddTail();
+    JsonQueryNode& node = nodes->AddTail();
     node.array_index = palStringToInteger(expr+1);
     int first_rsquare = palStringFindCh(expr, ']');
     BuildQueryNodes(&expr[first_rsquare+1], nodes);
@@ -552,20 +552,20 @@ void BuildQueryNodes(const char* expr, palArray<QueryNode>* nodes) {
   }
 
   if (first_dot > 0) {
-    QueryNode& node = nodes->AddTail();
+    JsonQueryNode& node = nodes->AddTail();
     node.name.AppendLength(expr, first_dot);
     BuildQueryNodes(&expr[first_dot], nodes);
     return;
   }
 
   if (first_lsquare > 0) {
-    QueryNode& node = nodes->AddTail();
+    JsonQueryNode& node = nodes->AddTail();
     node.name.AppendLength(expr, first_lsquare);
     BuildQueryNodes(&expr[first_lsquare], nodes);
     return;
   }
 
-  QueryNode& node = nodes->AddTail();
+  JsonQueryNode& node = nodes->AddTail();
   node.name.AppendLength(expr, palStringLength(expr));
 
   return;
@@ -575,7 +575,7 @@ int palJSONReader::GetPointerToValue(const char* expr, palJSONReaderPointer* poi
   pointer->elements = NULL;
   pointer->size = 0;
 
-  palArray<QueryNode> nodes;
+  palArray<JsonQueryNode> nodes;
 
   BuildQueryNodes(expr, &nodes);
 
@@ -602,7 +602,7 @@ int palJSONReader::GetPointerToValue(const char* expr, palJSONReaderPointer* poi
 
   _parser.StartParse();
   for (int i = 0; i < nodes.GetSize(); i++) {
-    const QueryNode& node = nodes[i];
+    const JsonQueryNode& node = nodes[i];
     int num_tokens = _parser.Parse(&tokens[0], max_tokens);
     if (node.array_index >= 0) {
       // array query

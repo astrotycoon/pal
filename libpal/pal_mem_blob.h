@@ -85,8 +85,8 @@ struct palGrowingMemoryBlob {
   void IncreaseCapacity(uint32_t new_capacity) {
     if (buffer_capacity == 0) {
       // initial growth
-      buffer = palMalloc(64);
-      buffer_capacity = 64;
+      buffer = palMalloc(new_capacity);
+      buffer_capacity = new_capacity;
     } else if (new_capacity > buffer_capacity) {
       // create new buffer
       void* new_buffer = palMalloc(new_capacity);

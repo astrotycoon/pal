@@ -146,20 +146,19 @@ PAL_INLINE palAtomicReferenceCount::palAtomicReferenceCount() {
 
 /* Atomically decrements reference count */
 /* Returns true if reference count hit 0 */
-PAL_INLINE bool palAtomicReferenceCount::Unref() volatile {
-  return _InterlockedDecrement(&count_) == 0;
+PAL_INLINE uint32_t palAtomicReferenceCount::Unref() volatile {
+  return _InterlockedDecrement(&count_);
 }
 
 /* Atomically increases reference count */
-PAL_INLINE void palAtomicReferenceCount::Ref() volatile {
-  _InterlockedIncrement(&count_);
+PAL_INLINE uint32_t palAtomicReferenceCount::Ref() volatile {
+  return _InterlockedIncrement(&count_);
 }
 
 /* Atomically loads and returns the reference count */
 PAL_INLINE uint32_t palAtomicReferenceCount::Load() const volatile {
   return _InterlockedExchangeAdd((volatile long*)&count_, 0);
 }
-
 
 PAL_INLINE void palAtomicMemoryBarrier() {
 #if defined(PAL_ARCH_32BIT)

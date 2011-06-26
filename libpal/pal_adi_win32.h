@@ -481,5 +481,5 @@ bool palAdiIsFullscreen() {
 }
 
 void palAdiSwapBuffers() {
-  // NOTHING
+  __swap_chain->Present(0, 0);
 }

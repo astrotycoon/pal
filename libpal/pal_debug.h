@@ -37,9 +37,11 @@ void palAbort();
 #if defined(PAL_BUILD_DEBUG)
 #define palAssert(expr) do { if (!(expr)) { palPrintf("Assertion failed: %s::%d\n", __FILE__, __LINE__); palAbort(); } } while (0)
 #define palAssertBreak(expr) do { if (!(expr)) { palPrintf("Assertion failed: %s::%d\n", __FILE__, __LINE__); palBreakHere(); } } while (0)
+#define palAssertNeverHit() do { palPrintf("Never hit assertion failed: %s::%d\n", __FILE__, __LINE__); palAbort(); } while (0)
 #else
+#define palAssertNeverHit() do {} while (0)
 #define palAssert(expr) do {} while (0)
-#define palAssertBreak(expr) do {} while(0);
+#define palAssertBreak(expr) do {} while(0)
 #endif
 
 

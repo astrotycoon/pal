@@ -12,4 +12,6 @@
 #include <stddef.h>
 #endif
 
+#include <cfloat>
+
 #endif
