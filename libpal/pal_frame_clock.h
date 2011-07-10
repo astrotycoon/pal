@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,30 +21,26 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_TIMER_WINDOWS_H_
-#define LIBPAL_PAL_TIMER_WINDOWS_H_
+#pragma once
 
-#define _WINSOCKAPI_
-#include <windows.h>
-typedef LONGLONG palTimerTick;
+#include "libpal/pal_timer.h"
 
-PAL_INLINE palTimerTick palTimerGetFrequency() {
-  palTimerTick frequency;
-  QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
-  return frequency;
-}
+class palFrameClock {
+  float _frame_step;
+  float _max_accumulated_time;
+  float _max_delta_time;
 
-PAL_INLINE palTimerTick palTimerGetTicks() {
-  palTimerTick t;
-  QueryPerformanceCounter((LARGE_INTEGER*)&t);
-  return t;
-}
+  float _accumulated_time;
+public:
+  palFrameClock();
+  ~palFrameClock();
 
-PAL_INLINE float palTimerGetSeconds(palTimerTick ticks) {
-  static palTimerTick frequency = palTimerGetFrequency();
-  float dt_s = static_cast<float>(ticks)/static_cast<float>(frequency);
-  return dt_s;
-}
+  void Setup(float frame_step, float max_accumulated_time, float max_delta_time);
 
+  void Reset();
+  void AddTime(float dt);
+  bool CanTakeFrame() const;
+  float TakeFrame();
 
-#endif  // LIBPAL_PAL_TIMER_WINDOWS_H_
+  float GetAccumulatedTime() const;
+};

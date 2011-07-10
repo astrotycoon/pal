@@ -26,22 +26,57 @@
 #include "libpal/pal_memory.h"
 
 struct palMemBlob {
+protected:
   void* buffer;
   int buffer_size; // in bytes
-
+  bool own_buffer;
+public:
   palMemBlob() {
     buffer_size = 0;
     buffer = NULL;
+    own_buffer = false;
   }
 
-  palMemBlob(void* buffer, int buffer_len) {
+  ~palMemBlob() {
+    if (buffer && own_buffer) {
+      palFree(buffer);
+    }
+    buffer = NULL;
+    buffer_size = 0;
+    own_buffer = false;
+  }
+
+  palMemBlob(void* buffer, int buffer_len, bool own_buffer) {
     this->buffer = buffer;
     this->buffer_size = buffer_len;
+    this->own_buffer = own_buffer;
   }
 
-  void* GetPtr(uint32_t offset) {
+  void* GetPtr(uint32_t offset = 0) const {
     uintptr_t addr = reinterpret_cast<uintptr_t>(buffer);
     return reinterpret_cast<void*>(addr+offset);
+  }
+
+  int GetBufferSize() const {
+    return buffer_size;
+  }
+
+  void* StealBuffer() {
+    own_buffer = false;
+    return buffer;
+  }
+
+  void TakeOwnerShip() {
+    own_buffer = true;
+  }
+
+  void Reset() {
+    if (own_buffer && buffer) {
+      palFree(buffer);
+    }
+    own_buffer = false;
+    buffer_size = 0;
+    buffer = NULL;
   }
 };
 

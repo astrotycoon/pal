@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_frame_clock.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_hash_constants.cpp"
 				>
 			</File>
@@ -414,6 +418,10 @@
 			</File>
 			<File
 				RelativePath=".\pal_file.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_frame_clock.h"
 				>
 			</File>
 			<File

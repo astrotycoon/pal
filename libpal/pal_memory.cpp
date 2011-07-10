@@ -122,7 +122,7 @@ void palMemorySetBytes(void* destination, unsigned char byte, int bytes) {
   memset(destination, byte, bytes);
 }
 
-int pal_next_power_of_two(int x) {
+int palRoundToPowerOfTwo(int x) {
 	const int start = 1;
 	int n = start;
 
@@ -131,4 +131,32 @@ int pal_next_power_of_two(int x) {
 	}
 
 	return n;
+}
+
+
+// globally override new operator
+
+void* operator new(size_t size) {
+  // we default to 16-byte alignment.
+  return palMallocAligned16(size);
+}
+
+void* operator new(size_t size, const palNewAlignment& alignment) {
+  return palMallocAligned(size, alignment.alignment);
+}
+
+void operator delete(void* p) {
+  palFreeAligned(p);
+}
+
+void* operator new[](size_t size) {
+  return palMallocAligned16(size);
+}
+
+void* operator new[](size_t size, const palNewAlignment& alignment) {
+  return palMallocAligned(size, alignment.alignment);
+}
+
+void operator delete[](void* p) {
+  palFreeAligned(p);
 }

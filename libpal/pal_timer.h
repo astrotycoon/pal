@@ -39,6 +39,11 @@
 #error no palTimer for your platform
 #endif
 
+PAL_INLINE float palTimerGetMilliseconds(palTimerTick ticks) {
+  float dt_s = palTimerGetSeconds(ticks);
+  return dt_s * 1000.0f;
+}
+
 class palTimer {
   palTimerTick start_;
   palTimerTick stop_;

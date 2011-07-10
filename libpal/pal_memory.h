@@ -24,6 +24,8 @@
 #ifndef __PAL_MEMORY_H__
 #define __PAL_MEMORY_H__
 
+#include <new>
+
 #include "libpal/pal_types.h"
 
 #ifndef NULL
@@ -50,6 +52,26 @@ void palMemoryCopyBytes(void* destination, const void* source, int bytes);
 void palMemoryZeroBytes(void* destination, int bytes);
 void palMemorySetBytes(void* destination, unsigned char byte, int bytes);
 
-int   pal_next_power_of_two(int x);
+int   palRoundToPowerOfTwo(int x);
+
+// globally override new.
+
+struct palNewAlignment {
+  uint32_t alignment;
+  palNewAlignment(uint32_t a) : alignment(a) {
+  }
+};
+
+#define palNew16 palNewAlignment(16)
+#define palNew128 palNewAlignment(128)
+#define palNew256 palNewAlignment(256)
+
+void* operator new(size_t size);
+void* operator new(size_t, const palNewAlignment& alignment);
+void operator delete(void* p);
+
+void* operator new[](size_t size);
+void* operator new[](size_t size, const palNewAlignment& alignment);
+void operator delete[](void* p);
 
 #endif

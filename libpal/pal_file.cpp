@@ -54,15 +54,15 @@ unsigned char* palCopyFileContents(const char *filename, uint64_t* size_out) {
 int palCopyFileContents(const char* filename, palMemBlob* blob) {
   palFile pf;
   bool r;
-  blob->buffer = NULL;
-  blob->buffer_size = 0;
+  *blob = palMemBlob(NULL, 0, false);
   r = pf.OpenForReading(filename);
   if (!r) {
     return -1;
   }
   uint64_t len;
-  blob->buffer = pf.CopyContents(&len);
-  blob->buffer_size = len;
+  void* buffer = pf.CopyContents(&len);
+  *blob = palMemBlob(buffer, len, false);
+  blob->TakeOwnerShip();
   pf.Close();
   return 0;
 }

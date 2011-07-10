@@ -100,13 +100,13 @@ public:
 
   /* Atomically decrements reference count */
   /* Returns true if reference count hit 0 */
-  PAL_INLINE uint32_t Unref() volatile;
+  PAL_INLINE int32_t Unref() volatile;
 
   /* Atomically increases reference count */
-  PAL_INLINE uint32_t Ref() volatile;
+  PAL_INLINE int32_t Ref() volatile;
 
   /* Atomically loads and returns the reference count */
-  PAL_INLINE uint32_t Load() const volatile;
+  PAL_INLINE int32_t Load() const volatile;
 };
 
 typedef palAtomicIntegral<int32_t> palAtomicInt32;

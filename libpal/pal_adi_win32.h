@@ -165,7 +165,7 @@ void palAdiProcessEvents() {
             palPrintf("Grabbed mouse\n");
           }
         }
-        palPrintf("mod: %x\n", running_mod);
+        //palPrintf("mod: %x\n", running_mod);
         __keyboard_callback(pkevent, __userdata);
         } break;
       case WM_KEYUP:
@@ -292,6 +292,12 @@ bool palAdiIsMouseGrabbed() {
 }
 
 void palAdiWarpMouse(uint16_t x, uint16_t y) {
+  HWND hwnd = __window;
+  POINT pt;
+  pt.x = x;
+  pt.y = y;
+  ClientToScreen(hwnd, &pt);
+  SetCursorPos(pt.x, pt.y);
 }
 
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

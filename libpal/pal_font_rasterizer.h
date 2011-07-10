@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_FONT_RASTERIZER_H_
-#define LIBPAL_PAL_FONT_RASTERIZER_H_
+#pragma once
 
 struct palFontExtents {
   int ascent;
@@ -88,5 +87,3 @@ public:
 
   
 };
-
-#endif  // LIBPAL_PAL_FONT_RASTERIZER_H_

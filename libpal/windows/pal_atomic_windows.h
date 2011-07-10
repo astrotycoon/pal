@@ -21,8 +21,9 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ATOMIC_WINDOWS_H_
-#define LIBPAL_PAL_ATOMIC_WINDOWS_H_
+#pragma once
+
+#include "libpal/pal_debug.h"
 
 #define _WINSOCKAPI_
 #include <Windows.h>
@@ -145,18 +146,19 @@ PAL_INLINE palAtomicReferenceCount::palAtomicReferenceCount() {
 }
 
 /* Atomically decrements reference count */
-/* Returns true if reference count hit 0 */
-PAL_INLINE uint32_t palAtomicReferenceCount::Unref() volatile {
-  return _InterlockedDecrement(&count_);
+PAL_INLINE int32_t palAtomicReferenceCount::Unref() volatile {
+  int32_t new_count = _InterlockedDecrement(&count_);
+  palAssert(new_count >= 0);
+  return new_count;
 }
 
 /* Atomically increases reference count */
-PAL_INLINE uint32_t palAtomicReferenceCount::Ref() volatile {
+PAL_INLINE int32_t palAtomicReferenceCount::Ref() volatile {
   return _InterlockedIncrement(&count_);
 }
 
 /* Atomically loads and returns the reference count */
-PAL_INLINE uint32_t palAtomicReferenceCount::Load() const volatile {
+PAL_INLINE int32_t palAtomicReferenceCount::Load() const volatile {
   return _InterlockedExchangeAdd((volatile long*)&count_, 0);
 }
 
@@ -168,6 +170,3 @@ PAL_INLINE void palAtomicMemoryBarrier() {
   __faststorefence();
 #endif
 }
-
-
-#endif  // LIBPAL_PAL_ATOMIC_WINDOWS_H_

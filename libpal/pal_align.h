@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,16 +21,17 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ALIGN_H_
-#define LIBPAL_PAL_ALIGN_H_
+#pragma once
 
 #include "libpal/pal_types.h"
 
 #if defined(PAL_COMPILER_MICROSOFT)
-#define PAL_ALIGN(alignment, declaration) __declspec(align(alignment)) declaration
+#define PAL_ALIGN_PRE(alignment) __declspec(align(alignment))
+#define PAL_ALIGN_POST(alignment)
 #define PAL_ALIGNOF(type) __alignof(type)
 #elif defined(PAL_COMPILER_GNU)
-#define PAL_ALIGN(alignment, declaration) declaration __attribute__ ((aligned (alignment)))
+#define PAL_ALIGN_PRE(alignment)
+#define PAL_ALIGN_POST(alignment) __attribute__ ((aligned (alignment)))
 template<class T>
 struct StructForAlignOf {
   unsigned char first_byte;
@@ -48,7 +49,3 @@ bool palIsAligned(void* ptr, uint32_t alignment);
 bool palIsAligned4(void* ptr);
 bool palIsAligned16(void* ptr);
 bool palIsAligned128(void* ptr);
-
-
-
-#endif  // LIBPAL_PAL_ALIGN_H_

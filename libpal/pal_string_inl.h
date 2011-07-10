@@ -327,7 +327,7 @@ void palString<PAL_STRING_DEFAULT_CAPACITY>::InsertLength(int position, const ch
 template<int PAL_STRING_DEFAULT_CAPACITY>
 void palString<PAL_STRING_DEFAULT_CAPACITY>::expandIfNeeded(int extraLength) {
   if (str_len_ + extraLength >= str_capacity_) {
-    resize(pal_next_power_of_two(str_len_ + extraLength + 1));
+    resize(palRoundToPowerOfTwo(str_len_ + extraLength + 1));
   }
 }
 template<int PAL_STRING_DEFAULT_CAPACITY>
