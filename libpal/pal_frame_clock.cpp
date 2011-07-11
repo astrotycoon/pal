@@ -24,9 +24,9 @@
 #include "libpal/pal_frame_clock.h"
 
 palFrameClock::palFrameClock() {
-  _frame_step = 0.016; // 16ms
-  _max_delta_time = 0.016; // 16ms
-  _max_accumulated_time = 5 * _frame_step; // 5 frames
+  _frame_step = 0.016f; // 16ms
+  _max_delta_time = 0.016f; // 16ms
+  _max_accumulated_time = 5.0f * _frame_step; // 5 frames
   _accumulated_time = 0.0f;
 }
 
