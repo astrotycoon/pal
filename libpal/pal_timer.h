@@ -25,6 +25,7 @@
 #define LIBPAL_PAL_TIMER_H__
 
 #include "libpal/pal_platform.h"
+#include "libpal/pal_types.h"
 
 // the platform headers define one datatype and two functions:
 // typedef ? palTimerTicks -  an integer representing the number of clock ticks
@@ -42,6 +43,18 @@
 PAL_INLINE float palTimerGetMilliseconds(palTimerTick ticks) {
   float dt_s = palTimerGetSeconds(ticks);
   return dt_s * 1000.0f;
+}
+
+PAL_INLINE uint32_t palTimerTickGetMilliseconds(palTimerTick ticks) {
+  palTimerTick hz = palTimerGetFrequency();
+  hz /= 1000;
+  return (uint32_t)(ticks / hz);
+}
+
+PAL_INLINE palTimerTick palTimerTickFromMilliseconds(uint32_t ms) {
+  palTimerTick hz = palTimerGetFrequency();
+  hz /= 1000;
+  return hz * ms;
 }
 
 class palTimer {

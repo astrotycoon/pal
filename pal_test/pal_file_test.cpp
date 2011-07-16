@@ -18,7 +18,7 @@ bool fileWriteTest ()
     palBreakHere();
     return false;
   }
-  int length = palStrlen(string)+1;
+  int length = palStringLength(string)+1;
   if (pf.Write(string, length) != length)
   {
     palBreakHere();
@@ -40,7 +40,7 @@ bool fileReadTest ()
     return false;
   }
 
-  int length = palStrlen(string)+1;
+  int length = palStringLength(string)+1;
   uint64_t read_length;
   char* b = (char*)pf.CopyContents(&read_length);
   if (!b)
@@ -54,7 +54,7 @@ bool fileReadTest ()
     palBreakHere();
     return false;
   }
-  if (palStrcmp(b, string))
+  if (palStringCompare(b, string))
   {
     palBreakHere();
     return false;

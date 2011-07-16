@@ -15,7 +15,11 @@
 #include "pal_web_socket_server_test.h"
 
 int main(int argc, char** argv) {
+  palStartup(windows_debugger_print_function);
   palSocketInit();
+
+  PalThreadTest();
+  return 0;
 
   palWebSocketServerTest();
   PalObjectIdTableTest();

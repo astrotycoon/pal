@@ -312,10 +312,6 @@
 						RelativePath=".\windows\pal_file_windows.cpp"
 						>
 					</File>
-					<File
-						RelativePath=".\windows\pal_thread_windows.cpp"
-						>
-					</File>
 				</Filter>
 				<Filter
 					Name="Apple"
@@ -359,6 +355,14 @@
 				</File>
 				<File
 					RelativePath=".\pal_web_socket_server.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="threading"
+				>
+				<File
+					RelativePath=".\pal_thread.cpp"
 					>
 				</File>
 			</Filter>
@@ -551,6 +555,10 @@
 					RelativePath=".\pal_thread.h"
 					>
 				</File>
+				<File
+					RelativePath=".\pal_thread_interface.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="containers"
@@ -704,10 +712,6 @@
 					>
 					<File
 						RelativePath=".\apple\pal_atomic_apple.h"
-						>
-					</File>
-					<File
-						RelativePath=".\apple\pal_thread_apple.h"
 						>
 					</File>
 				</Filter>

@@ -153,7 +153,7 @@ bool palHashMapTest3() {
   palSeedRandom(3);
   for (int i = 0; i < data_set_size; i++) {
     keys[i] = palGenerateRandom();
-    keys_as_strings[i] = palAsprintf("%d", keys[i]);
+    keys_as_strings[i] = palStringAllocatingPrintf("%d", keys[i]);
     values[i] = palGenerateRandom();
   }
 

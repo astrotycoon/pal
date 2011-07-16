@@ -105,6 +105,7 @@
 #define PAL_COMPILER_MICROSOFT
 #define PAL_INLINE __inline
 #define PAL_NO_INLINE __declspec(noinline)
+#define PAL_TLS __declspec(thread)
 #endif
 
 #if defined(PAL_COMPILER_MICROSOFT)

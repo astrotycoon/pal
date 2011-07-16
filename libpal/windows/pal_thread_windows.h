@@ -21,39 +21,30 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_THREAD_WINDOWS_H_
-#define LIBPAL_PAL_THREAD_WINDOWS_H_
+#pragma once
 
 #if defined(PAL_PLATFORM_WINDOWS)
 /* Interesting article: http://locklessinc.com/articles/pthreads_on_windows/ */
 
-#define _WINSOCKAPI_
 #include <windows.h>
 #include <process.h>
 
-const int kPalThreadPriorityLowest = -2;
-const int kPalThreadPriorityBelowNormal = -1;
-const int kPalThreadPriorityNormal = 0;
-const int kPalThreadPriorityAboveNormal = 1;
-const int kPalThreadPriorityHighest = 2;
+struct palThreadPlatformData {
+  uintptr_t thread;
+};
 
-typedef CRITICAL_SECTION palMutex;
-void palMutexLock(palMutex* m);
-bool palMutexTryLock(palMutex* m);
-void palMutexUnlock(palMutex* m);
-void palMutexInit(palMutex* m);
-void palMutexDestroy(palMutex* m);
+struct palMutexPlatformData {
+  CRITICAL_SECTION mutex;
+};
 
-typedef uintptr_t palThread;
+struct palSemaphorePlatformData {
+  HANDLE semaphore;
+};
 
-bool palThreadCreate(uint32_t stack_size, void (*thread_main)(uintptr_t), uintptr_t arg, uint32_t priority, const char* thread_name, palThread* thread);
-void palThreadExit();
-void palThreadSetPriority(palThread thread, uint32_t priority);
-uint32_t palThreadGetPriority(palThread thread);
-void palThreadYield ();
-void palThreadJoin(palThread thread);
-palThread palThreadGetID();
+struct palReaderWriterLockPlatformData {
+  PSRWLOCK rwlock;
+};
 
-#endif // defined(PAL_PLATFORM_WINDOWS)
-
-#endif  // LIBPAL_PAL_THREAD_WINDOWS_H_
+#else
+#error Included windows thread header on non windows platform
+#endif

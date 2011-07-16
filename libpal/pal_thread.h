@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,21 +21,186 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_THREAD_H_
-#define LIBPAL_PAL_THREAD_H_
+
+#pragma once
 
 #include "libpal/pal_platform.h"
 #include "libpal/pal_types.h"
-/* 
- * palMutex - a recursive mutex
- * palThread - standard thread abstraction
- */
+#include "libpal/pal_timer.h"
+#include "libpal/pal_delegate.h"
+#include "libpal/pal_string.h"
+#include "libpal/pal_errorcode.h"
+
 #if defined(PAL_PLATFORM_WINDOWS)
 #include "libpal/windows/pal_thread_windows.h"
-#elif defined(PAL_PLATFORM_APPLE)
-#include "libpal/apple/pal_thread_apple.h"
 #else
-#warning no palThread implementation for your platform, fill me in!
+#error Need to implement palThread classes for this platform
 #endif
 
-#endif  // LIBPAL_PAL_THREAD_H_
+#define PAL_THREAD_ERROR_GENERIC palMakeErrorCode(0xf00d, 0)
+#define PAL_THREAD_ERROR_TRY_AGAIN palMakeErrorCode(0xf00d, 1)
+#define PAL_THREAD_ERROR_COULD_NOT_CREATE palMakeErrorCode(0xf00d, 2)
+
+enum palThreadRecursionPolicy {
+  kPalThreadRecursionPolicyNotAllowed,
+  kPalThreadRecursionPolicyAllowed,
+  NUM_palThreadRecursionPolicies
+};
+
+#define palThreadCPUMaskAll 0xffffffff
+
+enum palThreadPriority {
+  kPalThreadPriorityHighest,
+  kPalThreadPriorityHigh,
+  kPalThreadPriorityNormal,
+  kPalThreadPriorityLow,
+  kPalThreadPriorityLowest,
+  NUM_palThreadPriorities,
+};
+
+typedef palDelegate<void (uintptr_t)> palThreadStart;
+
+struct palThreadDescription {
+  palString<> name;
+  palThreadStart start_method;
+  uintptr_t start_value;
+  palThreadPriority priority;
+  uint32_t stack_size;
+  uint32_t cpu_mask;
+  palThreadDescription() : cpu_mask(palThreadCPUMaskAll), stack_size(128*1024), priority(kPalThreadPriorityNormal), name("Unnamed Thread") {
+  }
+};
+
+class palThread {
+  palThreadDescription _desc;
+  palThreadPlatformData _pdata;
+  PAL_DISALLOW_COPY_AND_ASSIGN(palThread);
+public:
+  static palThread* GetCurrentThread();
+  static void Sleep(palTimerTick ticks);
+  static void SpinWait(int iterations);
+  static void SpinYield();
+  static void Exit(int64_t thread_exit_value);
+
+  palThread(const palThreadDescription& desc);
+
+  int Start(uintptr_t param);
+  int Join(int64_t* thread_exit_value);
+  const char* GetName() const;
+  const palThreadDescription& GetDescription() const;
+};
+
+struct palMutexDescription {
+  palString<> name;
+  bool initial_ownership;
+  palThreadRecursionPolicy recursion_policy;
+
+  palMutexDescription() : initial_ownership(false), name("Unnamed Mutex"), recursion_policy(kPalThreadRecursionPolicyNotAllowed) {
+  }
+};
+
+class palMutex {
+  palMutexDescription _desc;
+  palMutexPlatformData _pdata;
+  PAL_DISALLOW_COPY_AND_ASSIGN(palMutex);
+public:
+  palMutex(const palMutexDescription& desc);
+
+  int Create();
+  int Destroy();
+
+  int Acquire();
+  int Acquire(palTimerTick timeout);
+  int TryAcquire();
+
+  int Release();
+};
+
+struct palSemaphoreDescription {
+  palString<> name;
+  uint32_t maximum;
+  uint32_t initial_reservation;
+
+  palSemaphoreDescription() : initial_reservation(0), maximum(1), name("Unnamed Semaphore") {
+  }
+};
+
+class palSemaphore {
+  palSemaphoreDescription _desc;
+  palSemaphorePlatformData _pdata;
+  PAL_DISALLOW_COPY_AND_ASSIGN(palSemaphore);
+public:
+  palSemaphore(const palSemaphoreDescription& desc);
+
+  int Create();
+  int Destroy();
+
+  int Acquire();
+  int Acquire(palTimerTick timeout);
+  int TryAcquire();
+
+  int Release();
+};
+
+struct palReaderWriterLockDescription {
+  palString<> name;
+  palThreadRecursionPolicy recursion_policy;
+};
+
+class palReaderWriterLock {
+  palReaderWriterLockDescription _desc;
+  palReaderWriterLockPlatformData _pdata;
+  PAL_DISALLOW_COPY_AND_ASSIGN(palReaderWriterLock);
+public:
+  palReaderWriterLock(const palReaderWriterLockDescription& desc);
+
+  int Create();
+  int Destroy();
+
+  int AcquireReader();
+  int AcquireReader(palTimerTick timeout);
+  int TryAcquireReader();
+  int ReleaseReader();
+
+  int AcquireWriter();
+  int AcquireWriter(palTimerTick timeout);
+  int TryAcquireWriter();
+  int ReleaseWriter();
+};
+
+class palScopedMutex {
+  palMutex* _mutex;
+  PAL_DISALLOW_COPY_AND_ASSIGN(palScopedMutex);
+public:
+  palScopedMutex(palMutex* mutex) : _mutex(mutex) {
+    _mutex->Acquire();
+  }
+  ~palScopedMutex() {
+    _mutex->Release();
+  }
+};
+
+class palScopedReaderWriterLockReader {
+  palReaderWriterLock* _rw;
+public:
+  palScopedReaderWriterLockReader(class palReaderWriterLock* rw) : _rw(rw) {
+    _rw->AcquireReader();
+  }
+  ~palScopedReaderWriterLockReader() {
+    _rw->ReleaseReader();
+  }
+};
+
+class palScopedReaderWriterLockWriter {
+  palReaderWriterLock* _rw;
+public:
+  palScopedReaderWriterLockWriter(palReaderWriterLock* rw) : _rw(rw) {
+    _rw->AcquireWriter();
+  }
+
+  ~palScopedReaderWriterLockWriter() {
+    _rw->ReleaseWriter();
+  }
+};
+
+int palThreadInit();
