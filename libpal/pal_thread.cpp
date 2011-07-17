@@ -204,43 +204,43 @@ palReaderWriterLock::palReaderWriterLock(const palReaderWriterLockDescription& d
 }
 
 int palReaderWriterLock::Create() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::Destroy() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::AcquireReader() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::AcquireReader(palTimerTick timeout) {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::TryAcquireReader() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::ReleaseReader() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::AcquireWriter() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::AcquireWriter(palTimerTick timeout) {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::TryAcquireWriter() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palReaderWriterLock::ReleaseWriter() {
-  return -1;
+  return PAL_THREAD_ERROR_GENERIC;
 }
 
 int palThreadInit() {

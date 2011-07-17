@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "libpal/pal_platform.h"
 #include "libpal/pal_debug.h"
 
 #define _WINSOCKAPI_
@@ -129,6 +130,110 @@ public:
   }
 };
 
+template <> 
+struct palAtomicIntegral<int64_t> {
+private:
+  volatile long long value_;
+  // disable copying
+  palAtomicIntegral(const palAtomicIntegral&);
+  palAtomicIntegral& operator=(const palAtomicIntegral&);
+public:
+  palAtomicIntegral() {
+    InterlockedExchange64(&value_, 0);
+  }
+  palAtomicIntegral(int64_t initial_value) {
+    InterlockedExchange64(&value_, initial_value);
+  }
+
+  /* Atomically stores new_value into *this */
+  void Store(int64_t new_value)  volatile {
+    InterlockedExchange64(&value_, new_value);
+  }
+
+  /* Atomically fetches the value stored in *this and returns it */
+  int64_t Load() const volatile {
+    return InterlockedExchangeAdd64((volatile long long*)&value_, 0);
+  }
+
+  /* Atomically store a new value and return old value */
+  int64_t Exchange(int64_t new_value) volatile {
+    return InterlockedExchange64(&value_, new_value);
+  }
+
+  /* Atomically compare the value with expected, and store new_value if they are equal */
+  /* Returns true if value was expected, false otherwise */
+  /* Updates expected with value read */
+  bool CompareExchange(int64_t& expected, int64_t new_value) volatile {
+    int64_t actual;
+    actual = InterlockedCompareExchange64(&value_, new_value, expected);
+    bool success = actual == expected;
+    expected = actual;
+    return success;
+  }
+
+  /* Atomically fetches the value stored in *this and returns it */
+  operator int64_t() const volatile {
+    return InterlockedExchangeAdd64((volatile long long*)&value_, 0);
+  }
+
+  /* Atomically fetch the value, perform the operation and return the original value */
+  int64_t FetchAdd(int64_t i) volatile {
+    return InterlockedExchangeAdd64(&value_, i);
+  }
+
+  int64_t FetchSub(int64_t i) volatile {
+    return InterlockedExchangeAdd64(&value_, -i);
+  }
+
+  int64_t FetchAnd(int64_t i) volatile {
+    return InterlockedAnd64(&value_, i);
+  }
+
+  int64_t FetchOr(int64_t i) volatile {
+    return InterlockedOr64(&value_, i);
+  }
+
+  int64_t FetchXor(int64_t i) volatile {
+    return InterlockedXor64(&value_, i);
+  }
+
+  /* Atomically perform pre and post increment and decrement */
+  int64_t operator++() volatile {
+    return FetchAdd(1) + 1;
+  }
+
+  int64_t operator++(int) volatile {
+    return FetchAdd(1);
+  }
+
+  int64_t operator--() volatile {
+    return FetchSub(1) - 1;
+  }
+
+  int64_t operator--(int) volatile {
+    return FetchSub(1);
+  }
+
+  /* Atomically perform the operations, returning the resulting value */
+  int64_t operator+=(int64_t i) volatile {
+    return FetchAdd(i) + i;
+  }
+
+  int64_t operator-=(int64_t i) volatile {
+    return FetchSub(i) - i;
+  }
+
+  int64_t operator&=(int64_t i) volatile {
+    return FetchAnd(i) & i;
+  }
+  int64_t operator|=(int64_t i) volatile {
+    return FetchOr(i) | i;
+  }
+  int64_t operator^=(int64_t i) volatile {
+    return FetchXor(i) ^ i;
+  }
+};
+
 PAL_INLINE palAtomicFlag::palAtomicFlag() {
   _InterlockedExchange(&flag_, 0);
 }
@@ -160,6 +265,69 @@ PAL_INLINE int32_t palAtomicReferenceCount::Ref() volatile {
 /* Atomically loads and returns the reference count */
 PAL_INLINE int32_t palAtomicReferenceCount::Load() const volatile {
   return _InterlockedExchangeAdd((volatile long*)&count_, 0);
+}
+
+PAL_INLINE palAtomicAddress::palAtomicAddress() {
+  InterlockedExchangePointer(&value_, 0);
+}
+
+PAL_INLINE palAtomicAddress::palAtomicAddress(void* ptr) {
+  InterlockedExchangePointer(&value_, ptr);
+}
+
+/* Atomically stores new_value into *this */
+PAL_INLINE void palAtomicAddress::Store(void* new_value)  volatile {
+  InterlockedExchangePointer(&value_, new_value);
+}
+
+/* Atomically fetches the value stored in *this and returns it */
+PAL_INLINE void* palAtomicAddress::Load() const volatile {
+#if defined(PAL_ARCH_32BIT)
+  return reinterpret_cast<void*>(_InterlockedExchangeAdd((volatile long*)&value_, 0));
+#else
+  return reinterpret_cast<void*>(InterlockedExchangeAdd64((volatile long long*)&value_, 0));
+#endif
+}
+
+/* Atomically store a new value and return old value */
+PAL_INLINE void* palAtomicAddress::Exchange(void* new_value) volatile {
+  return InterlockedExchangePointer(&value_, new_value);
+}
+
+/* Atomically compare the value with expected, and store new_value if they are equal */
+/* Returns true if value was expected, false otherwise */
+/* Updates expected with value read */
+PAL_INLINE bool palAtomicAddress::CompareExchange(void*& expected, void* new_value) volatile {
+  void* actual;
+  actual = InterlockedCompareExchangePointer(&value_, new_value, expected);
+  bool success = actual == expected;
+  expected = actual;
+  return success;
+}
+
+/* Atomically fetches the value stored in *this and returns it */
+PAL_INLINE palAtomicAddress::operator void*() const volatile {
+#if defined(PAL_ARCH_32BIT)
+  return reinterpret_cast<void*>(_InterlockedExchangeAdd((volatile long*)&value_, 0));
+#else
+  return reinterpret_cast<void*>(InterlockedExchangeAdd64((volatile long long*)&value_, 0));
+#endif
+}
+
+PAL_INLINE void* palAtomicAddress::FetchAdd(ptrdiff_t i) volatile {
+#if defined(PAL_ARCH_32BIT)
+  return reinterpret_cast<void*>(_InterlockedExchangeAdd((volatile long*)&value_, i));
+#else
+  return reinterpret_cast<void*>(InterlockedExchangeAdd64((volatile long long*)&value_, i));
+#endif
+}
+
+PAL_INLINE void* palAtomicAddress::FetchSub(ptrdiff_t i) volatile {
+#if defined(PAL_ARCH_32BIT)
+  return reinterpret_cast<void*>(_InterlockedExchangeAdd((volatile long*)&value_, -i));
+#else
+  return reinterpret_cast<void*>(InterlockedExchangeAdd64((volatile long long*)&value_, -i));
+#endif
 }
 
 PAL_INLINE void palAtomicMemoryBarrier() {

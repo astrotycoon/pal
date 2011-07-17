@@ -59,6 +59,11 @@ public:
   T FetchOr(T i) volatile;
   T FetchXor(T i) volatile;
 
+  T operator=(T iv) volatile {
+    Store(iv);
+    return iv;
+  }
+
   /* Atomically perform pre and post increment and decrement */
   T operator++() volatile;
   T operator++(int) volatile;
@@ -112,11 +117,48 @@ public:
 typedef palAtomicIntegral<int32_t> palAtomicInt32;
 typedef palAtomicIntegral<int64_t> palAtomicInt64;
 
-#if defined(PAL_ARCH_32BIT)
-typedef palAtomicIntegral<int32_t> palAtomicAddress;
-#else
-typedef palAtomicIntegral<int64_t> palAtomicAddress;
-#endif
+struct palAtomicAddress {
+private:
+  void* value_;
+  // disable copying
+  palAtomicAddress(const palAtomicAddress&);
+  palAtomicAddress& operator=(const palAtomicAddress&);
+public:
+  palAtomicAddress();
+  palAtomicAddress(void* ptr);
+
+  /* Atomically stores new_value into *this */
+  void Store(void* new_value)  volatile;
+  /* Atomically fetches the value stored in *this and returns it */
+  void* Load() const volatile;
+
+  /* Atomically store a new value and return old value */
+  void* Exchange(void* new_value) volatile;
+
+  /* Atomically compare the value with expected, and store new_value if they are equal */
+  /* Returns true if value was expected, false otherwise */
+  /* Updates expected with value read */
+  bool CompareExchange(void*& expected, void* new_value) volatile;
+
+  /* Atomically fetches the value stored in *this and returns it */
+  operator void*() const volatile;
+
+  void* FetchAdd(ptrdiff_t i) volatile;
+  void* FetchSub(ptrdiff_t i) volatile;
+
+  void* operator=(void* iv) volatile {
+    Store(iv);
+    return iv;
+  }
+
+  void* operator+=(ptrdiff_t v) volatile {
+    return FetchAdd(v);
+  }
+
+  void* operator-=(ptrdiff_t v) volatile {
+    return FetchSub(v);
+  }
+};
 
 PAL_INLINE void palAtomicMemoryBarrier();
 
