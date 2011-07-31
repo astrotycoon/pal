@@ -86,8 +86,18 @@ void* palJSONToken::GetAsPointer() const {
   return NULL;
 }
 
+void palJSONToken::GetAsString(palDynamicString* str) const {
+  str->Set("");
+  str->Append(JSON_str+value_first_index+1, value_length-2);
+}
+
+void palJSONToken::GetName(palDynamicString* name) const {
+  name->Set("");
+  name->Append(JSON_str+name_first_index+1, name_length-2);
+}
+
 void palJSONToken::DebugPrintf() const {
-  palString<> debug_str;
+  palDynamicString debug_str;
 
   switch (type) {
   case kJSONTokenTypeValueFalse:
@@ -104,7 +114,7 @@ void palJSONToken::DebugPrintf() const {
   case kJSONTokenTypeMap:
     break;
   case kJSONTokenTypeMapEntry:
-    debug_str.AppendLength(JSON_str+name_first_index, name_length);
+    debug_str.Append(JSON_str+name_first_index, name_length);
     if (GetTypeOfValue() == kJSONTokenTypeValueFalse) {
       palPrintf("%s : false", debug_str.C());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueTrue) {
@@ -115,8 +125,8 @@ void palJSONToken::DebugPrintf() const {
       palPrintf("%s : %f", debug_str.C(), GetAsFloat());
     } else if (GetTypeOfValue() == kJSONTokenTypeValueString) {
       palPrintf("%s : ", debug_str.C());
-      debug_str.Clear();
-      debug_str.AppendLength(JSON_str+value_first_index, value_length);
+      debug_str.Reset();
+      debug_str.Append(JSON_str+value_first_index, value_length);
       palPrintf("%s", debug_str.C());
     } else {
       palPrintf("%s : \n", debug_str.C());
@@ -126,7 +136,7 @@ void palJSONToken::DebugPrintf() const {
     palPrintf("%f", GetAsFloat());
     break;
   case kJSONTokenTypeValueString:
-    debug_str.AppendLength(JSON_str+value_first_index, value_length);
+    debug_str.Append(JSON_str+value_first_index, value_length);
     palPrintf("%s", debug_str.C());
     break;
   case kJSONTokenTypeParseError:
@@ -514,7 +524,7 @@ void palJSONReader::Init(const char* JSON_str) {
 }
 
 struct JsonQueryNode {
-  palString<> name;
+  palDynamicString name;
   // or
   int array_index;
   JsonQueryNode() {
@@ -553,20 +563,20 @@ static void BuildQueryNodes(const char* expr, palArray<JsonQueryNode>* nodes) {
 
   if (first_dot > 0) {
     JsonQueryNode& node = nodes->AddTail();
-    node.name.AppendLength(expr, first_dot);
+    node.name.Append(expr, first_dot);
     BuildQueryNodes(&expr[first_dot], nodes);
     return;
   }
 
   if (first_lsquare > 0) {
     JsonQueryNode& node = nodes->AddTail();
-    node.name.AppendLength(expr, first_lsquare);
+    node.name.Append(expr, first_lsquare);
     BuildQueryNodes(&expr[first_lsquare], nodes);
     return;
   }
 
   JsonQueryNode& node = nodes->AddTail();
-  node.name.AppendLength(expr, palStringLength(expr));
+  node.name.Append(expr, palStringLength(expr));
 
   return;
 }

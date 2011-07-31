@@ -24,10 +24,13 @@
 #include "libpal/libpal.h"
 
 int palStartup(palConsolePrintFunction print_func) {
-  palThreadInit();
   if (print_func != NULL) {
     palConsoleSetPrintFunction(print_func);
   }
+  palAtomInitialize();
+  palThreadInit();
+  palSocketInit();
+
   palPrintf("palStartup\n");
   palPrintf("--------------\n");
 

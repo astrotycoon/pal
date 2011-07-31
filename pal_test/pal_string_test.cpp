@@ -7,9 +7,10 @@
 bool PalStringTest ()
 {
   {
-    palString<28> s28_2;
-    palString<28> s28;
-    palString<> s48;
+    palDynamicString s28_2;
+    s28_2;
+    palDynamicString s28;
+    palDynamicString s48;
 
     s28_2.Append("Foo");
     s28.Append("Foo");
@@ -51,15 +52,15 @@ bool PalStringTest ()
       return false;
     }
   }
-  palString<64> empty64;
-
-  if (empty64.capacity() != 64)
+  palDynamicString empty64;
+  empty64.SetCapacity(64);
+  if (empty64.GetCapacity() != 64)
   {
     palBreakHere();
     return false;
   }
 
-  if (empty64.Length() != 0)
+  if (empty64.GetLength() != 0)
   {
     palBreakHere();
     return false;
@@ -71,8 +72,8 @@ bool PalStringTest ()
     return false;
   }
 
-  palString<> str("123456789");
-  if (str.Length() != 9)
+  palDynamicString str("123456789");
+  if (str.GetLength() != 9)
   {
     palBreakHere();
     return false;
@@ -84,8 +85,8 @@ bool PalStringTest ()
     return false;
   }
 
-  palString<> copy_str(str);
-  if (str.Length() != copy_str.Length())
+  palDynamicString copy_str(str);
+  if (str.GetLength() != copy_str.GetLength())
   {
     palBreakHere();
     return false;
@@ -97,22 +98,16 @@ bool PalStringTest ()
     return false;
   }
 
-  copy_str.Clear();
-  if (copy_str.Length() != 0)
+  copy_str.Reset();
+  if (copy_str.GetLength() != 0)
   {
     palBreakHere();
     return false;
   }
 
-  if (copy_str.Equals("") == false)
-  {
-    palBreakHere();
-    return false;
-  }
+  str.SetLength(4);
 
-  str.Truncate(4);
-
-  if (str.Length() != 4)
+  if (str.GetLength() != 4)
   {
     palBreakHere();
     return false;
@@ -124,7 +119,7 @@ bool PalStringTest ()
     return false;
   }
 
-  palString<> printf_str;
+  palDynamicString printf_str;
 
   printf_str.AppendPrintf("%s - %d", "foo", 37);
 
@@ -134,20 +129,20 @@ bool PalStringTest ()
     return false;
   }
 
-  if (printf_str.Length() != 8)
+  if (printf_str.GetLength() != 8)
   {
     palBreakHere();
     return false;
   }
 
-  printf_str.PrependChar(' ');
+  printf_str.Prepend(' ');
   if (printf_str.Equals(" foo - 37") == false)
   {
     palBreakHere();
     return false;
   }
 
-  if (printf_str.Length() != 9)
+  if (printf_str.GetLength() != 9)
   {
     palBreakHere();
     return false;
@@ -160,7 +155,7 @@ bool PalStringTest ()
     return false;
   }
 
-  if (printf_str.Length() != 12)
+  if (printf_str.GetLength() != 12)
   {
     palBreakHere();
     return false;
@@ -174,13 +169,13 @@ bool PalStringTest ()
     return false;
   }
 
-  if (printf_str.Length() != 20)
+  if (printf_str.GetLength() != 20)
   {
     palBreakHere();
     return false;
   }
 
-  printf_str.Remove(3, 8);
+  printf_str.Cut(3, 8);
 
   if (printf_str.Equals("zz  foo - 37") == false)
   {
@@ -188,7 +183,7 @@ bool PalStringTest ()
     return false;
   }
 
-  if (printf_str.Length() != 12)
+  if (printf_str.GetLength() != 12)
   {
     palBreakHere();
     return false;

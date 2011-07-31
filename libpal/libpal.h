@@ -71,5 +71,6 @@
 #include "libpal/pal_adi.h"
 #include "libpal/pal_mem_blob.h"
 #include "libpal/pal_frame_clock.h"
+#include "libpal/pal_atom.h"
 
 int palStartup(palConsolePrintFunction print_func);

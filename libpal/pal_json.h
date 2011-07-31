@@ -66,7 +66,9 @@ struct palJSONToken {
   int GetAsInt() const;
   bool GetAsBool() const;
   void* GetAsPointer() const;
+  void GetAsString(palDynamicString* str) const;
 
+  void GetName(palDynamicString* name) const;
 
   void DebugPrintf() const;
 };

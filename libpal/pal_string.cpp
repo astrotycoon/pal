@@ -130,7 +130,7 @@ int pal_printf_upper_bound(const char* format, ...) {
 char* palStringAllocatingPrintfInternal(const char* format, va_list args) {
   int len = internal_pal_printf_upper_bound(format, args)+1;
   palAssert(len >= 0);
-  char* str = static_cast<char*>(malloc(len+1));
+  char* str = static_cast<char*>(palMalloc(len+1));
   int n = palStringPrintfInternal(str, len, format, args);
   return str;
 }
@@ -220,4 +220,411 @@ bool palStringFindString(const char* str, const char* findstr, int* start_out, i
 int palStringToInteger(const char* str) {
   int r = atoi(str);
   return r;
+}
+
+float palStringToFloat(const char* str) {
+  float f = (float)atof(str);
+  return f;
+}
+
+bool operator==(const palDynamicString& A, const palDynamicString& B) {
+  return A.Equals(B);
+}
+
+bool operator==(const palDynamicString& A, const char* B) {
+  return A.Equals(B);
+}
+
+bool operator==(const char* A, const palDynamicString& B) {
+  return B.Equals(A);
+}
+
+bool operator!=(const palDynamicString& A, const palDynamicString& B) {
+  return A.Equals(B) == false;
+}
+bool operator!=(const palDynamicString& A, const char* B) {
+  return A.Equals(B) == false;
+}
+
+bool operator!=(const char* B, const palDynamicString& A) {
+  return A.Equals(B) == false;
+}
+
+static const int kPalDynamicStringMinimumCapacity = 16;
+static const int kPalDynamicStringGrowthFactor = 2;
+static int pal_dynamic_string_memory_used = 0;
+
+palDynamicString::palDynamicString() : _buffer(NULL), _capacity(0), _length(0) {
+}
+
+palDynamicString::palDynamicString(const char* init_string) : _buffer(NULL), _capacity(0), _length(0) {
+  Set(init_string);
+}
+
+palDynamicString::palDynamicString(const palDynamicString& other) : _buffer(NULL), _capacity(0), _length(0){
+  Set(other.C());
+}
+
+void palDynamicString::SetCapacity(int capacity) {
+  if (capacity < _length) {
+    // we are shrinking
+    SetLength(capacity);
+  }
+  Resize(capacity);
+}
+
+void palDynamicString::SetLength(int new_length) {
+  if (new_length >= _capacity) {
+    // can't grow longer than capacity
+    return;
+  }
+  if (new_length > _length) {
+    // string is being grown
+    // fill with spaces
+    palMemorySetBytes(&_buffer[_length], ' ', new_length - _length);
+  }
+  _buffer[new_length] = '\0';
+  _length = new_length;
+}
+
+int palDynamicString::GetCapacity() const {
+  return _capacity;
+}
+
+int palDynamicString::GetLength() const {
+  return _length;
+}
+
+void palDynamicString::Reset() {
+  Resize(0);
+  _length = 0;
+}
+
+const char* palDynamicString::C() const {
+  return _buffer;
+}
+
+char* palDynamicString::C() {
+  return _buffer;
+}
+
+bool palDynamicString::Equals(const char* str) const {
+  return Compare(str) == 0;
+}
+
+bool palDynamicString::Equals(const palDynamicString& str) const {
+  return Compare(str) == 0;
+}
+
+int palDynamicString::Compare(const char* str) const {
+  if (_buffer == NULL) {
+    return 1;
+  }
+  return palStringCompare(_buffer, str);
+}
+
+int palDynamicString::Compare(const palDynamicString& str) const {
+  if (_buffer == NULL) {
+    return 1;
+  }
+  return palStringCompare(_buffer, str.C());
+}
+
+void palDynamicString::Set(const char ch) {
+  SetLength(0);
+  ExpandCapacityIfNeeded(1);
+  _buffer[0] = ch;
+  _buffer[1] = '\0';
+  _length = 1;
+}
+
+void palDynamicString::Set(const char* str) {
+  SetLength(0);
+  int length = palStringLength(str);
+  ExpandCapacityIfNeeded(length);
+  palStringCopy(_buffer, str); 
+  _length = length;
+}
+
+void palDynamicString::Set(const char* str, int length) {
+  SetLength(0);
+  ExpandCapacityIfNeeded(length);
+  palMemoryCopyBytes(_buffer, str, length);
+  _buffer[length] = '\0';
+  _length = length;
+}
+
+void palDynamicString::Set(const palDynamicString& str) {
+  SetLength(0);
+  int length = str.GetLength();
+  ExpandCapacityIfNeeded(length);
+  palStringCopy(_buffer, str.C());
+  _length = length;
+}
+
+void palDynamicString::Set(const palDynamicString& str, int start, int count) {
+  SetLength(0);
+  int str_length = str.GetLength();
+  if (start < 0 || start >= str_length) {
+    return;
+  }
+  Set(str.C()+start, count);
+}
+
+void palDynamicString::SetPrintf(const char* format, ...) {
+  SetLength(0);
+  va_list args;
+  va_start(args, format);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
+  Set(temp_string);
+  palFree(temp_string);
+  va_end(args);
+}
+
+void palDynamicString::Append(const char ch) {
+  Insert(-1, ch);
+}
+
+void palDynamicString::Append(const char* str) {
+  Insert(-1, str);
+}
+
+void palDynamicString::Append(const char* str, int length) {
+  Insert(-1, str, length);
+}
+
+void palDynamicString::Append(const palDynamicString& str) {
+  Insert(-1, str);
+}
+
+void palDynamicString::Append(const palDynamicString& str, int start, int count) {
+  Insert(-1, str, start, count);
+}
+
+void palDynamicString::AppendPrintf(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
+  Insert(-1, temp_string);
+  palFree(temp_string);
+  va_end(args);
+}
+
+void palDynamicString::Prepend(const char ch) {
+  Insert(0, ch);
+}
+
+void palDynamicString::Prepend(const char* str) {
+  Insert(0, str);
+}
+
+void palDynamicString::Prepend(const char* str, int length) {
+  Insert(0, str, length);
+}
+
+void palDynamicString::Prepend(const palDynamicString& str) {
+  Insert(0, str);
+}
+
+void palDynamicString::Prepend(const palDynamicString& str, int start, int count) {
+  Insert(0, str, start, count);
+}
+
+void palDynamicString::PrependPrintf(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
+  Insert(0, temp_string);
+  palFree(temp_string);
+  va_end(args);
+}
+
+
+void palDynamicString::Insert(int start, const char ch) {
+ ExpandCapacityIfNeeded(1);
+
+  if (start < 0)
+    start = _length;
+
+  if (start > _length)
+    return;
+
+  /* create gap for new string by
+   * moving the tail (read: string->str_len_ - position) of the original string str_len_ bytes forward
+   */
+  if (start < _length) {
+    palMemoryCopyBytes(_buffer + start + 1, _buffer + start, _length - start);
+  }
+
+  _buffer[start] = ch;
+  _length += 1;
+  _buffer[_length] = '\0';
+}
+
+void palDynamicString::Insert(int start, const char* str) {
+  Insert(start, str, palStringLength(str));
+}
+
+void palDynamicString::Insert(int start, const char* str, int count) {
+  // all the real work gets forwarded to this function
+  if (count == 0) {
+    return;
+  }
+
+  if (start < 0) {
+    start = _length;
+  }
+
+  // make sure position is valid
+  if (start > _length)
+    return;
+
+  ExpandCapacityIfNeeded(count);
+
+  /* create gap for new string by
+   * moving the tail (read: str_len_ - position) of the original string str_len_ bytes forward
+   */
+  if (start < _length) {
+    palMemoryCopyBytes(_buffer + start + count, _buffer + start, _length - start);
+  }
+
+  /* insert new string */
+  if (count == 1) {
+    // single character
+    _buffer[start] = *str;
+  } else {
+    // > 1 character
+    palMemoryCopyBytes(_buffer + start, str, count);
+  }
+
+  _length += count;
+  _buffer[_length] = 0;
+}
+
+void palDynamicString::Insert(int start, const palDynamicString& str) {
+  Insert(start, str.C(), str.GetLength());
+}
+
+void palDynamicString::Insert(int start, const palDynamicString& str, int str_start, int count) {
+  Insert(start, str.C()+str_start, count);
+}
+
+void palDynamicString::InsertPrintf(int start, const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  char* temp_string = palStringAllocatingPrintfInternal(format, args);
+  Insert(start, temp_string);
+  palFree(temp_string);
+  va_end(args);
+}
+
+void palDynamicString::Cut(int start, int count) {
+  if (start < 0 || start >= _length) {
+    return;
+  }
+  if (start+count > _length) {
+    int allowed = start+count - _length;
+    count = allowed;
+  }
+  palMemoryCopyBytes(_buffer+start, _buffer+start+count, _length-count);
+  _length -= count;
+}
+
+void palDynamicString::Cut(int start, int count, char* target_str) {
+  Copy(start, count, target_str);
+  Cut(start, count);
+}
+
+void palDynamicString::Cut(int start, int count, palDynamicString* target_str) {
+  target_str->SetLength(0);
+  if (target_str->GetCapacity() > count) {
+    target_str->ExpandCapacityIfNeeded(count);
+  }
+  Copy(start, count, target_str->C());
+  Cut(start, count);
+}
+
+void palDynamicString::Copy(int start, int count, char* target_str) {
+  if (start < 0 || start >= _length) {
+    target_str[0] = '\0';
+    return;
+  }
+  if (start+count > _length) {
+    int allowed = start+count - _length;
+    count = allowed;
+  }
+  palMemoryCopyBytes(target_str, _buffer+start, count);
+  target_str[count+1] = '\0';
+}
+
+void palDynamicString::Copy(int start, int count, palDynamicString* target_str) {
+  target_str->SetLength(0);
+  if (target_str->GetCapacity() > count) {
+    target_str->ExpandCapacityIfNeeded(count);
+  }
+  return Copy(start, count, target_str->C());
+}
+
+palDynamicString& palDynamicString::operator=(const palDynamicString& str) {
+  if (this != &str) {
+    Set(str);
+  }
+  return *this;
+}
+
+palDynamicString& palDynamicString::operator=(const char* str) {
+  if (_buffer != str) {
+    Set(str);
+  }
+  return *this;
+}
+
+void palDynamicString::ExpandCapacityIfNeeded(int added_chars) {
+  if (_length+added_chars >= _capacity) {
+    int size = palRoundToPowerOfTwo(_length+added_chars+1);
+    if (size < kPalDynamicStringMinimumCapacity) {
+      size = kPalDynamicStringMinimumCapacity;
+    }
+    Resize(size);
+  }
+}
+
+void palDynamicString::Resize(int new_capacity) {
+  if (new_capacity == 0) {
+    // deleting the string
+    pal_dynamic_string_memory_used -= _capacity;
+    palFree(_buffer);
+    _buffer = NULL;
+    _capacity = 0;
+  } else if (new_capacity > _capacity) {
+    // growing the string
+    char* new_buffer = (char*)palMalloc(new_capacity);
+
+    // track memory used by dynamic strings
+    pal_dynamic_string_memory_used += new_capacity;
+    pal_dynamic_string_memory_used -= _capacity;
+
+    if (_buffer != NULL) {
+      palStringCopy(new_buffer, _buffer);
+    } else {
+      new_buffer[0] = '\0';
+    }
+    palFree(_buffer);
+    _buffer = new_buffer;
+    _capacity = new_capacity;
+  } else if (new_capacity < _capacity) {
+    // shrinking the string
+    char* new_buffer = (char*)palMalloc(new_capacity);
+
+    // track memory used by dynamic strings
+    pal_dynamic_string_memory_used += new_capacity;
+    pal_dynamic_string_memory_used -= _capacity;
+
+    // copy beginning of old string into new string
+    palAssert(_buffer != NULL);
+    palMemoryCopyBytes(new_buffer, _buffer, new_capacity);
+    palFree(_buffer);
+    _buffer = new_buffer;
+    _capacity = new_capacity;
+  }
 }

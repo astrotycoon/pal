@@ -135,8 +135,8 @@ void palWebSocketServer::Update() {
         r = client_.Receive(&incoming_buffer_[incoming_buffer_cursor_], &bytes_to_read);
         if (bytes_to_read > 0) {
           incoming_buffer_cursor_ += bytes_to_read;
-          palString<> s;
-          s.AppendLength((const char*)incoming_buffer_, incoming_buffer_cursor_);
+          palDynamicString s;
+          s.Append((const char*)incoming_buffer_, incoming_buffer_cursor_);
           if (HasCompleteHandshake(s.C(), bytes_to_read)) {
             r = ProcessHandshake(s.C(), bytes_to_read);
             if (r == 0) {
@@ -282,7 +282,7 @@ int palWebSocketServer::ParseMessages() {
 
 
 static uint32_t ParseKey(palTokenizer* tokenizer) {  
-  palString<> key_as_string;
+  palDynamicString key_as_string;
 
   bool r = tokenizer->ReadRestOfLineAsString(&key_as_string);
   if (r == false) {
@@ -410,11 +410,11 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   if (!r || token.type != kTokenName) {
     return -3;
   }
-  palString<> resource_name(token.value_string);
+  palDynamicString resource_name(token.value_string);
   tokenizer.SkipRestOfLine();
 
-  palString<> host_name;
-  palString<> origin_name;
+  palDynamicString host_name;
+  palDynamicString origin_name;
   uint32_t key1 = 0;
   uint32_t key2 = 0;
   do {
@@ -536,7 +536,7 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   }
 #endif
 
-  palString<> server_response;
+  palDynamicString server_response;
 
   server_response.Append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
   server_response.Append("Upgrade: WebSocket\r\n");
@@ -549,10 +549,10 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   server_response.Append(origin_name.C());
   server_response.Append("\r\n");
   server_response.Append("\r\n");
-  server_response.AppendLength(&response[0], 16);
+  server_response.Append(&response[0], 16);
 
   //printf("Client:\n%s\n", s);
   //printf("Reply:\n%s\n", server_response.C());
-  client_.Send((unsigned char*)server_response.C(), server_response.Length());
+  client_.Send((unsigned char*)server_response.C(), server_response.GetLength());
   return 0;
 }

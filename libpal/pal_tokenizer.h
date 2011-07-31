@@ -112,7 +112,7 @@ struct palToken
 	uint64_t value_integer;
 	float value_float;
 	char value_ch;
-	palString<> value_string;
+	palDynamicString value_string;
 };
 
 struct palTokenizerKeyword {
@@ -147,7 +147,7 @@ public:
 
 	void	PushToken(palToken* token); // pushes a token so that next call to FetchNextToken will return it.
 
-  bool ReadRestOfLineAsString(palString<>* result);
+  bool ReadRestOfLineAsString(palDynamicString* result);
 
 	bool	SkipRestOfLine();
 	bool	SkipUntilKeyword(const char* keyword);

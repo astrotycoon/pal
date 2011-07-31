@@ -28,10 +28,8 @@
 #include "libpal/pal_string.h"
 #include "libpal/pal_types.h"
 
-template<class Key> struct palHashEqual
-{
-	bool operator()(const Key& x, const Key& y) const
-	{
+template<class Key> struct palHashEqual {
+	bool operator()(const Key& x, const Key& y) const {
 		return x == y;
 	}
 };

@@ -25,11 +25,13 @@
 
 #include "libpal/pal_hash_map.h"
 #include "libpal/pal_atom.h"
+#include "libpal/pal_thread.h"
 
 // stats
 
-
 #define PAL_ATOM_PAGE_SIZE 4096
+
+static palMutex _atom_table_mutex;
 
 struct palAtomMemoryManager {
   char* page;
@@ -91,18 +93,26 @@ static palAtom palAtomAddString(const char* str) {
 
 void palAtomInitialize() {
   buffer.Init();
+  palMutexDescription md;
+  md.initial_ownership = false;
+  md.name.Set("palAtomTableMutex");
+  md.recursion_policy = kPalThreadRecursionPolicyAllowed;
+  int r = _atom_table_mutex.Create(md);
+  palAssert(r == 0);
   // atom 0 is the NULL string.
   _atom_strings.push_back(NULL);
   atom_counter++;
 }
 
 void palAtomGetStats(uint32_t* total_memory, uint32_t* wasted_memory, uint32_t* large_strings) {
+  palScopedMutex m(&_atom_table_mutex);
   *total_memory = buffer.total_allocated_memory;
   *wasted_memory = buffer.total_wasted_memory;
   *large_strings = buffer.total_large_strings;
 }
 
 palAtom palAtomTryString(const char* str) {
+  palScopedMutex m(&_atom_table_mutex);
   palAtom* result = _string_to_atom_map.Find(str);
   if (!result) {
     return 0;
@@ -111,6 +121,7 @@ palAtom palAtomTryString(const char* str) {
 }
 
 palAtom palAtomFromStaticString(const char* str) {
+  palScopedMutex m(&_atom_table_mutex);
   palAtom* result = _string_to_atom_map.Find(str);
   if (!result) {
     return palAtomAddString(str);
@@ -120,6 +131,7 @@ palAtom palAtomFromStaticString(const char* str) {
 }
 
 palAtom palAtomFromString(const char* str) {
+  palScopedMutex m(&_atom_table_mutex);
   palAtom* result = _string_to_atom_map.Find(str);
   if (!result) {
     return palAtomAddString(buffer.CopyString(str));

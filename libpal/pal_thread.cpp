@@ -91,18 +91,23 @@ void palThread::Exit(int64_t thread_exit_value) {
   _endthreadex((unsigned int)thread_exit_value);
 }
 
-palThread::palThread(const palThreadDescription& desc) : _desc(desc) {
+palThread::palThread() {
+  _pdata.thread = INVALID_HANDLE_VALUE;
 }
 
-int palThread::Start(uintptr_t param) {
+int palThread::Start(const palThreadDescription& desc, uintptr_t param) {
+  _desc = desc;
   _desc.start_value = param;
-  _pdata.thread = _beginthreadex(NULL, _desc.stack_size, ThreadRunner, reinterpret_cast<void*>(this), 0, NULL);
+  _pdata.thread = (HANDLE)_beginthreadex(NULL, _desc.stack_size, ThreadRunner, reinterpret_cast<void*>(this), 0, NULL);
   return 0;
 }
 
 int palThread::Join(int64_t* thread_return_value) {
-  WaitForSingleObject(reinterpret_cast<HANDLE>(_pdata.thread), INFINITE);
-  CloseHandle(reinterpret_cast<HANDLE>(_pdata.thread));
+  if (_pdata.thread != INVALID_HANDLE_VALUE) {
+    WaitForSingleObject(reinterpret_cast<HANDLE>(_pdata.thread), INFINITE);
+    CloseHandle(reinterpret_cast<HANDLE>(_pdata.thread));
+    _pdata.thread = INVALID_HANDLE_VALUE;
+  }
   return 0;
 }
 
@@ -114,10 +119,15 @@ const palThreadDescription& palThread::GetDescription() const {
   return _desc;
 }
 
-palMutex::palMutex(const palMutexDescription& desc) : _desc(desc) {
+palThreadDescription& palThread::GetDescription() {
+  return _desc;
 }
 
-int palMutex::Create() {
+palMutex::palMutex() {
+}
+
+int palMutex::Create(const palMutexDescription& desc) {
+  _desc = desc;
   InitializeCriticalSection(&_pdata.mutex);
   return 0;
 }
@@ -151,10 +161,12 @@ int palMutex::Destroy() {
   return 0;
 }
 
-palSemaphore::palSemaphore(const palSemaphoreDescription& desc) : _desc(desc) {
+palSemaphore::palSemaphore() {
+  _pdata.semaphore = 0;
 }
 
-int palSemaphore::Create() {
+int palSemaphore::Create(const palSemaphoreDescription& desc) {
+  _desc = desc;
   _pdata.semaphore = CreateSemaphoreEx(NULL, _desc.initial_reservation, _desc.maximum, _desc.name.C(), 0, SEMAPHORE_ALL_ACCESS);
   if (_pdata.semaphore == 0) {
     return PAL_THREAD_ERROR_COULD_NOT_CREATE;
@@ -163,7 +175,10 @@ int palSemaphore::Create() {
 }
 
 int palSemaphore::Destroy() {
-  CloseHandle(_pdata.semaphore);
+  if (_pdata.semaphore != 0) {
+    CloseHandle(_pdata.semaphore);
+  }
+  
   return 0;
 }
 
@@ -200,10 +215,11 @@ int palSemaphore::Release() {
   return PAL_THREAD_ERROR_GENERIC;
 }
 
-palReaderWriterLock::palReaderWriterLock(const palReaderWriterLockDescription& desc) : _desc(desc) {
+palReaderWriterLock::palReaderWriterLock() {
 }
 
-int palReaderWriterLock::Create() {
+int palReaderWriterLock::Create(const palReaderWriterLockDescription& desc) {
+  _desc = desc;
   return PAL_THREAD_ERROR_GENERIC;
 }
 
@@ -245,9 +261,10 @@ int palReaderWriterLock::ReleaseWriter() {
 
 int palThreadInit() {
   static palThreadDescription main_thread_description;
-  main_thread_description.name = palString<>("Main Thread");
+  main_thread_description.name = palDynamicString("Main Thread");
   main_thread_description.stack_size = 1024*1024;
-  static palThread main_thread(main_thread_description);
+  static palThread main_thread;
+  main_thread.GetDescription() = main_thread_description;
   current_thread = &main_thread;
   __SetThreadName(GetCurrentThreadId(), "Main Thread");
   return 0;

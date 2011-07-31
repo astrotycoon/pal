@@ -16,8 +16,8 @@
 
 int main(int argc, char** argv) {
   palStartup(windows_debugger_print_function);
-  palSocketInit();
-
+  
+  PalStringTest();
   PalThreadTest();
   return 0;
 

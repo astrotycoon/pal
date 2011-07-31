@@ -50,85 +50,81 @@ int   palStringFindCh(const char* str, char ch);
 bool  palStringFindString(const char* str, const char* findstr, int* start, int* end);
 
 int palStringToInteger(const char* str);
+float palStringToFloat(const char* str);
 
-// ideally palString should be 64 bytes
-// on 32-bit architectures the struct adds up to: 12 bytes (52 bytes to spare)
-// on 64-bit architectures it is 16 bytes (48 bytes to spare)
-// sizeof(palString) = PAL_STRING_DEFAULT_CAPACITY + (12 or 16)
+class palDynamicString {
+public:
+  palDynamicString();
+  palDynamicString(const char* init_string);
+  palDynamicString(const palDynamicString& other);
 
+  void SetCapacity(int capacity);
+  void SetLength(int new_length);
 
-template<int PAL_STRING_DEFAULT_CAPACITY = 52>
-class palString {
- public:
-  palString() {
-    str_ = &default_buffer_[0];
-    str_capacity_ = PAL_STRING_DEFAULT_CAPACITY;
-    str_len_ = 0;
-    str_[0] = '\0';
-  }
+  int GetCapacity() const;
+  int GetLength() const;
 
-  explicit palString(const char* init_string) {
-    str_ = &default_buffer_[0];
-    str_capacity_ = PAL_STRING_DEFAULT_CAPACITY;
-    str_len_ = 0;
-    str_[0] = '\0';
-    Set(init_string);
-  }
+  void Reset();
 
-  ~palString() {
-    if (str_ != &default_buffer_[0]) {
-      palFree(str_);
-    }
-  }
-
-  template<int OTHER_STRING_CAPACITY> friend class palString;
-
-  // copy
-  explicit palString(const palString<PAL_STRING_DEFAULT_CAPACITY>& that);
-  // assignment
-  palString<PAL_STRING_DEFAULT_CAPACITY>& operator = (const palString<PAL_STRING_DEFAULT_CAPACITY>& that);
-  template<int OTHER_STRING_CAPACITY>
-  palString<PAL_STRING_DEFAULT_CAPACITY>& operator = (const palString<OTHER_STRING_CAPACITY>& that);
-
-  bool operator == (const palString<PAL_STRING_DEFAULT_CAPACITY>& that);
-  template<int OTHER_STRING_CAPACITY>
-  bool operator == (const palString<OTHER_STRING_CAPACITY>& that);
-  bool operator != (const palString<PAL_STRING_DEFAULT_CAPACITY>& that);
-  template<int OTHER_STRING_CAPACITY>
-  bool operator != (const palString<OTHER_STRING_CAPACITY>& that);
-  
-
-  void Set(const char* str);
-  void SetSize(int new_size);
-  int Truncate(int len);
   const char* C() const;
-  int Length() const;
-  bool Equals(const char* test) const;
-  void Clear();
-  void Append(const char* append_str);
+  char* C();
+
+  bool Equals(const char* str) const;
+  bool Equals(const palDynamicString& str) const;
+
+  int Compare(const char* str) const;
+  int Compare(const palDynamicString& str) const;
+
+  void Set(const char ch);
+  void Set(const char* str);
+  void Set(const char* str, int length);
+  void Set(const palDynamicString& str);
+  void Set(const palDynamicString& str, int start, int count);
+  void SetPrintf(const char* format, ...);
+  
+  void Append(const char ch);
+  void Append(const char* str);
+  void Append(const char* str, int length);
+  void Append(const palDynamicString& str);
+  void Append(const palDynamicString& str, int start, int count);
   void AppendPrintf(const char* format, ...);
-  void AppendChar(const char ch);
-  void AppendLength(const char* append_str, int length);
-  void Prepend(const char* prepend_str);
+  
+  void Prepend(const char ch);
+  void Prepend(const char* str);
+  void Prepend(const char* str, int length);
+  void Prepend(const palDynamicString& str);
+  void Prepend(const palDynamicString& str, int start, int count);
   void PrependPrintf(const char* format, ...);
-  void PrependChar(const char ch);
-  void PrependLength(const char* prepend_str, int length);
-  void Insert(int position, const char* str);
-  void InsertPrintf(int position, const char* format, ...);
-  void InsertChar(int position, const char ch);
-  void InsertLength(int position, const char* insert_str, int length);
-  void Remove(int position, int length);
 
-  int capacity() { return str_capacity_; };
+  /* If start == -1, inserted into end of string */
+  void Insert(int start, const char* str);
+  void Insert(int start, const char* str, int count);
+  void Insert(int start, const char ch);
+  void Insert(int start, const palDynamicString& str);
+  void Insert(int start, const palDynamicString& str, int str_start, int count);
+  void InsertPrintf(int start, const char* format, ...);
+
+  void Cut(int start, int count);
+  void Cut(int start, int count, char* target_str);
+  void Cut(int start, int count, palDynamicString* target_str);
+
+  void Copy(int start, int count, char* target_str);
+  void Copy(int start, int count, palDynamicString* target_str);
+
+  palDynamicString& operator=(const palDynamicString& str);
+  palDynamicString& operator=(const char* str);
+private:
+  char* _buffer;
+  int _length;
+  int _capacity;
 protected:
-  void expandIfNeeded(int extraLength);
-  void resize(int newSize);
-
-  char* str_;  // 4 or 8 bytes
-  int str_len_;  // 4 bytes
-  int str_capacity_;  // 4 bytes
-  char default_buffer_[PAL_STRING_DEFAULT_CAPACITY];
+  void ExpandCapacityIfNeeded(int added_chars);
+  void Resize(int new_capacity);
 };
 
-#include "pal_string_inl.h"  // template implementation of palString class
-
+bool operator==(const palDynamicString& A, const palDynamicString& B);
+bool operator==(const palDynamicString& A, const char* B);
+bool operator==(const char* A, const palDynamicString& B);
+bool operator!=(const palDynamicString& A, const palDynamicString& B);
+bool operator!=(const palDynamicString& A, const char* B);
+bool operator!=(const char* B, const palDynamicString& A);

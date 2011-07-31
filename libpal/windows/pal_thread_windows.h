@@ -30,7 +30,7 @@
 #include <process.h>
 
 struct palThreadPlatformData {
-  uintptr_t thread;
+  HANDLE thread;
 };
 
 struct palMutexPlatformData {

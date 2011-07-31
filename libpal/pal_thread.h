@@ -61,7 +61,7 @@ enum palThreadPriority {
 typedef palDelegate<void (uintptr_t)> palThreadStart;
 
 struct palThreadDescription {
-  palString<> name;
+  palDynamicString name;
   palThreadStart start_method;
   uintptr_t start_value;
   palThreadPriority priority;
@@ -82,16 +82,17 @@ public:
   static void SpinYield();
   static void Exit(int64_t thread_exit_value);
 
-  palThread(const palThreadDescription& desc);
+  palThread();
 
-  int Start(uintptr_t param);
+  int Start(const palThreadDescription& desc, uintptr_t param);
   int Join(int64_t* thread_exit_value);
   const char* GetName() const;
   const palThreadDescription& GetDescription() const;
+  palThreadDescription& GetDescription();
 };
 
 struct palMutexDescription {
-  palString<> name;
+  palDynamicString name;
   bool initial_ownership;
   palThreadRecursionPolicy recursion_policy;
 
@@ -104,9 +105,9 @@ class palMutex {
   palMutexPlatformData _pdata;
   PAL_DISALLOW_COPY_AND_ASSIGN(palMutex);
 public:
-  palMutex(const palMutexDescription& desc);
+  palMutex();
 
-  int Create();
+  int Create(const palMutexDescription& desc);
   int Destroy();
 
   int Acquire();
@@ -117,7 +118,7 @@ public:
 };
 
 struct palSemaphoreDescription {
-  palString<> name;
+  palDynamicString name;
   uint32_t maximum;
   uint32_t initial_reservation;
 
@@ -130,9 +131,9 @@ class palSemaphore {
   palSemaphorePlatformData _pdata;
   PAL_DISALLOW_COPY_AND_ASSIGN(palSemaphore);
 public:
-  palSemaphore(const palSemaphoreDescription& desc);
+  palSemaphore();
 
-  int Create();
+  int Create(const palSemaphoreDescription& desc);
   int Destroy();
 
   int Acquire();
@@ -143,7 +144,7 @@ public:
 };
 
 struct palReaderWriterLockDescription {
-  palString<> name;
+  palDynamicString name;
   palThreadRecursionPolicy recursion_policy;
 };
 
@@ -152,9 +153,9 @@ class palReaderWriterLock {
   palReaderWriterLockPlatformData _pdata;
   PAL_DISALLOW_COPY_AND_ASSIGN(palReaderWriterLock);
 public:
-  palReaderWriterLock(const palReaderWriterLockDescription& desc);
+  palReaderWriterLock();
 
-  int Create();
+  int Create(const palReaderWriterLockDescription& desc);
   int Destroy();
 
   int AcquireReader();
