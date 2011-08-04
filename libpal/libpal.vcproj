@@ -223,6 +223,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_page_allocator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_platform.cpp"
 				>
 			</File>
@@ -274,17 +278,13 @@
 				Name="allocators"
 				>
 				<File
+					RelativePath=".\dlmalloc\dlmalloc.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\pal_allocator.cpp"
 					>
 				</File>
-				<Filter
-					Name="tlsf"
-					>
-					<File
-						RelativePath=".\tlsf\tlsf.c"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="font"
@@ -604,7 +604,15 @@
 				Name="allocators"
 				>
 				<File
+					RelativePath=".\dlmalloc\dlmalloc.h"
+					>
+				</File>
+				<File
 					RelativePath=".\pal_allocator.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_allocator_interface.h"
 					>
 				</File>
 				<File
@@ -616,6 +624,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\pal_page_allocator.h"
+					>
+				</File>
+				<File
 					RelativePath=".\pal_pool_allocator.h"
 					>
 				</File>
@@ -623,18 +635,6 @@
 					RelativePath=".\pal_stack_allocator.h"
 					>
 				</File>
-				<Filter
-					Name="tlsf"
-					>
-					<File
-						RelativePath=".\tlsf\tlsf.h"
-						>
-					</File>
-					<File
-						RelativePath=".\tlsf\tlsfbits.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="simd"

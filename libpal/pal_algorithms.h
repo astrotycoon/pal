@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,18 +21,27 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ALGORITHMS_H_
-#define LIBPAL_PAL_ALGORITHMS_H_
+#pragma once
 
-template<class T> const T& palMin( const T& a, const T& b ) {
+template<class T>
+void palSwap(T& a, T& b) {
+  T temp(a);
+  a = b;
+  b = temp;
+}
+
+template<class T>
+const T& palMin( const T& a, const T& b ) {
 	return (a<b)?a:b;
 }
 
-template<class T> const T& palMax( const T& a, const T& b ) {
+template<class T>
+const T& palMax( const T& a, const T& b ) {
 	return (b<a)?a:b;
 }
 
-template<class T> const T& palClamp(const T& a, const T& min, const T& max) {
+template<class T>
+const T& palClamp(const T& a, const T& min, const T& max) {
 	return (a < min) ? min : (a > max) ? max : a;
 }
 
@@ -129,21 +138,17 @@ int palBinarySearchGT(const T* data, const int num_data, const T& needle) {
 }
 
 template<typename T>
-class palCompareFuncLessThan
-{
+class palCompareFuncLessThan {
 public:
-  bool operator() (const T& a, const T& b)
-  {
+  bool operator()(const T& a, const T& b) {
     return (a < b);
   }
 };
 
 template<typename T>
-class palCompareFuncLessThanDereference
-{
+class palCompareFuncLessThanDereference {
 public:
-  bool operator() (const T& a, const T& b)
-  {
+  bool operator()(const T& a, const T& b) {
     return (*a < *b);
   }
 };
@@ -156,14 +161,12 @@ void palQuickSortInternal(T* buffer, CompareFuncLessThan LessThan, int lo, int h
   T x= buffer[(lo+hi)/2];
 
   //  partition
-  do
-  {    
+  do {    
     while (LessThan(buffer[i],x)) 
       i++; 
     while (LessThan(x,buffer[j])) 
       j--;
-    if (i<=j)
-    {
+    if (i<=j) {
       T temp = buffer[i];
       buffer[i] = buffer[j];
       buffer[j] = temp;
@@ -185,23 +188,18 @@ void palHeapSortInternal(T *buffer, CompareFuncLessThan LessThan, int k, int n) 
 
   T temp = buffer[k - 1];
   /* k has child(s) */
-  while (k <= n/2) 
-  {
+  while (k <= n/2)  {
     int child = 2*k;
 
-    if ((child < n) && LessThan(buffer[child - 1] , buffer[child]))
-    {
+    if ((child < n) && LessThan(buffer[child - 1] , buffer[child])) {
       child++;
     }
     /* pick larger child */
-    if (LessThan(temp , buffer[child - 1]))
-    {
+    if (LessThan(temp , buffer[child - 1])) {
       /* move child up */
       buffer[k - 1] = buffer[child - 1];
       k = child;
-    }
-    else
-    {
+    } else {
       break;
     }
   }
@@ -210,8 +208,7 @@ void palHeapSortInternal(T *buffer, CompareFuncLessThan LessThan, int k, int n) 
 
 template<class T, typename CompareFuncLessThan>
 void palQuickSort(T* buffer, int buffer_size, CompareFuncLessThan LessThan) {
-  if (buffer_size > 1)
-  {
+  if (buffer_size > 1) {
     palQuickSortInternal(buffer, LessThan,0,buffer_size-1);
   }
 }
@@ -221,14 +218,12 @@ void palHeapSort(T* buffer, int buffer_size, CompareFuncLessThan LessThan) {
   /* sort a[0..N-1],  N.B. 0 to N-1 */
   int k;
   int n = buffer_size;
-  for (k = n/2; k > 0; k--) 
-  {
+  for (k = n/2; k > 0; k--)  {
     palHeapSortInternal(buffer, LessThan, k, n);
   }
 
   /* a[1..N] is now a heap */
-  while (n >= 1) 
-  {
+  while (n >= 1)  {
     T temp = buffer[0];
     buffer[0] = buffer[n-1];
     buffer[n-1] = temp;
@@ -239,4 +234,58 @@ void palHeapSort(T* buffer, int buffer_size, CompareFuncLessThan LessThan) {
   } 
 }
 
-#endif  // LIBPAL_PAL_ALGORITHMS_H_
+template<class T>
+void palArrayReverse(T* buffer, int buffer_size) {
+  int start = 0;
+  int end = buffer_size-1;
+  while (start<end) {
+    palSwap(buffer[start], buffer[end]);
+    start++;
+    end--;
+  }
+}
+
+template<class T>
+T* palArrayFindFirstOf(T* buffer, int buffer_size, const T& needle) {
+  int count = 0;
+  while (count < buffer_size) {
+    if (buffer[count] == needle) {
+      return &buffer[count];
+    }
+    count++;
+  }
+  return NULL;
+}
+
+template<class T>
+T* palArrayFindLastOf(T* buffer, int buffer_size, const T& needle) {
+  int count = buffer_size-1;
+  while (count >= 0) {
+    if (buffer[count] == needle) {
+      return &buffer[count];
+    }
+    count--;
+  }
+  return NULL;
+}
+
+template<class T>
+int palArrayCountOf(T* buffer, int buffer_size, const T& needle) {
+  int needle_count = 0;
+  int count = 0;
+  while (count < buffer_size) {
+    if (buffer[count] == needle) {
+      needle_count++:
+    }
+    count++;
+  }
+  return needle_count;
+}
+
+template<class T>
+void palArrayCopy(T* dest_buffer,const T* src_buffer, int count) {
+  int i = 0;
+  while (i < count) {
+    dest_buffer[i] = src_buffer[i];
+  }
+}
