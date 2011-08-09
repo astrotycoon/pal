@@ -21,9 +21,6 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_PLATFORM_H_
-#define LIBPAL_PAL_PLATFORM_H_
-
 /* This include file will set defines indicating the PLATFORM, CPU, ARCH, COMPILER and BUILD type:
  *
  * PAL_PLATFORM_WINDOWS
@@ -55,6 +52,8 @@
  * 
  * PAL_INLINE
  * PAL_NO_INLINE
+ *
+ * PAL_LIBRARY_PRESENT
  */
 
 #if defined(__LITTLE_ENDIAN__)
@@ -146,6 +145,7 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
+#define PAL_LIBRARY_PRESENT 1
+
 void palBreakHere();
 
-#endif  // LIBPAL_PAL_PLATFORM_H_

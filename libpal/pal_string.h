@@ -42,8 +42,10 @@ bool  palStringEquals(const char* a, const char* b);
 bool  palStringEqualsN(const char* a, const char* b, int n);
 int   palStringPrintf(char* str, uint32_t size, const char* format, ...);
 char* palStringAllocatingPrintf(const char* format, ...);
+void palStringAllocatingPrintfDeallocate(char* buff);
 
 char* palStringAllocatingPrintfInternal(const char* format, va_list args);
+void palStringAllocatingPrintfInternalDeallocate(char* buff);
 int palStringPrintfInternal(char* str, uint32_t size, const char* format, va_list args);
 
 int   palStringFindCh(const char* str, char ch);
@@ -57,6 +59,7 @@ public:
   palDynamicString();
   palDynamicString(const char* init_string);
   palDynamicString(const palDynamicString& other);
+  ~palDynamicString();
 
   void SetCapacity(int capacity);
   void SetLength(int new_length);

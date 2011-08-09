@@ -26,10 +26,10 @@
 #include "libpal/pal_hash_map.h"
 #include "libpal/pal_atom.h"
 #include "libpal/pal_thread.h"
+#include "libpal/pal_allocator.h"
 
-// stats
-
-#define PAL_ATOM_PAGE_SIZE 4096
+// 32kb at a time
+#define PAL_ATOM_PAGE_SIZE (32768)
 
 static palMutex _atom_table_mutex;
 
@@ -60,16 +60,17 @@ char* palAtomMemoryManager::CopyString(const char* str) {
     total_allocated_memory += length;
     return palStringDuplicate(str);
   }
+  const uint32_t page_size = ((palPageAllocator*)g_PageAllocator)->GetPageSize();
   if (page == NULL) {
     // initial run
-    page = (char*)palMalloc(PAL_ATOM_PAGE_SIZE);
+    page = (char*)g_PageAllocator->Allocate(PAL_ATOM_PAGE_SIZE, page_size);
     offset = 0;
     total_allocated_memory += PAL_ATOM_PAGE_SIZE;
   }
   if (offset + length >= PAL_ATOM_PAGE_SIZE) {
     total_wasted_memory += (PAL_ATOM_PAGE_SIZE - offset);
     total_allocated_memory += PAL_ATOM_PAGE_SIZE;
-    page = (char*)palMalloc(PAL_ATOM_PAGE_SIZE);
+    page = (char*)g_PageAllocator->Allocate(PAL_ATOM_PAGE_SIZE, page_size);
     offset = 0;
   }
   char* copy = page+offset;
@@ -93,15 +94,22 @@ static palAtom palAtomAddString(const char* str) {
 
 void palAtomInitialize() {
   buffer.Init();
+  _atom_strings.SetAllocator(g_DefaultHeapAllocator);
+  _string_to_atom_map.SetAllocator(g_DefaultHeapAllocator);
   palMutexDescription md;
   md.initial_ownership = false;
-  md.name.Set("palAtomTableMutex");
+  md.name = "palAtomTableMutex";
   md.recursion_policy = kPalThreadRecursionPolicyAllowed;
   int r = _atom_table_mutex.Create(md);
   palAssert(r == 0);
   // atom 0 is the NULL string.
   _atom_strings.push_back(NULL);
   atom_counter++;
+}
+
+void palAtomShutdown() {
+  _atom_strings.Reset();
+  _string_to_atom_map.Reset();
 }
 
 void palAtomGetStats(uint32_t* total_memory, uint32_t* wasted_memory, uint32_t* large_strings) {

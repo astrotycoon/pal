@@ -26,10 +26,6 @@
 #define ONLY_MSPACES 1
 #define MSPACES 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stddef.h>   /* for size_t */
 
 #ifndef ONLY_MSPACES
@@ -525,6 +521,8 @@ size_t dlmalloc_usable_size(void*);
 
 #if MSPACES
 
+#include "libpal/pal_page_allocator.h"
+
 /*
   mspace is an opaque type representing an independent
   region of space that supports mspace_malloc, etc.
@@ -542,7 +540,7 @@ typedef void* mspace;
   compiling with a different DEFAULT_GRANULARITY or dynamically
   setting with mallopt(M_GRANULARITY, value).
 */
-mspace create_mspace(size_t capacity, int locked);
+mspace create_mspace(size_t capacity, palPageAllocator* page_allocator);
 
 /*
   destroy_mspace destroys the given space, and attempts to return all
@@ -561,7 +559,7 @@ size_t destroy_mspace(mspace msp);
   Destroying this space will deallocate all additionally allocated
   space (if possible) but not the initial base.
 */
-mspace create_mspace_with_base(void* base, size_t capacity, int locked);
+mspace create_mspace_with_base(void* base, size_t capacity);
 
 /*
   mspace_track_large_chunks controls whether requests for large chunks
@@ -616,8 +614,5 @@ void mspace_inspect_all(mspace msp,
                         void* arg);
 #endif  /* MSPACES */
 
-#ifdef __cplusplus
-};  /* end of extern "C" */
-#endif
 
 #endif /* MALLOC_280_H */

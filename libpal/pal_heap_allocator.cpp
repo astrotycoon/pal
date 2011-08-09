@@ -21,44 +21,53 @@
 	distribution.
 */
 
-#include "libpal/tlsf/tlsf.h"
-
-#include "libpal/pal_types.h"
-#include "libpal/pal_debug.h"
+#include "libpal/dlmalloc/dlmalloc.h"
 #include "libpal/pal_heap_allocator.h"
 
-void palHeapAllocator::Create(void* mem, uint32_t size) {
-  palSpinlockTake(&lock_);
-  tlsf_create(mem, size);
-  internal_ = mem;
-  palSpinlockRelease(&lock_);
+
+int palHeapAllocator::Create(void* mem, uint32_t size) {
+  internal_ = create_mspace_with_base(mem, size);
+  if (internal_ == NULL) {
+    return PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE;
+  }
+  return 0;
 }
 
-void* palHeapAllocator::Allocate(size_t size, int flags) {
-  palSpinlockTake(&lock_);
-  void* r = tlsf_malloc(internal_, size);
-  palSpinlockRelease(&lock_);
-  return r;
+int palHeapAllocator::Create(palPageAllocator* page_allocator) {
+  internal_ = create_mspace(0, page_allocator);
+  if (internal_ == NULL) {
+    return PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE;
+  }
+  mspace_track_large_chunks(internal_, 1);
+  return 0;
 }
 
-void* palHeapAllocator::Allocate(size_t size, size_t alignment, size_t alignment_offset, int flags) {
-  palAssert(alignment_offset == 0); // don't support it
-  palSpinlockTake(&lock_);
-  void* r = tlsf_memalign(internal_, alignment, size);
-  palSpinlockRelease(&lock_);
-  return r; 
+int palHeapAllocator::Destroy() {
+  if (internal_) {
+    destroy_mspace(internal_);
+    internal_ = 0;
+  }
+  return 0;
 }
 
-void  palHeapAllocator::Deallocate(void* p, size_t size) {
-  palSpinlockTake(&lock_);
-  tlsf_free(internal_, p);
-  palSpinlockRelease(&lock_);
+
+void* palHeapAllocator::Allocate(uint32_t size, int alignment) {
+  void* ptr = mspace_memalign(internal_, alignment, size);
+  if (ptr) {
+    uint32_t reported_size = mspace_usable_size(ptr);
+    ReportMemoryAllocation(ptr, reported_size);
+  }
+  return ptr;
 }
 
-const char* palHeapAllocator::GetName() const {
-  return name_;
+void palHeapAllocator::Deallocate(void* ptr) {
+  if (ptr) {
+    uint32_t reported_size = mspace_usable_size(ptr);
+    mspace_free(internal_, ptr);
+    ReportMemoryDeallocation(ptr, reported_size);
+  }
 }
 
-void        palHeapAllocator::SetName(const char* name) {
-  name_ = name;
+uint32_t palHeapAllocator::GetSize(void* ptr) const {
+  return mspace_usable_size(ptr);
 }

@@ -110,6 +110,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;c:\workspace\external\SDL-1.2.14\include&quot;;&quot;$(SolutionDir)&quot;;c:\workspace\pal\libpal\freetype\include\;c:\workspace\pal\;&quot;c:\workspace\external\glew-win32\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				ExceptionHandling="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				RuntimeTypeInfo="false"
@@ -283,6 +284,10 @@
 				</File>
 				<File
 					RelativePath=".\pal_allocator.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_tracking_allocator.cpp"
 					>
 				</File>
 			</Filter>
@@ -628,11 +633,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\pal_pool_allocator.h"
+					RelativePath=".\pal_proxy_allocator.h"
 					>
 				</File>
 				<File
-					RelativePath=".\pal_stack_allocator.h"
+					RelativePath=".\pal_tracking_allocator.h"
 					>
 				</File>
 			</Filter>

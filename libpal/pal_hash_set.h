@@ -21,21 +21,19 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_HASH_SET_H__
-#define LIBPAL_PAL_HASH_SET_H__
+#pragma once
 
 #include "libpal/pal_debug.h"
 #include "libpal/pal_array.h"
 #include "libpal/pal_hash_functions.h"
 
-template <class Key, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key), typename Allocator = palAllocator >
+template <class Key, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key)>
 class palHashSet
 {
 public:
   /* Types and constants */
-  typedef palHashSet<Key, HashFunction, KeyEqual, KeyAlignment, Allocator> this_type;
+  typedef palHashSet<Key, HashFunction, KeyEqual, KeyAlignment> this_type;
   typedef Key key_type;
-  typedef Allocator allocator_type;
   static const uint32_t key_size = sizeof(Key);
   static const uint32_t key_alignment = KeyAlignment;
   /* A chaining hash table. There are four arrays used in the implementation:
@@ -61,7 +59,7 @@ public:
    */
   int hash_size_configuration_;
 
-	palArray<int, PAL_ALIGNOF(int), Allocator>	hash_bucket_list_head_;
+	palArray<int, PAL_ALIGNOF(int)>	hash_bucket_list_head_;
 
 
   /* These three could be thought of as:
@@ -72,8 +70,8 @@ public:
    *     Value value;
    * }
    */
-	palArray<int, PAL_ALIGNOF(int), Allocator>	chain_next_;
-	palArray<Key, key_alignment, Allocator>   key_array_;
+	palArray<int, PAL_ALIGNOF(int)>	chain_next_;
+	palArray<Key, key_alignment>   key_array_;
 
   HashFunction hash_function_;
   KeyEqual key_equal_function_;
@@ -175,7 +173,7 @@ public:
   }
 
   /* Copy constructor */
-  palHashSet (const palHashSet<Key,HashFunction, KeyEqual>& set) : hash_size_configuration_(set.hash_size_configuration_), hash_bucket_list_head_(set.hash_bucket_list_head_), chain_next_(set.chain_next_), key_array_(set.key_array_), hash_function_(set.hash_function_), key_equal_function_(set.key_equal_function_) {
+  palHashSet (const palHashSet<Key,HashFunction, KeyEqual>& set, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : hash_size_configuration_(set.hash_size_configuration_), hash_bucket_list_head_(set.hash_bucket_list_head_, allocator), chain_next_(set.chain_next_, allocator), key_array_(set.key_array_, allocator), hash_function_(set.hash_function_), key_equal_function_(set.key_equal_function_) {
   }
 
   bool Insert(const Key& key) {
@@ -383,4 +381,3 @@ public:
 #endif
 };
 
-#endif  // LIBPAL_PAL_HASH_SET_H__

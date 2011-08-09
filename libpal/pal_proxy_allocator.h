@@ -27,23 +27,27 @@
 #include "libpal/pal_allocator_interface.h"
 #include "libpal/pal_page_allocator.h"
 
-#define PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE palMakeErrorCode(0xee, 1)
-
-class palHeapAllocator : public palAllocatorInterface {
-  void* internal_;
+class palProxyAllocator : public palAllocatorInterface {
+  palAllocatorInterface* _target_allocator;
 public:
-  palHeapAllocator(const char* name) : palAllocatorInterface(name), internal_(NULL) {
+
+  palProxyAllocator(const char* proxy_name, palAllocatorInterface* target_allocator) : palAllocatorInterface(proxy_name), _target_allocator(target_allocator) {
   }
-  ~palHeapAllocator() {
 
+  virtual void* Allocate(uint32_t size, int alignment  = 8) {
+    void* p = _target_allocator->Allocate(size, alignment);
+    uint32_t size_p = _target_allocator->GetSize(p);
+    ReportMemoryAllocation(p, size_p);
+    return p;
   }
-  
-  int Create(void* mem, uint32_t size);
-  int Create(palPageAllocator* page_allocator);
 
-  int Destroy();
+  virtual void Deallocate(void* ptr) {
+    uint32_t size_p = _target_allocator->GetSize(ptr);
+    _target_allocator->Deallocate(ptr);
+    ReportMemoryDeallocation(ptr, size_p);
+  }
 
-  virtual void* Allocate(uint32_t size, int alignment = 8);
-  virtual void Deallocate(void* ptr);
-  virtual uint32_t GetSize(void* ptr) const;
+  virtual uint32_t GetSize(void* ptr) const {
+    return _target_allocator->GetSize(ptr);
+  }
 };

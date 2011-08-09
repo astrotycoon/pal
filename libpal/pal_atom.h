@@ -28,6 +28,7 @@
 typedef uint32_t palAtom;
 
 void palAtomInitialize();
+void palAtomShutdown();
 void palAtomGetStats(uint32_t* total_memory, uint32_t* wasted_memory, uint32_t* large_strings);
 palAtom palAtomTryString(const char* str);
 palAtom palAtomFromStaticString(const char* str);

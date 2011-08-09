@@ -21,8 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_DEBUG_H_
-#define LIBPAL_PAL_DEBUG_H_
+#pragma once
 
 /* This header file provides the following macros when compiled with PAL_BUILD_DEBUG:
  * palBreakHere - breaks into the debugger
@@ -31,6 +30,14 @@
  */
 #include "libpal/pal_platform.h"
 #include "libpal/pal_console.h"
+#include "libpal/pal_types.h"
+
+int palDebugInit();
+int palDebugShutdown();
+
+int palDebugCaptureCallstack(int entries_to_skip, int max_entries, uintptr_t* callstack);
+int palDebugGetSizeForSymbolLookup(int name_length);
+const char* palDebugLookupSymbol(uintptr_t pc, int name_length, void* buffer);
 
 void palAbort();
 
@@ -44,6 +51,3 @@ void palAbort();
 #define palAssertBreak(expr) do {} while(0)
 #endif
 
-
-
-#endif  // LIBPAL_PAL_DEBUG_H_

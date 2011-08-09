@@ -11,7 +11,7 @@ public:
   void DecrementCount() { count--; }
   void AddToCount(int x) { count += x; }
   void DecToCount(int x) { count -= x; }
-  void PrintCount() const { printf("%d\n", count); }
+  void PrintCount() const { palPrintf("%d\n", count); }
   int GetCount() { return count; }
 
   static int StrangeFunction(int z, float f) { palPrintf("Strange."); return 77; }

@@ -25,7 +25,7 @@
 #define STBI_NO_STDIO
 #define STBI_HEADER_FILE_ONLY
 #include "libpal/stb/stb_image.h"
-#include "libpal/pal_memory.h"
+#include "libpal/pal_allocator.h"
 #include "libpal/pal_image.h"
 
 palImage::palImage() {
@@ -36,13 +36,13 @@ palImage::palImage() {
 
 palImage::~palImage() {
   if (pixels) {
-    palFree(pixels);
+    g_StdProxyAllocator->Deallocate(pixels);
   }
 }
 
 void palImage::Reset() {
   if (pixels) {
-    palFree(pixels);
+    g_StdProxyAllocator->Deallocate(pixels);
   }
   pixels = NULL;
   x = 0;

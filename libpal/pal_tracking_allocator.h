@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -23,21 +23,28 @@
 
 #pragma once
 
-#include "libpal/pal_types.h"
+#include "libpal/pal_allocator_interface.h"
+#include "libpal/pal_ilist.h"
 
-#ifndef NULL
-#define NULL 0
-#endif
+#define MAX_CALLSTACK_ENTRIES 63
+struct palTrackedAllocation {
+  uintptr_t stacktrace[MAX_CALLSTACK_ENTRIES+1];
+  void* ptr;
+  palIListNodeDeclare(palTrackedAllocation, list_node);
+};
 
-void palMemoryCopyBytes(void* destination, const void* source, int bytes);
-void palMemoryZeroBytes(void* destination, int bytes);
-void palMemorySetBytes(void* destination, unsigned char byte, int bytes);
+class palTrackingAllocator : public palAllocatorInterface {
+  palIList _tracked_allocations;
+  palAllocatorInterface* _parent_allocator;
+  void* _symbol_lookup_buffer;
+public:
+  palTrackingAllocator(const char* name, palAllocatorInterface* parent_allocator);
 
-int   palRoundToPowerOfTwo(int x);
+  ~palTrackingAllocator();
 
-void* operator new(size_t size);
-void* operator new(size_t size, void* p);
-void operator delete(void* p);
+  virtual void* Allocate(uint32_t size, int alignment = 8);
+  virtual void Deallocate(void* ptr);
+  virtual uint32_t GetSize(void* ptr) const;
 
-void* operator new[](size_t size);
-void operator delete[](void* p);
+  void ConsoleDump() const;
+};

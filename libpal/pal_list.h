@@ -21,10 +21,7 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_LIST_H__
-#define LIBPAL_PAL_LIST_H__
-
-#include <stdio.h>
+#pragma once
 
 #include "libpal/pal_pool_allocator.h"
 
@@ -42,32 +39,25 @@ struct palListNode {
   }
 };
 
-template <typename T, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
+template <typename T, uint32_t Alignment = PAL_ALIGNOF(T)>
 class palList {
  public:
    /* Types and constants */
-   typedef palList<T, Alignment, Allocator> this_type;
+   typedef palList<T, Alignment> this_type;
    typedef T element_type;
-   typedef Allocator allocator_type;
    static const uint32_t element_size = sizeof(palListNode<T>);
    static const uint32_t element_alignment = Alignment; 
  private:
-  allocator_type allocator_;
+  palAllocatorInterface* allocator_;
   palListNode<T> root_;
 
+  PAL_DISALLOW_COPY_AND_ASSIGN(palList);
  public:
   palList() {
     // circular
     root_.next = &root_;
     root_.prev = &root_;
-    allocator_ = allocator_type("palList");
-  }
-
-  palList(const allocator_type& allocator) {
-    // circular
-    root_.next = &root_;
-    root_.prev = &root_;
-    allocator_ = allocator;
+    allocator_ = NULL;
   }
 
   ~palList() {
@@ -75,53 +65,64 @@ class palList {
     Erase(GetFirst(), GetLast());
   }
 
+  void SetAllocator(palAllocatorInterface* allocator) {
+    allocator_ = allocator;
+  }
+
+  palAllocatorInterface* GetAllocator() const {
+    return allocator_;
+  }
+
   void PushFront(const T& item) {
-    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_->Allocate(sizeof(palListNode<T>), element_alignment));
     new (node) palListNode<T>(item);
     AddHead(node);
   }
 
   void PushBack(const T& item) {
-    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    palListNode<T>* node = reinterpret_cast<palListNode<T>*>(allocator_->Allocate(sizeof(palListNode<T>), element_alignment));
     new (node) palListNode<T>(item);
     AddTail(node);
   }
 
   void PopFront() {
     palListNode<T>* node = PopHead();
-    allocator_.Deallocate(node, sizeof(palListNode<T>));
+    allocator_->Deallocate(node);
   }
 
   void PopBack() {
     palListNode<T>* node = PopTail();
-    allocator_.Deallocate(node, sizeof(palListNode<T>));
+    allocator_->Deallocate(node);
   }
 
   void InsertBefore(const T& item, palListNode<T>* node) {
-    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_->Allocate(sizeof(palListNode<T>), element_alignment));
     new (new_node) palListNode<T>(item);
     Add(new_node, node->prev, node);
   }
 
   void InsertAfter(const T& item, palListNode<T>* node) {
-    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_.Allocate(sizeof(palListNode<T>), element_alignment));
+    palListNode<T>* new_node = reinterpret_cast<palListNode<T>*>(allocator_->Allocate(sizeof(palListNode<T>), element_alignment));
     new (new_node) palListNode<T>(item);
     Add(new_node, node, node->next);
   }
 
   void Erase(palListNode<T>* node) {
     RemoveNode(node);
-    allocator_.Deallocate(node, sizeof(palListNode<T>));
+    allocator_->Deallocate(node);
   }
 
   void Erase(palListNode<T>* begin, palListNode<T>* end) {
     palListNode<T>* node = begin;
-    while (node != end) {
+    do {
       begin = node->next;
       RemoveNode(node);
-      allocator_.Deallocate(node, sizeof(palListNode<T>));
+      allocator_->Deallocate(node);
+      if (node == end) {
+        break;
+      }
       node = begin;
-    }
+    } while(true);
   }
 
   void RemoveFirst(const T& item) {
@@ -460,8 +461,4 @@ protected:
   palListNode<T>* GetRoot() {
     return &root_;
   }
-
-
 };
-
-#endif  // LIBPAL_PAL_LIST_H__

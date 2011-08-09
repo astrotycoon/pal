@@ -27,12 +27,22 @@ int palStartup(palConsolePrintFunction print_func) {
   if (print_func != NULL) {
     palConsoleSetPrintFunction(print_func);
   }
+  palDebugInit();
+  palAllocatorInit();
   palAtomInitialize();
   palThreadInit();
   palSocketInit();
 
   palPrintf("palStartup\n");
   palPrintf("--------------\n");
+
+  return 0;
+}
+
+int palShutdown() {
+  palSocketFini();
+  palAtomShutdown();
+  palAllocatorShutdown();
 
   return 0;
 }

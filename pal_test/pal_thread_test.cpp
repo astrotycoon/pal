@@ -52,7 +52,7 @@ void thread_countdown(uintptr_t seven) {
 bool PalThreadTest () {
   palMutexDescription my_mutex_desc;
   my_mutex_desc.initial_ownership = false;
-  my_mutex_desc.name = palDynamicString("My Mutex");
+  my_mutex_desc.name = "My Mutex";
   palMutex my_mutex;
 
   my_mutex.Create(my_mutex_desc);
@@ -69,7 +69,7 @@ bool PalThreadTest () {
   my_mutex.Destroy();
 
   palThreadDescription t_desc;
-  t_desc.name = palDynamicString("Test thread");
+  t_desc.name = "Test thread";
   t_desc.start_method = palThreadStart(thread_args_test);
   palThread t;
   t.Start(t_desc, 0x7);
@@ -77,11 +77,11 @@ bool PalThreadTest () {
 
   {
     palThreadDescription ta_desc[3];
-    ta_desc[0].name = palDynamicString("Countdown Thread 0");
+    ta_desc[0].name = "Countdown Thread 0";
     ta_desc[0].start_method = palThreadStart(thread_countdown);
-    ta_desc[1].name = palDynamicString("Countdown Thread 1");
+    ta_desc[1].name = "Countdown Thread 1";
     ta_desc[1].start_method = palThreadStart(thread_countdown);
-    ta_desc[2].name = palDynamicString("Countdown Thread 2");
+    ta_desc[2].name = "Countdown Thread 2";
     ta_desc[2].start_method = palThreadStart(thread_countdown);
     palThread t0;
     palThread t1;
@@ -100,8 +100,8 @@ bool PalThreadTest () {
     palThreadDescription tcd1_desc;
     tcd0_desc.start_method = palThreadStart(&CD0, &CountDown::DecrementUntilNegative);
     tcd1_desc.start_method = palThreadStart(&CD1, &CountDown::DecrementUntilNegative);
-    tcd0_desc.name = palDynamicString("Countdown Class Thread 0");
-    tcd1_desc.name = palDynamicString("Countdown Class Thread 1");
+    tcd0_desc.name = "Countdown Class Thread 0";
+    tcd1_desc.name = "Countdown Class Thread 1";
     palThread tcd0;
     palThread tcd1;
     tcd0.Start(tcd0_desc, 0);

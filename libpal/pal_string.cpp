@@ -31,6 +31,7 @@
 #include "libpal/pal_string.h"
 #include "libpal/pal_memory.h"
 #include "libpal/pal_debug.h"
+#include "libpal/pal_allocator.h"
 
 bool    palIsAlpha(char ch) {
   return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
@@ -130,9 +131,13 @@ int pal_printf_upper_bound(const char* format, ...) {
 char* palStringAllocatingPrintfInternal(const char* format, va_list args) {
   int len = internal_pal_printf_upper_bound(format, args)+1;
   palAssert(len >= 0);
-  char* str = static_cast<char*>(palMalloc(len+1));
+  char* str = static_cast<char*>(g_StringProxyAllocator->Allocate(len+1));
   int n = palStringPrintfInternal(str, len, format, args);
   return str;
+}
+
+void palStringAllocatingPrintfInternalDeallocate(char* buff) {
+  g_StringProxyAllocator->Deallocate(buff);
 }
 
 char* palStringAllocatingPrintf(const char* format, ...) {
@@ -141,6 +146,10 @@ char* palStringAllocatingPrintf(const char* format, ...) {
   char* str = palStringAllocatingPrintfInternal(format, args);
   va_end(args);
   return str;
+}
+
+void palStringAllocatingPrintfDeallocate(char* buff) {
+  palStringAllocatingPrintfInternalDeallocate(buff);
 }
 
 int palStringPrintfInternal(char* str, uint32_t size, const char* format, va_list args) {
@@ -258,11 +267,19 @@ palDynamicString::palDynamicString() : _buffer(NULL), _capacity(0), _length(0) {
 }
 
 palDynamicString::palDynamicString(const char* init_string) : _buffer(NULL), _capacity(0), _length(0) {
+  if (init_string == NULL) {
+    return;
+  }
   Set(init_string);
 }
 
 palDynamicString::palDynamicString(const palDynamicString& other) : _buffer(NULL), _capacity(0), _length(0){
   Set(other.C());
+}
+
+palDynamicString::~palDynamicString() {
+  Resize(0);
+  _length = 0;
 }
 
 void palDynamicString::SetCapacity(int capacity) {
@@ -377,7 +394,7 @@ void palDynamicString::SetPrintf(const char* format, ...) {
   va_start(args, format);
   char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Set(temp_string);
-  palFree(temp_string);
+  g_StringProxyAllocator->Deallocate(temp_string);
   va_end(args);
 }
 
@@ -406,7 +423,7 @@ void palDynamicString::AppendPrintf(const char* format, ...) {
   va_start(args, format);
   char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(-1, temp_string);
-  palFree(temp_string);
+  g_StringProxyAllocator->Deallocate(temp_string);
   va_end(args);
 }
 
@@ -435,7 +452,7 @@ void palDynamicString::PrependPrintf(const char* format, ...) {
   va_start(args, format);
   char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(0, temp_string);
-  palFree(temp_string);
+  g_StringProxyAllocator->Deallocate(temp_string);
   va_end(args);
 }
 
@@ -514,7 +531,7 @@ void palDynamicString::InsertPrintf(int start, const char* format, ...) {
   va_start(args, format);
   char* temp_string = palStringAllocatingPrintfInternal(format, args);
   Insert(start, temp_string);
-  palFree(temp_string);
+  g_StringProxyAllocator->Deallocate(temp_string);
   va_end(args);
 }
 
@@ -590,15 +607,15 @@ void palDynamicString::ExpandCapacityIfNeeded(int added_chars) {
 }
 
 void palDynamicString::Resize(int new_capacity) {
-  if (new_capacity == 0) {
+  if (_buffer && new_capacity == 0) {
     // deleting the string
     pal_dynamic_string_memory_used -= _capacity;
-    palFree(_buffer);
+    g_StringProxyAllocator->Deallocate(_buffer);
     _buffer = NULL;
     _capacity = 0;
   } else if (new_capacity > _capacity) {
     // growing the string
-    char* new_buffer = (char*)palMalloc(new_capacity);
+    char* new_buffer = (char*)g_StringProxyAllocator->Allocate(new_capacity);
 
     // track memory used by dynamic strings
     pal_dynamic_string_memory_used += new_capacity;
@@ -609,12 +626,12 @@ void palDynamicString::Resize(int new_capacity) {
     } else {
       new_buffer[0] = '\0';
     }
-    palFree(_buffer);
+    g_StringProxyAllocator->Deallocate(_buffer);
     _buffer = new_buffer;
     _capacity = new_capacity;
   } else if (new_capacity < _capacity) {
     // shrinking the string
-    char* new_buffer = (char*)palMalloc(new_capacity);
+    char* new_buffer = (char*)g_StringProxyAllocator->Allocate(new_capacity);
 
     // track memory used by dynamic strings
     pal_dynamic_string_memory_used += new_capacity;
@@ -623,7 +640,7 @@ void palDynamicString::Resize(int new_capacity) {
     // copy beginning of old string into new string
     palAssert(_buffer != NULL);
     palMemoryCopyBytes(new_buffer, _buffer, new_capacity);
-    palFree(_buffer);
+    g_StringProxyAllocator->Deallocate(_buffer);
     _buffer = new_buffer;
     _capacity = new_capacity;
   }

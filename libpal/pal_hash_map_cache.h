@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,8 +21,8 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_HASH_MAP_CACHE_H__
-#define LIBPAL_PAL_HASH_MAP_CACHE_H__
+#pragma once
+
 
 #include "libpal/pal_debug.h"
 #include "libpal/pal_random.h"
@@ -42,6 +42,10 @@ protected:
 public:
 	palHashMapCache(int cacheSize) : _cacheSize(cacheSize), _cache_queries(0), _cache_hits(0), _cache_ejects(0), _map() {
 	}
+
+  void SetAllocator(palAllocatorInterface* allocator) {
+    _map.SetAllocator(allocator);
+  }
 
 	int GetIndex(const Key& key) {
 		_cache_queries++;
@@ -99,5 +103,3 @@ public:
 		return _cache_ejects;
 	}
 };
-
-#endif  // LIBPAL_PAL_HASH_MAP_CACHE_H__

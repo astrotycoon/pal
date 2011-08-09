@@ -22,7 +22,7 @@ void* palPageAllocator::Allocate(uint32_t size, int alignment) {
     *((uint32_t*)p) = PAGE_ALLOCATOR_MAGIC;
     *((uint32_t*)(p + sizeof(uint32_t))) = size;
   }
-  ReportMemoryAllocation(size+_page_size);
+  ReportMemoryAllocation(p+_page_size, size+_page_size);
   return p+_page_size;
 }
 
@@ -33,7 +33,9 @@ void palPageAllocator::Deallocate(void* ptr) {
   p += 4;
   uint32_t size = *((uint32_t*)p);
   palAssert(magic == PAGE_ALLOCATOR_MAGIC);
-  ReportMemoryDeallocation(size+_page_size);
+  p -= 4;
+  VirtualFree(p, 0, MEM_RELEASE);
+  ReportMemoryDeallocation(ptr, size+_page_size);
 }
 
 uint32_t palPageAllocator::GetSize(void* ptr) const {
@@ -50,10 +52,32 @@ uint32_t palPageAllocator::GetPageSize() const {
   return _page_size;
 }
 
+#define MAX_SIZE_T (~(size_t)0)
+#define MFAIL ((void*)(MAX_SIZE_T))
 void* palPageAllocator::mmap(size_t size) {
-
+  void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+  if (ptr) {
+    ReportMemoryAllocation(ptr, size);
+    return ptr;
+  } else {
+    return MFAIL;
+  }
 }
 
 int palPageAllocator::munmap(void* ptr, size_t size) {
-
+  MEMORY_BASIC_INFORMATION minfo;
+  char* cptr = (char*)ptr;
+  while (size) {
+    if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
+      return -1;
+    if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
+      minfo.State != MEM_COMMIT || minfo.RegionSize > size)
+      return -1;
+    if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
+      return -1;
+    ReportMemoryDeallocation(cptr, minfo.RegionSize);
+    cptr += minfo.RegionSize;
+    size -= minfo.RegionSize;
+  }
+  return 0;
 }

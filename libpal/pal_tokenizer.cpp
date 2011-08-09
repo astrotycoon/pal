@@ -173,7 +173,7 @@ void palTokenizer::Reset() {
 void palTokenizer::ClearBuffer() {
 	if (own_buffer_)
 	{
-    palFree(buffer_start_);
+    g_StdProxyAllocator->Deallocate(buffer_start_);
 	}
 	own_buffer_ = false;
 	buffer_start_ = NULL;

@@ -60,7 +60,7 @@ bool fileReadTest ()
     return false;
   }
 
-  palFree(b);
+  g_StdProxyAllocator->Deallocate(b);
   pf.Close();
   return true;
 }

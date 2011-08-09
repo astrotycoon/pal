@@ -27,33 +27,33 @@ bool palWebSocketServerTest() {
   
   r = server.Startup(8080);
   if (r != 0) {
-    printf("Could not start websocket server: %d\n", r);
+    palPrintf("Could not start websocket server: %d\n", r);
   }
 
   int threshold = 2;
   while (true) {
     server.Update();
     if (server.HasOpen()) {
-      printf("Connection was opened\n");
+      palPrintf("Connection was opened\n");
     }
     if (server.HasClose()) {
-      printf("Connection was closed\n");
+      palPrintf("Connection was closed\n");
     }
     if (server.HasError()) {
-      printf("Connection had error\n");
+      palPrintf("Connection had error\n");
     }
     if (server.PendingMessageCount() > threshold) {
       threshold = 0;
       MsgCounter counter;
       server.ProcessMessages(palWebSocketServer::OnMessageDelegate(&counter, &MsgCounter::CountMessages));
-      printf("Received %d messages\n", counter.counter);
+      palPrintf("Received %d messages\n", counter.counter);
       server.ProcessMessages(PrintMessages);
       server.ClearMessages(); // clear messages
       server.SendMessage("MSG");
     }
   }
 
-  printf("Finished web socket test.\n");
+  palPrintf("Finished web socket test.\n");
 
   return true;
 }

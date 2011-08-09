@@ -30,8 +30,7 @@
 #include "libpal/pal_spinlock.h"
 #include "libpal/pal_allocator.h"
 
-class palPoolAllocator
-{
+class palPoolAllocator : public palAllocatorInterface {
 protected:
   palSpinlock spinlock_;
 	uint32_t pool_element_size_;
@@ -46,17 +45,16 @@ protected:
 		return ptr >= pool_base_ptr_ && ptr <= (pool_base_ptr_ + (pool_element_size_ * num_pool_elements_-1));
 	}
 public:
-  palPoolAllocator() : pool_element_size_(0), num_pool_elements_(0), num_free_pool_elements_(0), pool_base_ptr_(0), free_ptr_(0) {
+  palPoolAllocator() : palAllocatorInterface("pool"), pool_element_size_(0), num_pool_elements_(0), num_free_pool_elements_(0), pool_base_ptr_(0), free_ptr_(0) {
     palSpinlockInit(&spinlock_);
   }
   
-  palPoolAllocator(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) {
+  palPoolAllocator(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) : palAllocatorInterface("pool") {
     palSpinlockInit(&spinlock_);
     Create(pool_memory, pool_memory_size, element_size, element_alignment);
   }
 
-  ~palPoolAllocator ()
-  {
+  ~palPoolAllocator() {
   }
 
   void Create(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) {  
@@ -88,18 +86,7 @@ public:
 		return num_free_pool_elements_;
 	}
 
-  void* Allocate(size_t size, int flags = kPalAllocationFlagNone) {
-    palSpinlockTake(&spinlock_);
-    if (num_free_pool_elements_ == 0) {
-      return NULL;
-    }
-    num_free_pool_elements_--;
-    unsigned char* new_element = free_ptr_;
-    free_ptr_ = *(unsigned char**)new_element;
-    palSpinlockRelease(&spinlock_);
-    return new_element;
-  }
-  void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone) {
+  void* Allocate(uint32_t size, int alignment) {
     palSpinlockTake(&spinlock_);
     if (num_free_pool_elements_ == 0) {
       return NULL;
@@ -111,7 +98,7 @@ public:
     return new_element;
   }
 
-  void  Deallocate(void* p, size_t size) {
+  void  Deallocate(void* p) {
     if (!p) {
       return;
     }
@@ -122,6 +109,10 @@ public:
     *(unsigned char**)p = free_ptr_;
     free_ptr_ = (unsigned char*)p;
     palSpinlockRelease(&spinlock_);
+  }
+
+  uint32_t GetSize(void* p) const {
+    return pool_element_size_;
   }
   
   void FreeAll() {

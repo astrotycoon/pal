@@ -31,15 +31,14 @@
 #include "libpal/pal_hash_functions.h"
 #include "libpal/pal_hash_constants.h"
 
-template <class Key, class Value, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key), uint32_t ValueAlignment = PAL_ALIGNOF(Value), typename Allocator = palAllocator>
+template <class Key, class Value, class HashFunction = palHashFunction<Key>, class KeyEqual = palHashEqual<Key>, uint32_t KeyAlignment = PAL_ALIGNOF(Key), uint32_t ValueAlignment = PAL_ALIGNOF(Value)>
 class palHashMap
 {
 public:
   /* Types and constants */
-  typedef palHashMap<Key, Value, HashFunction, KeyEqual, KeyAlignment, ValueAlignment, Allocator> this_type;
+  typedef palHashMap<Key, Value, HashFunction, KeyEqual, KeyAlignment, ValueAlignment> this_type;
   typedef Key key_type;
   typedef Value value_type;
-  typedef Allocator allocator_type;
   static const uint32_t key_size = sizeof(Key);
   static const uint32_t value_size = sizeof(Value);
   static const uint32_t key_alignment = KeyAlignment;
@@ -69,7 +68,7 @@ protected:
    */
   int hash_size_configuration_;
 
-	palArray<int, 4, Allocator>	hash_bucket_list_head_;
+	palArray<int, 4>	hash_bucket_list_head_;
 
 
   /* These three could be thought of as:
@@ -80,9 +79,9 @@ protected:
    *     Value value;
    * }
    */
-	palArray<int, PAL_ALIGNOF(int), Allocator>	chain_next_;
-	palArray<Key, KeyAlignment, Allocator>   key_array_;
-	palArray<Value, ValueAlignment, Allocator>	value_array_;
+	palArray<int, PAL_ALIGNOF(int)>	chain_next_;
+	palArray<Key, KeyAlignment>   key_array_;
+	palArray<Value, ValueAlignment>	value_array_;
 
   HashFunction hash_function_;
   KeyEqual key_equal_function_;
@@ -164,12 +163,6 @@ protected:
   }
 public:
 	palHashMap () : hash_size_configuration_(0), hash_bucket_list_head_(), chain_next_(), key_array_(), value_array_(), hash_function_(HashFunction()), key_equal_function_(KeyEqual()) {
-    int new_bucket_size = kPalHashTableSizeConfigurations[hash_size_configuration_].prime_size;
-    hash_bucket_list_head_.Resize(new_bucket_size);
-    for (int i = 0; i < new_bucket_size; i++) {
-      // set all list heads to NULL
-      hash_bucket_list_head_[i] = kPalHashNULL;
-    }
 	}
 
 	/* Assignment operator */
@@ -186,11 +179,27 @@ public:
     return *this;
 	}
 
-	/* Copy constructor */
-	palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map) : hash_size_configuration_(map.hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_), chain_next_(map.chain_next_), key_array_(map.key_array_), value_array_(map.value_array_), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
-	}
+  /* Copy constructor */
+  palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : hash_size_configuration_(map.hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_, allocator), chain_next_(map.chain_next_, allocator), key_array_(map.key_array_, allocator), value_array_(map.value_array_, allocator), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
+  }
+
+  void SetAllocator(palAllocatorInterface* allocator) {
+    hash_bucket_list_head_.SetAllocator(allocator);
+    chain_next_.SetAllocator(allocator);
+    key_array_.SetAllocator(allocator);
+    value_array_.SetAllocator(allocator);
+  }
 
 	bool Insert(const Key& key, const Value& value) {
+    if (hash_bucket_list_head_.GetSize() == 0) {
+      // first insert
+      int new_bucket_size = kPalHashTableSizeConfigurations[hash_size_configuration_].prime_size;
+      hash_bucket_list_head_.Resize(new_bucket_size);
+      for (int i = 0; i < new_bucket_size; i++) {
+        // set all list heads to NULL
+        hash_bucket_list_head_[i] = kPalHashNULL;
+      }
+    }
     /* First try and find the key in the hash table */
     int index = FindIndex(key);
 		if (index != kPalHashNULL) {

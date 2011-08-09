@@ -38,9 +38,8 @@
 #include "libpal/pal_file.h"
 #include "libpal/pal_endian.h"
 #include "libpal/pal_algorithms.h"
-#include "libpal/pal_pool_allocator.h"
+#include "libpal/pal_page_allocator.h"
 #include "libpal/pal_heap_allocator.h"
-#include "libpal/pal_stack_allocator.h"
 #include "libpal/pal_array.h"
 #include "libpal/pal_min_heap.h"
 #include "libpal/pal_image.h"
@@ -74,3 +73,4 @@
 #include "libpal/pal_atom.h"
 
 int palStartup(palConsolePrintFunction print_func);
+int palShutdown();

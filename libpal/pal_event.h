@@ -51,7 +51,7 @@ struct palEventDelegate {
 };
 
 extern palPoolAllocator defualt_event_delegate_pool_allocator;
-typedef palList<palEventDelegate, 8, palPoolAllocator> palEventDelegateList;
+typedef palList<palEventDelegate, 8> palEventDelegateList;
 
 template<typename Signature>
 class palEvent;

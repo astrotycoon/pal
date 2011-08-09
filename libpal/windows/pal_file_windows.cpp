@@ -83,7 +83,7 @@ bool palFile::IsOpen() {
 unsigned char* palFile::CopyContentsAsString(uint64_t* string_length)
 {
   unsigned char *buf = NULL;
-  buf = (unsigned char *)palMalloc((int)GetSize()+1);
+  buf = (unsigned char *)g_StdProxyAllocator->Allocate((int)GetSize()+1);
   if (!buf)
     return NULL;
   uint64_t read_size = Read(buf, GetSize());
@@ -96,7 +96,7 @@ unsigned char* palFile::CopyContentsAsString(uint64_t* string_length)
 
 unsigned char* palFile::CopyContents(uint64_t* string_length) {
   unsigned char *buf = NULL;
-  buf = (unsigned char *)palMalloc((int)GetSize());
+  buf = (unsigned char *)g_StdProxyAllocator->Allocate((int)GetSize());
   if (!buf)
     return NULL;
   uint64_t read_size = Read(buf, GetSize());
@@ -149,7 +149,7 @@ uint64_t palFile::WritePrintf(const char* str, ...) {
   char* to_write = palStringAllocatingPrintfInternal(str, argptr);
   va_end(argptr);
   uint64_t r = Write(to_write);
-  palFree(to_write);
+  palStringAllocatingPrintfInternalDeallocate(to_write);
   return r;
 }
 

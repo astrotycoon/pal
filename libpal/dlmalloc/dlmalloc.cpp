@@ -523,6 +523,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 
 #define ONLY_MSPACES 1
 #define MSPACES 1
+#define USE_LOCKS 1
+#define HAVE_MORECORE 0
 
 #ifndef DLMALLOC_EXPORT
 #define DLMALLOC_EXPORT extern
@@ -796,14 +798,9 @@ struct mallinfo {
   #endif
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+
 #ifndef FORCEINLINE
  #define FORCEINLINE inline
-#endif
-#endif /* __cplusplus */
-#ifndef FORCEINLINE
- #define FORCEINLINE
 #endif
 
 #if !ONLY_MSPACES
@@ -1411,10 +1408,6 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 
 #endif /* MSPACES */
 
-#ifdef __cplusplus
-}  /* end of extern "C" */
-#endif /* __cplusplus */
-
 /*
   ========================================================================
   To make a fully customizable malloc.h header file, cut everything
@@ -1719,17 +1712,17 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
     #ifdef MMAP
         #define CALL_MMAP(s)        MMAP(s)
     #else /* MMAP */
-        #define CALL_MMAP(s)        MMAP_DEFAULT(s)
+        #define CALL_MMAP(s)        (((mstate)msp)->_page_allocator != NULL ? ((mstate)msp)->_page_allocator->mmap(s) : MFAIL)
     #endif /* MMAP */
     #ifdef MUNMAP
         #define CALL_MUNMAP(a, s)   MUNMAP((a), (s))
     #else /* MUNMAP */
-        #define CALL_MUNMAP(a, s)   MUNMAP_DEFAULT((a), (s))
+        #define CALL_MUNMAP(a, s)   (((mstate)msp)->_page_allocator != NULL ? ((mstate)msp)->_page_allocator->munmap((a), (s)) : -1)
     #endif /* MUNMAP */
     #ifdef DIRECT_MMAP
         #define CALL_DIRECT_MMAP(s) DIRECT_MMAP(s)
     #else /* DIRECT_MMAP */
-        #define CALL_DIRECT_MMAP(s) DIRECT_MMAP_DEFAULT(s)
+        #define CALL_DIRECT_MMAP(s) (((mstate)msp)->_page_allocator != NULL ? ((mstate)msp)->_page_allocator->mmap(s) : MFAIL)
     #endif /* DIRECT_MMAP */
 #else  /* HAVE_MMAP */
     #define USE_MMAP_BIT            (SIZE_T_ZERO)
@@ -1846,8 +1839,8 @@ static FORCEINLINE void x86_clear_lock(int* sl) {
 #define CLEAR_LOCK(sl)   x86_clear_lock(sl)
 
 #else /* Win32 MSC */
-#define CAS_LOCK(sl)     interlockedexchange(sl, 1)
-#define CLEAR_LOCK(sl)   interlockedexchange (sl, 0)
+#define CAS_LOCK(sl)     interlockedexchange((volatile long*)sl, 1)
+#define CLEAR_LOCK(sl)   interlockedexchange ((volatile long*)sl, 0)
 
 #endif /* ... gcc spins locks ... */
 
@@ -2567,6 +2560,8 @@ typedef struct malloc_segment* msegmentptr;
 #define MAX_SMALL_SIZE    (MIN_LARGE_SIZE - SIZE_T_ONE)
 #define MAX_SMALL_REQUEST (MAX_SMALL_SIZE - CHUNK_ALIGN_MASK - CHUNK_OVERHEAD)
 
+#include "libpal/pal_page_allocator.h"
+
 struct malloc_state {
   binmap_t   smallmap;
   binmap_t   treemap;
@@ -2588,6 +2583,7 @@ struct malloc_state {
   MLOCK_T    mutex;     /* locate lock among fields that rarely change */
 #endif /* USE_LOCKS */
   msegment   seg;
+  palPageAllocator* _page_allocator;
   void*      extp;      /* Unused but available for extensions */
   size_t     exts;
 };
@@ -3804,6 +3800,7 @@ static void internal_malloc_stats(mstate m) {
 
 /* Malloc using mmap */
 static void* mmap_alloc(mstate m, size_t nb) {
+  mstate msp = m;
   size_t mmsize = mmap_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
   if (m->footprint_limit != 0) {
     size_t fp = m->footprint + mmsize;
@@ -3836,6 +3833,7 @@ static void* mmap_alloc(mstate m, size_t nb) {
 
 /* Realloc using mmap */
 static mchunkptr mmap_resize(mstate m, mchunkptr oldp, size_t nb, int flags) {
+  mstate msp = m;
   size_t oldsize = chunksize(oldp);
   flags = flags; /* placate people compiling -Wunused */
   if (is_small(nb)) /* Can't shrink mmap regions below small size */
@@ -4015,6 +4013,7 @@ static void add_segment(mstate m, char* tbase, size_t tsize, flag_t mmapped) {
 
 /* Get memory from system using MORECORE or MMAP */
 static void* sys_alloc(mstate m, size_t nb) {
+  mstate msp = m;
   char* tbase = CMFAIL;
   size_t tsize = 0;
   flag_t mmap_flag = 0;
@@ -4225,6 +4224,7 @@ static void* sys_alloc(mstate m, size_t nb) {
 
 /* Unmap and unlink any mmapped segments that don't contain used chunks */
 static size_t release_unused_segments(mstate m) {
+  mstate msp = m;
   size_t released = 0;
   int nsegs = 0;
   msegmentptr pred = &m->seg;
@@ -4248,7 +4248,8 @@ static size_t release_unused_segments(mstate m) {
         else {
           unlink_large_chunk(m, tp);
         }
-        if (CALL_MUNMAP(base, size) == 0) {
+        int mm_result = CALL_MUNMAP(base, size);
+        if (mm_result == 0) {
           released += size;
           m->footprint -= size;
           /* unlink obsoleted record */
@@ -4272,6 +4273,7 @@ static size_t release_unused_segments(mstate m) {
 }
 
 static int sys_trim(mstate m, size_t pad) {
+  mstate msp = m;
   size_t released = 0;
   ensure_initialization();
   if (pad < MAX_REQUEST && is_initialized(m)) {
@@ -4339,6 +4341,7 @@ static int sys_trim(mstate m, size_t pad) {
    of free mainly in that the chunk need not be marked as inuse.
 */
 static void dispose_chunk(mstate m, mchunkptr p, size_t psize) {
+  mstate msp = m;
   mchunkptr next = chunk_plus_offset(p, psize);
   if (!pinuse(p)) {
     mchunkptr prev;
@@ -5374,7 +5377,7 @@ size_t dlmalloc_usable_size(void* mem) {
 
 #if MSPACES
 
-static mstate init_user_mstate(char* tbase, size_t tsize) {
+static mstate init_user_mstate(char* tbase, size_t tsize, palPageAllocator* page_allocator) {
   size_t msize = pad_request(sizeof(struct malloc_state));
   mchunkptr mn;
   mchunkptr msp = align_as_chunk(tbase);
@@ -5387,6 +5390,7 @@ static mstate init_user_mstate(char* tbase, size_t tsize) {
   m->magic = mparams.magic;
   m->release_checks = MAX_RELEASE_CHECK_RATE;
   m->mflags = mparams.default_mflags;
+  m->_page_allocator = page_allocator;
   m->extp = 0;
   m->exts = 0;
   disable_contiguous(m);
@@ -5397,7 +5401,8 @@ static mstate init_user_mstate(char* tbase, size_t tsize) {
   return m;
 }
 
-mspace create_mspace(size_t capacity, int locked) {
+mspace create_mspace(size_t capacity, palPageAllocator* page_allocator) {
+  int locked = 1; // force locks
   mstate m = 0;
   size_t msize;
   ensure_initialization();
@@ -5406,9 +5411,9 @@ mspace create_mspace(size_t capacity, int locked) {
     size_t rs = ((capacity == 0)? mparams.granularity :
                  (capacity + TOP_FOOT_SIZE + msize));
     size_t tsize = granularity_align(rs);
-    char* tbase = (char*)(CALL_MMAP(tsize));
+    char* tbase = (char*)(page_allocator->mmap(tsize));
     if (tbase != CMFAIL) {
-      m = init_user_mstate(tbase, tsize);
+      m = init_user_mstate(tbase, tsize, page_allocator);
       m->seg.sflags = USE_MMAP_BIT;
       set_lock(m, locked);
     }
@@ -5416,14 +5421,15 @@ mspace create_mspace(size_t capacity, int locked) {
   return (mspace)m;
 }
 
-mspace create_mspace_with_base(void* base, size_t capacity, int locked) {
+mspace create_mspace_with_base(void* base, size_t capacity) {
+  int locked = 1; // force locks
   mstate m = 0;
   size_t msize;
   ensure_initialization();
   msize = pad_request(sizeof(struct malloc_state));
   if (capacity > msize + TOP_FOOT_SIZE &&
       capacity < (size_t) -(msize + TOP_FOOT_SIZE + mparams.page_size)) {
-    m = init_user_mstate((char*)base, capacity);
+    m = init_user_mstate((char*)base, capacity, NULL);
     m->seg.sflags = EXTERN_BIT;
     set_lock(m, locked);
   }

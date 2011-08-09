@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,83 +21,52 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ALLOCATOR_H__
-#define LIBPAL_PAL_ALLOCATOR_H__
+#pragma once
 
-#include "libpal/pal_types.h"
-#include "libpal/pal_memory.h"
-#include "libpal/pal_align.h"
+#include "libpal/pal_allocator_interface.h"
+#include "libpal/pal_page_allocator.h"
+#include "libpal/pal_heap_allocator.h"
+#include "libpal/pal_proxy_allocator.h"
+#include "libpal/pal_tracking_allocator.h"
+#include "libpal/pal_array.h"
 
-#define kPalAllocationFlagNone 0x0
-#define kPalAllocationFlagGame 0x1
-#define kPalAllocationFlagMultipleFrame 0x2
-#define kPalAllocationFlagFrame 0x4
+extern palAllocatorInterface* g_PageAllocator; // page allocator
+extern palAllocatorInterface* g_DefaultHeapAllocator; // default heap
+extern palAllocatorInterface* g_StdProxyAllocator; // Calls to new, new[], etc go through here
+extern palAllocatorInterface* g_StringProxyAllocator; // string related allocations
 
-/* The palAllocator will always be used as a template argument
- * so you don't inherit from this class, but just implement this
- * interface. Avoids virtual function calls.
- */
+int palAllocatorInit();
+int palAllocatorShutdown();
 
-class palAllocator {
-protected:
-  uint32_t magic_;
-  const char* name_;
-public:
-  palAllocator(const char* name = "SystemHeapAlignedAllocator");
-  palAllocator(const palAllocator& x);
-  palAllocator(const palAllocator& x, const char* name);
-
-  palAllocator& operator=(const palAllocator& x);
-
-  void* Allocate(size_t size, int flags = kPalAllocationFlagNone);
-  void* Allocate(size_t size, size_t alignment, size_t alignment_offset = 0, int flags = kPalAllocationFlagNone);
-  void  Deallocate(void* p, size_t size);
-
-  const char* GetName() const;
-  void        SetName(const char* name);
-
-  friend bool operator==(const palAllocator& a, const palAllocator& b);
-  friend bool operator!=(const palAllocator& a, const palAllocator& b);
+struct palTrackedAllocator {
+  palArray<palTrackedAllocator> children;
+  palAllocatorInterface* allocator;
+  palAllocatorInterface* parent;
+  palTrackedAllocator() {
+    allocator = NULL;
+    parent = NULL;
+  }
+  ~palTrackedAllocator() {
+    children.Reset();
+  }
 };
 
-bool operator==(const palAllocator& a, const palAllocator& b);
-bool operator!=(const palAllocator& a, const palAllocator& b);
+class palAllocatorTracker {
+  palTrackedAllocator _root;
+  palAllocatorInterface* _allocator;
 
-#define PAL_CLASS_ALLOCATOR_OVERRIDE_SYSTEM_HEAP_ALIGNED_ALIGNOF(TName) \
-  static void* operator new(size_t size) {                         \
-    palAllocator a;                     \
-    return a.Allocate(size, PAL_ALIGNOF(TName)); \
-  }                                                                \
-  static void operator delete(void* p) {                           \
-    palAllocator a;                     \
-    return a.Deallocate(p, 0);              \
-  } \
-  static void* operator new[](size_t size) { \
-    palAllocator a; \
-    return a.Allocate(size, PAL_ALIGNOF(TName)); \
-  } \
-  static void operator delete[](void* p) { \
-    palAllocator a; \
-    return a.Deallocate(p, 0); \
-  }
+  palTrackedAllocator* AddAllocator(palTrackedAllocator* root, palAllocatorInterface* allocator);
+  palTrackedAllocator* LocateParentAllocator(palTrackedAllocator* root, palAllocatorInterface* allocator);
+  void ConsoleDump(int level, palTrackedAllocator* root);
+public:
+  palAllocatorTracker();
+  ~palAllocatorTracker();
 
-#define PAL_CLASS_ALLOCATOR_OVERRIDE_SYSTEM_HEAP_ALIGNED_FIXED_ALIGN(Alignment) \
-  static void* operator new(size_t size) {                         \
-  palAllocator a;                     \
-  return a.Allocate(size, Alignment); \
-}                                                                \
-  static void operator delete(void* p) {                           \
-  palAllocator a;                     \
-  return a.Deallocate(p, 0);              \
-} \
-  static void* operator new[](size_t size) { \
-  palAllocator a; \
-  return a.Allocate(size, Alignment); \
-} \
-  static void operator delete[](void* p) { \
-  palAllocator a; \
-  return a.Deallocate(p, 0); \
-}
+  void SetAllocator(palAllocatorInterface* allocator);
 
+  void RegisterAllocator(palAllocatorInterface* allocator, palAllocatorInterface* parent_allocator);
 
-#endif  // LIBPAL_PAL_ALLOCATOR_H__
+  void ConsoleDump();
+};
+
+extern palAllocatorTracker* g_AllocatorTracker;

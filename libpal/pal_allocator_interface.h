@@ -23,48 +23,88 @@
 
 #pragma once
 
-#include "libpal/libpal.h"
+#include "libpal/pal_memory.h"
+#include "libpal/pal_atomic.h"
+#include "libpal/pal_align.h"
 
 class palAllocatorInterface {
 public:
-  palAllocatorInterface(const char* name) : _name(name), _memory_allocations(0), _memory_used(0) {
+  palAllocatorInterface(const char* name) : _name(name) {
+    _memory_allocations.Store(0);
+    _memory_used.Store(0);
   }
   virtual ~palAllocatorInterface() {
     AssertOnLeak();
   }
 
+  /* INTERFACE */
+  virtual void* Allocate(uint32_t size, int alignment = 8) = 0;
+  virtual void Deallocate(void* ptr) = 0;
+  virtual uint32_t GetSize(void* ptr) const = 0;
+
+  template <class T>
+  T* Construct() {
+    void* allocation = Allocate(sizeof(T), PAL_ALIGNOF(T));
+    return new (allocation) T();
+  }
+
+  template <class T, class P1>
+  T* Construct(const P1& p1) {
+    void* allocation = Allocate(sizeof(T), PAL_ALIGNOF(T));
+    return new (allocation) T(p1);
+  }
+
+  template <typename T, class P1, class P2>
+  T* Construct(const P1& p1, const P2& p2) {
+    void* allocation = Allocate(sizeof(T), PAL_ALIGNOF(T));
+    return new (allocation) T(p1, p2);
+  }
+
+  template <typename T, class P1, class P2>
+  T* Construct(const P1& p1, P2& p2) {
+    void* allocation = Allocate(sizeof(T), PAL_ALIGNOF(T));
+    return new (allocation) T(p1, p2);
+  }
+
+  template <class T>
+  void Destruct(T* p) {
+    if (p) {
+      p->~T();
+      Deallocate(p);
+    }
+  }
+  /* END INTERFACE */
+
   const char* GetName() const {
     return _name;
   }
 
-  /* INTERFACE */
-  virtual void* Allocate(uint32_t size, int alignment) = 0;
-  virtual void Deallocate(void* ptr) = 0;
-  virtual uint32_t GetSize(void* ptr) const = 0;
-  /* END INTERFACE */
-
   int GetNumberOfAllocations() {
-    return _memory_allocations;
+    return _memory_allocations.Load();
   }
   int GetMemoryAllocated() {
-    return _memory_used;
+    return _memory_used.Load();
   }
 
 protected:
-  void ReportMemoryAllocation(uint32_t size) {
-    _memory_used += size;
-    _memory_allocations++;
+  void ReportMemoryAllocation(void* p, uint32_t size) {
+    //palPrintf("[%s] %p %d +\n", _name, p, size);
+    _memory_allocations.FetchAdd(1);
+    _memory_used.FetchAdd(size);
   }
-  void ReportMemoryDeallocation(uint32_t size) {
-    _memory_used -= size;
-    _memory_allocations--;
+  void ReportMemoryDeallocation(void* p, uint32_t size) {
+    //palPrintf("[%s] %p %d -\n", _name, p, size);
+    _memory_allocations.FetchSub(1);
+    _memory_used.FetchSub(size);
   }
   void AssertOnLeak() {
-    palAssert(_memory_allocations == 0 && _memory_used == 0);
+    if (_memory_allocations.Load() != 0 || _memory_used.Load() != 0) {
+      palPrintf("Allocator %s has leaks [%d allocations - %d bytes]\n", _name, _memory_allocations.Load(), _memory_used.Load());
+    }
   }
 private:
-  uint32_t _memory_allocations;
-  uint32_t _memory_used;
+  palAtomicInt32 _memory_allocations;
+  palAtomicInt32 _memory_used;
   PAL_DISALLOW_COPY_AND_ASSIGN(palAllocatorInterface);
   const char* _name;
 };

@@ -27,18 +27,17 @@
 #include "libpal/pal_array.h"
 #include "libpal/pal_algorithms.h"
 
-template <typename T, typename CompareFuncLessThan = palCompareFuncLessThan<T>, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
+template <typename T, typename CompareFuncLessThan = palCompareFuncLessThan<T>, uint32_t Alignment = PAL_ALIGNOF(T)>
 class palMinHeap
 {
 public:
   /* Types and constants */
-  typedef palMinHeap<T, CompareFuncLessThan, Alignment, Allocator> this_type;
+  typedef palMinHeap<T, CompareFuncLessThan, Alignment> this_type;
   typedef T element_type;
-  typedef Allocator allocator_type;
   static const uint32_t element_size = sizeof(T);
   static const uint32_t element_alignment = Alignment; 
 protected:
-  palArray<T, Alignment, Allocator> array_;
+  palArray<T, Alignment> array_;
   CompareFuncLessThan LessThan_;
 
   /* Heap helpers */
@@ -81,10 +80,17 @@ public:
   palMinHeap(int capacity) : array_(capacity), LessThan_(CompareFuncLessThan()) {
   }
 
-  palMinHeap(const palMinHeap<T>& mh) : array_(mh.array_), LessThan_(mh.LessThan_) {
+  palMinHeap(const palMinHeap<T>& mh, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : array_(mh.array_, allocator), LessThan_(mh.LessThan_) {
 
   }
 
+  void SetAllocator(palAllocatorInterface* allocator) {
+    array_.SetAllocator(allocator);
+  }
+
+  palAllocatorInterface* GetAllocator() const {
+    return array_.GetAllocator();
+  }
   palMinHeap<T>& operator=(const palMinHeap<T>& rhs) {
     array_ = rhs.array_;
     LessThan_ = rhs.LessThan_;

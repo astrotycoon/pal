@@ -26,79 +26,8 @@
 
 #include "libpal/pal_debug.h"
 #include "libpal/pal_align.h"
+#include "libpal/pal_allocator.h"
 #include "libpal/pal_memory.h"
-
-
-void* palMalloc(int size) {
-  return malloc(size);
-}
-
-void  palFree(void* p) {
-  free(p);
-}
-
-void* palMallocAligned(uint32_t size, uint32_t alignment, uint32_t offset) {
-  if (alignment < 1) {
-    // fix alignment
-    alignment = 1;
-  }
-
-  const int pointerSize = sizeof(void*);
-  const int requestedSize = size + alignment - 1 + pointerSize;
-
-  void* original = malloc(requestedSize);
-
-  
-  if (!original)
-    return NULL;
-
-  uintptr_t address = (uintptr_t)original;
-  address += pointerSize;
-  uintptr_t aligned_address = palAlign(address + offset, alignment) - offset;
-  void* aligned = (void*)aligned_address;
-  *(void**)((char*)aligned-pointerSize) = original;
-
-  return aligned;
-}
-
-void* palMallocAligned(uint32_t size, uint32_t alignment) {
-  const int pointerSize = sizeof(void*);
-  const int requestedSize = size + alignment - 1 + pointerSize;
-
-  void* original = malloc(requestedSize);
-
-  if (!original)
-    return NULL;
-
-  void* start = (char*)original + pointerSize;
-  void* aligned = palAlign(start, alignment);
-  *(void**)((char*)aligned-pointerSize) = original;
-
-  return aligned;
-}
-
-void* palMallocAligned4 (uint32_t size) {
-  void* ptr = palMallocAligned(size, 4);
-  palAssert(palIsAligned4(ptr));
-  return ptr;
-}
-
-void* palMallocAligned16(uint32_t size) {
-  void* ptr = palMallocAligned(size, 16);
-  palAssert(palIsAligned16(ptr));
-  return ptr;
-}
-
-void* palMallocAligned128(uint32_t size) {
-  void* ptr = palMallocAligned(size, 128);
-  palAssert(palIsAligned128(ptr));
-  return ptr;
-}
-
-void palFreeAligned(void* ptr) {
-  void* original = *(void**)((char*)ptr-sizeof(void*));
-  free(original);
-}
 
 void palMemoryCopyBytes(void* destination, const void* source, int bytes) {
   intptr_t d_start = reinterpret_cast<intptr_t>(destination);
@@ -136,27 +65,22 @@ int palRoundToPowerOfTwo(int x) {
 
 // globally override new operator
 
-void* operator new(size_t size) {
-  // we default to 16-byte alignment.
-  return palMallocAligned16(size);
+void* operator new(size_t size) { 
+  return g_StdProxyAllocator->Allocate(size, 16);
 }
 
-void* operator new(size_t size, const palNewAlignment& alignment) {
-  return palMallocAligned(size, alignment.alignment);
+void* operator new(size_t size, void* p) {
+  return p;
 }
 
 void operator delete(void* p) {
-  palFreeAligned(p);
+  g_StdProxyAllocator->Deallocate(p);
 }
 
 void* operator new[](size_t size) {
-  return palMallocAligned16(size);
-}
-
-void* operator new[](size_t size, const palNewAlignment& alignment) {
-  return palMallocAligned(size, alignment.alignment);
+  return g_StdProxyAllocator->Allocate(size, 16);
 }
 
 void operator delete[](void* p) {
-  palFreeAligned(p);
+  g_StdProxyAllocator->Deallocate(p);
 }

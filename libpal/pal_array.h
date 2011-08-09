@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2009 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,29 +21,24 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_ARRAY_H__
-#define LIBPAL_PAL_ARRAY_H__
+#pragma once
 
-#include <new>
 #include "libpal/pal_debug.h"
-#include "libpal/pal_allocator.h"
+#include "libpal/pal_allocator_interface.h"
 #include "libpal/pal_memory.h"
 #include "libpal/pal_align.h"
 
 #define kpalArrayDefaultGrowthCapacity 2.0f
 
-template <typename T, uint32_t Alignment = PAL_ALIGNOF(T), typename Allocator = palAllocator>
-class palArray
-{
+template <typename T, uint32_t Alignment = PAL_ALIGNOF(T)>
+class palArray {
 public:
   /* Types and constants */
-  typedef palArray<T, Alignment, Allocator> this_type;
+  typedef palArray<T, Alignment> this_type;
   typedef T element_type;
-  typedef Allocator allocator_type;
-  static const uint32_t element_size = sizeof(T);
   static const uint32_t element_alignment = Alignment; 
 protected:
-  allocator_type allocator_;
+  palAllocatorInterface* allocator_;
 	float growth_factor_;
 	T* buffer_;
 	int capacity_;
@@ -86,23 +81,23 @@ protected:
 
 	void DeallocateBuffer() {
     if (buffer_ != NULL) {
-      allocator_.Deallocate(buffer_, capacity_ * this_type::element_size);
+      allocator_->Deallocate(buffer_);
     }
 		buffer_ = NULL;
 		capacity_ = 0;
 	}
 
 	T* AllocateBuffer(int number) {
-    return static_cast<T*>(allocator_.Allocate(number * this_type::element_size, this_type::element_alignment));
+    return static_cast<T*>(allocator_->Allocate(number * sizeof(T), this_type::element_alignment));
 	}
 public:
 	/* Copy constructor */
-	palArray(const palArray<T>& array) {
+	palArray(const palArray<T>& array, palAllocatorInterface* allocator = g_DefaultHeapAllocator) {
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
 		stolen_ = false;
-    allocator_ = allocator_type("palArray");
+    allocator_ = allocator;
 		growth_factor_ = array.growth_factor_;
 		Reserve(array.GetCapacity());
 		Resize(array.GetSize());
@@ -122,7 +117,6 @@ public:
       DeallocateBuffer();
     }
 
-    allocator_ = array.allocator_;
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
@@ -136,32 +130,13 @@ public:
 		return *this;
 	}
 
-  palArray(const allocator_type& allocator) {
-    buffer_ = NULL;
-    capacity_ = 0;
-    size_ = 0;
-    stolen_ = false;
-    growth_factor_ = kpalArrayDefaultGrowthCapacity;
-    allocator_ = allocator;
-  }
-
 	palArray() {
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
     stolen_ = false;
-    allocator_ = allocator_type("palArray");
+    allocator_ = NULL;
 		growth_factor_ = kpalArrayDefaultGrowthCapacity;
-	}
-
-	palArray(int capacity) {
-		buffer_ = NULL;
-		capacity_ = 0;
-		size_ = 0;
-    allocator_ = allocator_type("palArray");
-		growth_factor_ = kpalArrayDefaultGrowthCapacity;
-		stolen_ = false;
-		Reserve(capacity);
 	}
 
   ~palArray() {
@@ -169,6 +144,14 @@ public:
       CallDestructor(0, size_);
       DeallocateBuffer();
     }
+  }
+
+  void SetAllocator(palAllocatorInterface* allocator) {
+    allocator_ = allocator;
+  }
+
+  palAllocatorInterface* GetAllocator() const {
+    return allocator_;
   }
 
   T& operator[](int i) {
@@ -376,5 +359,3 @@ public:
     buffer_[size_].~T();
   }
 };
-
-#endif  // LIBPAL_PAL_ARRAY_H__

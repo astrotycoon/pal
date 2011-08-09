@@ -13,19 +13,20 @@
 #include "pal_json_test.h"
 #include "pal_object_id_table_test.h"
 #include "pal_web_socket_server_test.h"
+#include "pal_heap_allocator_test.h"
 
 int main(int argc, char** argv) {
   palStartup(windows_debugger_print_function);
-  
-  PalStringTest();
-  PalThreadTest();
+  palShutdown();
   return 0;
+  PalContainerTest();
+  PalThreadTest();
 
   palWebSocketServerTest();
   PalObjectIdTableTest();
   PalEventTest();
   PalJsonTest();
-  PalPoolAllocTest();
+  //PalPoolAllocTest();
   PalTimeLineTest();
   PalAlgorithmsTest();
   PalSimdTest();
@@ -34,10 +35,7 @@ int main(int argc, char** argv) {
   PalStringTest();
   PalStringTest();
   PalThreadTest();
-  PalAtomicTest();
-  PalContainerTest();
-
-  palSocketFini();
+  
 
   return 0;
 }

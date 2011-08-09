@@ -61,7 +61,7 @@ enum palThreadPriority {
 typedef palDelegate<void (uintptr_t)> palThreadStart;
 
 struct palThreadDescription {
-  palDynamicString name;
+  const char* name;
   palThreadStart start_method;
   uintptr_t start_value;
   palThreadPriority priority;
@@ -92,11 +92,11 @@ public:
 };
 
 struct palMutexDescription {
-  palDynamicString name;
+  const char* name;
   bool initial_ownership;
   palThreadRecursionPolicy recursion_policy;
 
-  palMutexDescription() : initial_ownership(false), name("Unnamed Mutex"), recursion_policy(kPalThreadRecursionPolicyNotAllowed) {
+  palMutexDescription() : initial_ownership(false), name(NULL), recursion_policy(kPalThreadRecursionPolicyNotAllowed) {
   }
 };
 
@@ -118,7 +118,7 @@ public:
 };
 
 struct palSemaphoreDescription {
-  palDynamicString name;
+  const char* name;
   uint32_t maximum;
   uint32_t initial_reservation;
 
@@ -144,7 +144,7 @@ public:
 };
 
 struct palReaderWriterLockDescription {
-  palDynamicString name;
+  const char* name;
   palThreadRecursionPolicy recursion_policy;
 };
 

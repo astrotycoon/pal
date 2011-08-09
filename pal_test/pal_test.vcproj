@@ -44,6 +44,7 @@
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)/&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
+				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -94,7 +95,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -118,6 +119,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(SolutionDir)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				ExceptionHandling="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -199,15 +201,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_heap_allocator_test.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_json_test.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\pal_object_id_table_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_pool_alloc_test.cpp"
 				>
 			</File>
 			<File
@@ -265,15 +267,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_heap_allocator_test.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_json_test.h"
 				>
 			</File>
 			<File
 				RelativePath=".\pal_object_id_table_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_pool_alloc_test.h"
 				>
 			</File>
 			<File

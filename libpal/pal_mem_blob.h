@@ -24,6 +24,7 @@
 */
 
 #include "libpal/pal_memory.h"
+#include "libpal/pal_allocator.h"
 
 struct palMemBlob {
 protected:
@@ -39,7 +40,7 @@ public:
 
   ~palMemBlob() {
     if (buffer && own_buffer) {
-      palFree(buffer);
+      g_StdProxyAllocator->Deallocate(buffer);
     }
     buffer = NULL;
     buffer_size = 0;
@@ -72,7 +73,7 @@ public:
 
   void Reset() {
     if (own_buffer && buffer) {
-      palFree(buffer);
+      g_StdProxyAllocator->Deallocate(buffer);
     }
     own_buffer = false;
     buffer_size = 0;
@@ -114,21 +115,21 @@ struct palGrowingMemoryBlob {
   }
 
   ~palGrowingMemoryBlob() {
-    palFree(buffer);
+    g_StdProxyAllocator->Deallocate(buffer);
   }
 
   void IncreaseCapacity(uint32_t new_capacity) {
     if (buffer_capacity == 0) {
       // initial growth
-      buffer = palMalloc(new_capacity);
+      buffer = g_StdProxyAllocator->Allocate(new_capacity);
       buffer_capacity = new_capacity;
     } else if (new_capacity > buffer_capacity) {
       // create new buffer
-      void* new_buffer = palMalloc(new_capacity);
+      void* new_buffer = g_StdProxyAllocator->Allocate(new_capacity);
       // copy old buffer into new buffer
       palMemoryCopyBytes(new_buffer, buffer, buffer_size);
       // free old buffer
-      palFree(buffer);
+      g_StdProxyAllocator->Deallocate(buffer);
 
       buffer = new_buffer;
       buffer_capacity = new_capacity;
@@ -160,7 +161,7 @@ struct palGrowingMemoryBlob {
 
   void Reset() {
     if (buffer) {
-      palFree(buffer);
+      g_StdProxyAllocator->Deallocate(buffer);
     }
     buffer = NULL;
     buffer_capacity = 0;

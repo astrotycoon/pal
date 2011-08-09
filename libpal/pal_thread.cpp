@@ -112,7 +112,7 @@ int palThread::Join(int64_t* thread_return_value) {
 }
 
 const char* palThread::GetName() const {
-  return _desc.name.C();
+  return _desc.name;
 }
 
 const palThreadDescription& palThread::GetDescription() const {
@@ -167,7 +167,7 @@ palSemaphore::palSemaphore() {
 
 int palSemaphore::Create(const palSemaphoreDescription& desc) {
   _desc = desc;
-  _pdata.semaphore = CreateSemaphoreEx(NULL, _desc.initial_reservation, _desc.maximum, _desc.name.C(), 0, SEMAPHORE_ALL_ACCESS);
+  _pdata.semaphore = CreateSemaphoreEx(NULL, _desc.initial_reservation, _desc.maximum, _desc.name, 0, SEMAPHORE_ALL_ACCESS);
   if (_pdata.semaphore == 0) {
     return PAL_THREAD_ERROR_COULD_NOT_CREATE;
   }
@@ -261,7 +261,7 @@ int palReaderWriterLock::ReleaseWriter() {
 
 int palThreadInit() {
   static palThreadDescription main_thread_description;
-  main_thread_description.name = palDynamicString("Main Thread");
+  main_thread_description.name = "Main Thread";
   main_thread_description.stack_size = 1024*1024;
   static palThread main_thread;
   main_thread.GetDescription() = main_thread_description;
