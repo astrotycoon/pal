@@ -25,7 +25,6 @@
 #include "libpal/pal_ilist.h"
 #include "libpal/pal_compacting_allocator.h"
 
-
 #define ALLOCATED_BIT (0x1)
 #define SIZE_MASK (~0x1)
 #define MINIMUM_SIZE (4)
@@ -82,6 +81,10 @@ palCompactingAllocator::palCompactingAllocator(uint32_t size, void* memory) : ch
 
 palCompactingAllocator::~palCompactingAllocator() {
   // NOP
+}
+
+void palCompactingAllocator::SetAllocator(palAllocatorInterface* allocator) {
+  handle_to_address_.SetAllocator(allocator);
 }
 
 void palCompactingAllocator::Create(uint32_t size, void* memory) {
@@ -285,7 +288,7 @@ void palCompactingAllocator::DiagnosticDump() {
   palIListForeachDeclare(gcaMemoryChunkHeader, chunk_list) chunks_iterator(&chunk_list_head);
   palPrintf("Memory Base Address = %p\n", memory_);
   palPrintf("Memory size = %x\n", memory_size_);
-  palPrintf("sizeof(gcaMemoryChunkHeader) = %zx\n", sizeof(gcaMemoryChunkHeader));
+  palPrintf("sizeof(gcaMemoryChunkHeader) = %x\n", sizeof(gcaMemoryChunkHeader));
 
   int chunk_id = 0;
   while (chunks_iterator.Finished() == false) {
@@ -301,7 +304,7 @@ void palCompactingAllocator::DiagnosticDump() {
     palPrintf("Handle = %d\n", chunk->handle);
     palPrintf("Size = %x\n", chunk->GetSize());
     uintptr_t next_header = (uintptr_t)reinterpret_cast<unsigned char*>(chunk) + sizeof(*chunk) + chunk->GetSize();
-    palPrintf("&next_header = %zx\n", next_header);
+    palPrintf("&next_header = %x\n", next_header);
     chunks_iterator.Next();
     chunk_id++;
     if (chunks_iterator.Finished() == false) {

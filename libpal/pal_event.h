@@ -21,8 +21,7 @@ misrepresented as being the original software.
 distribution.
 */
 
-#ifndef LIBPAL_PAL_EVENT_H_
-#define LIBPAL_PAL_EVENT_H_
+#pragma once
 
 #include "libpal/pal_list.h"
 #include "libpal/pal_delegate.h"
@@ -50,8 +49,7 @@ struct palEventDelegate {
   }
 };
 
-extern palPoolAllocator defualt_event_delegate_pool_allocator;
-typedef palList<palEventDelegate, 8> palEventDelegateList;
+extern palAllocatorInterface* g_palEventDelegateAllocator;
 
 template<typename Signature>
 class palEvent;
@@ -63,6 +61,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -124,7 +125,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -186,7 +189,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -248,7 +253,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -310,7 +317,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -372,7 +381,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -434,7 +445,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -496,7 +509,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -558,7 +573,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -620,7 +637,9 @@ public:
 protected:
   palList<palEventDelegate> delegates_;
 public:
-
+  palEvent() {
+    delegates_.SetAllocator(g_palEventDelegateAllocator);
+  }
   void Register(DelegateType del) {
     palEventDelegate ped;
     *(ped.Cast<DelegateType>()) = del;
@@ -675,4 +694,5 @@ public:
   }
 };
 
-#endif  // LIBPAL_PAL_EVENT_H_
+int palEventInit();
+int palEventShutdown();

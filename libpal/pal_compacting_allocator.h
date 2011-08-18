@@ -57,6 +57,7 @@ class palCompactingAllocator {
   palCompactingAllocator(uint32_t memory_size, void* memory);
   ~palCompactingAllocator();
 
+  void SetAllocator(palAllocatorInterface* allocator);
   void Create(uint32_t size, void* memory);
 
   palGCAHandle Malloc(uint32_t size);

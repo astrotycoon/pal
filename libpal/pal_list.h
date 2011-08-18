@@ -61,8 +61,10 @@ class palList {
   }
 
   ~palList() {
-    // erase all nodes
-    Erase(GetFirst(), GetLast());
+    if (IsEmpty() == false) {
+      // erase all nodes
+      Erase(GetFirst(), GetLast());
+    }
   }
 
   void SetAllocator(palAllocatorInterface* allocator) {

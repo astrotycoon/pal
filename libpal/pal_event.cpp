@@ -21,12 +21,18 @@
 	distribution.
 */
 
+#include "libpal/pal_proxy_allocator.h"
 #include "libpal/pal_event.h"
 
-/* Configure the pool allocator for event delegates */
-#define kPalEventDelegateMax 4096
-#define kPalEventDelegatePoolSize palEventDelegateList::element_size*kPalEventDelegateMax
+palAllocatorInterface* g_palEventDelegateAllocator = NULL;
 
-static unsigned char* event_delegate_pool_memory[kPalEventDelegatePoolSize];
+int palEventInit() {
+  g_palEventDelegateAllocator = g_DefaultHeapAllocator->Construct<palProxyAllocator>("Event Delegate", g_DefaultHeapAllocator);
+  return 0;
+}
 
-palPoolAllocator defualt_event_delegate_pool_allocator(&event_delegate_pool_memory[0], kPalEventDelegatePoolSize, palEventDelegateList::element_size, 8);
+int palEventShutdown() {
+  g_DefaultHeapAllocator->Destruct(g_palEventDelegateAllocator);
+  g_palEventDelegateAllocator = NULL;
+  return 0;
+}
