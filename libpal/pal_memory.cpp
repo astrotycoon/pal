@@ -29,26 +29,26 @@
 #include "libpal/pal_allocator.h"
 #include "libpal/pal_memory.h"
 
-void palMemoryCopyBytes(void* destination, const void* source, int bytes) {
-  intptr_t d_start = reinterpret_cast<intptr_t>(destination);
-  intptr_t d_end = d_start + bytes;
-  intptr_t s_start = reinterpret_cast<intptr_t>(source);
-  intptr_t s_end = s_start + bytes;
+void palMemoryCopyBytes(void* destination, const void* source, uint64_t bytes) {
+  uintptr_t d_start = reinterpret_cast<uintptr_t>(destination);
+  uintptr_t d_end = d_start + (uintptr_t)bytes;
+  uintptr_t s_start = reinterpret_cast<uintptr_t>(source);
+  uintptr_t s_end = s_start + (uintptr_t)bytes;
   if ((s_start >= d_start && s_start < d_end) ||
     (d_start >= s_start && d_start < s_end)) {
     // regions overlap
-    memmove(destination, source, bytes);
+    memmove(destination, source, (size_t)bytes);
   } else {
-    memcpy(destination, source, bytes);
+    memcpy(destination, source, (size_t)bytes);
   }
 }
 
-void palMemoryZeroBytes(void* destination, int bytes) {
-  memset(destination, 0, bytes);
+void palMemoryZeroBytes(void* destination, uint64_t bytes) {
+  memset(destination, 0, (size_t)bytes);
 }
 
-void palMemorySetBytes(void* destination, unsigned char byte, int bytes) {
-  memset(destination, byte, bytes);
+void palMemorySetBytes(void* destination, unsigned char byte, uint64_t bytes) {
+  memset(destination, byte, (size_t)bytes);
 }
 
 int palRoundToPowerOfTwo(int x) {

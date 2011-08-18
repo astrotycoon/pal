@@ -29,9 +29,9 @@
 #define NULL 0
 #endif
 
-void palMemoryCopyBytes(void* destination, const void* source, int bytes);
-void palMemoryZeroBytes(void* destination, int bytes);
-void palMemorySetBytes(void* destination, unsigned char byte, int bytes);
+void palMemoryCopyBytes(void* destination, const void* source, uint64_t bytes);
+void palMemoryZeroBytes(void* destination, uint64_t bytes);
+void palMemorySetBytes(void* destination, unsigned char byte, uint64_t bytes);
 
 int   palRoundToPowerOfTwo(int x);
 
