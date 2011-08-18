@@ -12,15 +12,15 @@ palPageAllocator::palPageAllocator() : palAllocatorInterface("Sytem Memory Page 
 #endif
 }
 
-void* palPageAllocator::Allocate(uint32_t size, int alignment) {
+void* palPageAllocator::Allocate(uint64_t size, uint32_t alignment) {
   palAssert(alignment == _page_size);
   palAssert((size & (alignment-1)) == 0);
   unsigned char* p = NULL;
-  VirtualAlloc(&p, size+_page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  VirtualAlloc(&p, (SIZE_T)(size+_page_size), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   palAssert(p != NULL);
   {
     *((uint32_t*)p) = PAGE_ALLOCATOR_MAGIC;
-    *((uint32_t*)(p + sizeof(uint32_t))) = size;
+    *((uint64_t*)(p + sizeof(uint32_t))) = size;
   }
   ReportMemoryAllocation(p+_page_size, size+_page_size);
   return p+_page_size;
@@ -31,19 +31,19 @@ void palPageAllocator::Deallocate(void* ptr) {
   p -= _page_size;
   uint32_t magic = *((uint32_t*)p);
   p += 4;
-  uint32_t size = *((uint32_t*)p);
+  uint64_t size = *((uint64_t*)p);
   palAssert(magic == PAGE_ALLOCATOR_MAGIC);
   p -= 4;
   VirtualFree(p, 0, MEM_RELEASE);
   ReportMemoryDeallocation(ptr, size+_page_size);
 }
 
-uint32_t palPageAllocator::GetSize(void* ptr) const {
+uint64_t palPageAllocator::GetSize(void* ptr) const {
   unsigned char* p = reinterpret_cast<unsigned char*>(ptr);
   p -= _page_size;
   uint32_t magic = *((uint32_t*)p);
   p += 4;
-  uint32_t size = *((uint32_t*)p);
+  uint64_t size = *((uint64_t*)p);
   palAssert(magic == PAGE_ALLOCATOR_MAGIC);
   return size;
 }

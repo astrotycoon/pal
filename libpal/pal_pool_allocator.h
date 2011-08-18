@@ -1,5 +1,5 @@
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -21,9 +21,6 @@
 	distribution.
 */
 
-#ifndef LIBPAL_PAL_POOL_ALLOCATOR_H_
-#define LIBPAL_PAL_POOL_ALLOCATOR_H_
-
 #include "libpal/pal_platform.h"
 #include "libpal/pal_debug.h"
 #include "libpal/pal_align.h"
@@ -40,8 +37,7 @@ protected:
 	unsigned char* pool_base_ptr_;
 	unsigned char* free_ptr_;
 
-	bool PointerFromPool (void* ptr)
-	{
+	bool PointerFromPool(void* ptr) {
 		return ptr >= pool_base_ptr_ && ptr <= (pool_base_ptr_ + (pool_element_size_ * num_pool_elements_-1));
 	}
 public:
@@ -86,7 +82,7 @@ public:
 		return num_free_pool_elements_;
 	}
 
-  void* Allocate(uint32_t size, int alignment) {
+  void* Allocate(uint64_t size, uint32_t alignment) {
     palSpinlockTake(&spinlock_);
     if (num_free_pool_elements_ == 0) {
       return NULL;
@@ -94,6 +90,7 @@ public:
     num_free_pool_elements_--;
     unsigned char* new_element = free_ptr_;
     free_ptr_ = *(unsigned char**)new_element;
+    ReportMemoryAllocation(new_element, pool_element_size_);
     palSpinlockRelease(&spinlock_);
     return new_element;
   }
@@ -103,15 +100,16 @@ public:
       return;
     }
 
-    palAssert (PointerFromPool (p));
+    palAssert(PointerFromPool (p));
     palSpinlockTake(&spinlock_);
     num_free_pool_elements_++;
     *(unsigned char**)p = free_ptr_;
     free_ptr_ = (unsigned char*)p;
+    ReportMemoryDeallocation(p, pool_element_size_);
     palSpinlockRelease(&spinlock_);
   }
 
-  uint32_t GetSize(void* p) const {
+  uint64_t GetSize(void* p) const {
     return pool_element_size_;
   }
   
@@ -127,9 +125,8 @@ public:
 			current_element += pool_element_size_;
 		}
     num_free_pool_elements_ = num_pool_elements_;
+    ResetMemoryAllocationStatistics();
     palSpinlockRelease(&spinlock_);
   }
 };
-
-#endif  // LIBPAL_PAL_POOL_ALLOCATOR_H_
 

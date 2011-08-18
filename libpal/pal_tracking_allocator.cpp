@@ -33,16 +33,16 @@ palTrackingAllocator::~palTrackingAllocator() {
   ConsoleDump();
 }
 
-void* palTrackingAllocator::Allocate(uint32_t size, int alignment) {
-  const uint32_t requested_size = size+sizeof(palTrackedAllocation);
+void* palTrackingAllocator::Allocate(uint64_t size, uint32_t alignment) {
+  const uint64_t requested_size = size+sizeof(palTrackedAllocation);
   void* result = _parent_allocator->Allocate(requested_size, alignment);
   if (result) {
-    const uint32_t received_size = GetSize(result);
+    const uint64_t received_size = GetSize(result);
     ReportMemoryAllocation(result, received_size);
-    const uint32_t offset = received_size-sizeof(palTrackedAllocation);
+    const uint64_t offset = received_size-sizeof(palTrackedAllocation);
     palAssert(offset >= size);
     uintptr_t tracked_allocation_pointer = (uintptr_t)result;
-    tracked_allocation_pointer += offset;
+    tracked_allocation_pointer += (uintptr_t)offset;
     palTrackedAllocation* tracked_allocation = (palTrackedAllocation*)tracked_allocation_pointer;
     tracked_allocation->ptr = result;
     _tracked_allocations.AddTail(&tracked_allocation->list_node);
@@ -53,11 +53,11 @@ void* palTrackingAllocator::Allocate(uint32_t size, int alignment) {
 
 void palTrackingAllocator::Deallocate(void* ptr) {
   if (ptr) {
-    const uint32_t received_size = GetSize(ptr);
+    const uint64_t received_size = GetSize(ptr);
     ReportMemoryDeallocation(ptr, received_size);
-    const uint32_t offset = received_size-sizeof(palTrackedAllocation);
+    const uint64_t offset = received_size-sizeof(palTrackedAllocation);
     uintptr_t tracked_allocation_pointer = (uintptr_t)ptr;
-    tracked_allocation_pointer += offset;
+    tracked_allocation_pointer += (uintptr_t)offset;
     palTrackedAllocation* tracked_allocation = (palTrackedAllocation*)tracked_allocation_pointer;
     palAssert(tracked_allocation->ptr == ptr);
     _tracked_allocations.Remove(&tracked_allocation->list_node);
@@ -65,7 +65,7 @@ void palTrackingAllocator::Deallocate(void* ptr) {
   }
 }
 
-uint32_t palTrackingAllocator::GetSize(void* ptr) const {
+uint64_t palTrackingAllocator::GetSize(void* ptr) const {
   return _parent_allocator->GetSize(ptr);
 }
 

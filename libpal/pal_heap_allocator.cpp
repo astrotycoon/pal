@@ -25,8 +25,8 @@
 #include "libpal/pal_heap_allocator.h"
 
 
-int palHeapAllocator::Create(void* mem, uint32_t size) {
-  internal_ = create_mspace_with_base(mem, size);
+int palHeapAllocator::Create(void* mem, uint64_t size) {
+  internal_ = create_mspace_with_base(mem, (size_t)size);
   if (internal_ == NULL) {
     return PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE;
   }
@@ -51,8 +51,8 @@ int palHeapAllocator::Destroy() {
 }
 
 
-void* palHeapAllocator::Allocate(uint32_t size, int alignment) {
-  void* ptr = mspace_memalign(internal_, alignment, size);
+void* palHeapAllocator::Allocate(uint64_t size, uint32_t alignment) {
+  void* ptr = mspace_memalign(internal_, alignment, (size_t)size);
   if (ptr) {
     uint32_t reported_size = mspace_usable_size(ptr);
     ReportMemoryAllocation(ptr, reported_size);
@@ -68,6 +68,6 @@ void palHeapAllocator::Deallocate(void* ptr) {
   }
 }
 
-uint32_t palHeapAllocator::GetSize(void* ptr) const {
+uint64_t palHeapAllocator::GetSize(void* ptr) const {
   return mspace_usable_size(ptr);
 }

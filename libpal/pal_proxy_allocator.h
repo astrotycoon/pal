@@ -34,20 +34,24 @@ public:
   palProxyAllocator(const char* proxy_name, palAllocatorInterface* target_allocator) : palAllocatorInterface(proxy_name), _target_allocator(target_allocator) {
   }
 
-  virtual void* Allocate(uint32_t size, int alignment  = 8) {
+  virtual void* Allocate(uint64_t size, uint32_t alignment  = 8) {
     void* p = _target_allocator->Allocate(size, alignment);
-    uint32_t size_p = _target_allocator->GetSize(p);
-    ReportMemoryAllocation(p, size_p);
+    if (p) {
+      uint64_t size_p = _target_allocator->GetSize(p);
+      ReportMemoryAllocation(p, size_p);
+    }
     return p;
   }
 
   virtual void Deallocate(void* ptr) {
-    uint32_t size_p = _target_allocator->GetSize(ptr);
-    _target_allocator->Deallocate(ptr);
-    ReportMemoryDeallocation(ptr, size_p);
+    if (ptr) {
+      uint64_t size_p = _target_allocator->GetSize(ptr);
+      _target_allocator->Deallocate(ptr);
+      ReportMemoryDeallocation(ptr, size_p);
+    }
   }
 
-  virtual uint32_t GetSize(void* ptr) const {
+  virtual uint64_t GetSize(void* ptr) const {
     return _target_allocator->GetSize(ptr);
   }
 };

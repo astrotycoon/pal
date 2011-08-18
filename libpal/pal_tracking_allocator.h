@@ -42,9 +42,9 @@ public:
 
   ~palTrackingAllocator();
 
-  virtual void* Allocate(uint32_t size, int alignment = 8);
+  virtual void* Allocate(uint64_t size, uint32_t alignment = 8);
   virtual void Deallocate(void* ptr);
-  virtual uint32_t GetSize(void* ptr) const;
+  virtual uint64_t GetSize(void* ptr) const;
 
   void ConsoleDump() const;
 };
