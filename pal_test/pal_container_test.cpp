@@ -3,6 +3,70 @@
 #include "libpal/libpal.h"
 #include "pal_container_test.h"
 
+bool palArrayTest2() {
+  palArray<int> testArray;
+  testArray.SetAllocator(g_DefaultHeapAllocator);
+
+  testArray.push_back(0);
+  testArray.push_back(1);
+  testArray.push_back(2);
+  testArray.push_back(3);
+  testArray.push_back(4);
+  testArray.push_back(5);
+  testArray.push_back(6);
+  testArray.push_back(7);
+  testArray.push_back(8);
+  testArray.push_back(9);
+
+  palArray<int> otherArray;
+  otherArray.SetAllocator(g_DefaultHeapAllocator);
+  testArray.CutSlice(0, testArray.GetSize(), &otherArray);
+
+  if (testArray.IsEmpty() == false) {
+    palBreakHere();
+  }
+
+  if (testArray.GetSize() != 0) {
+    palBreakHere();
+  }
+
+  if (otherArray.GetSize() != 10 || otherArray.IsEmpty() == true) {
+    palBreakHere();
+  }
+
+  otherArray.CopySlice(0, otherArray.GetSize(), &testArray);
+
+  if (otherArray.GetSize() != 10 || otherArray.IsEmpty() == true) {
+    palBreakHere();
+  }
+
+  if (testArray.GetSize() != 10 || testArray.IsEmpty() == true) {
+    palBreakHere();
+  }
+
+  if (testArray != otherArray) {
+    palBreakHere();
+  }
+
+  testArray.Append(otherArray, 0, otherArray.GetSize());
+  if (testArray.GetSize() != 20) {
+    palBreakHere();
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (testArray[i] != i) {
+      palBreakHere();
+    }
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (testArray[i+10] != i) {
+      palBreakHere();
+    }
+  }
+  return true;
+}
+
 bool palArrayTest() {
   palArray<int> testArray;
   testArray.SetAllocator(g_DefaultHeapAllocator);
@@ -279,7 +343,7 @@ bool palHashMapTest() {
   intMap.Insert(3, 99);
   intMap.Insert(4, 100);
 
-  palHashMap<int, int> copiedIntMap(intMap, g_DefaultHeapAllocator);
+  palHashMap<int, int> copiedIntMap(intMap);
   palHashMap<int, int> assignedIntMap;
   assignedIntMap.SetAllocator(g_DefaultHeapAllocator);
   palAssertBreak(assignedIntMap.GetSize() == 0);
@@ -403,7 +467,7 @@ bool palMinHeapTest() {
   mh.Insert(1);
   mh.Insert(1000000);
 
-  palMinHeap<int> mh2(mh, g_DefaultHeapAllocator);
+  palMinHeap<int> mh2(mh);
   answer_index = 0;
   while (mh2.IsEmpty() == false) {
     int answer = mh2.FindMin();
@@ -541,20 +605,28 @@ bool palListSortBenchmark() {
 }
 
 bool palListSortTest() {
-  palList<int> il;
-  il.SetAllocator(g_DefaultHeapAllocator);
-  il.PushFront(4);
-  il.PushFront(6);
-  il.PushFront(99);
-  il.PushFront(21);
-  il.PushFront(5);
-  il.PushFront(9);
-  il.PushFront(13);
-  
-  //dumpListForward(il);
-  il.Sort(CompareIntNode);
+  void* pool = g_DefaultHeapAllocator->Allocate(1024*1024);
+  palPoolAllocator pa;
+  pa.Create(pool, 1024*1024, sizeof(palListNode<int>), PAL_ALIGNOF(palListNode<int>));
 
-  //dumpListForward(il);
+  {
+    palList<int> il;
+    il.SetAllocator(&pa);
+    il.PushFront(4);
+    il.PushFront(6);
+    il.PushFront(99);
+    il.PushFront(21);
+    il.PushFront(5);
+    il.PushFront(9);
+    il.PushFront(13);
+
+    //dumpListForward(il);
+    il.Sort(CompareIntNode);
+    //dumpListForward(il);
+  }
+  
+  g_DefaultHeapAllocator->Deallocate(pool);
+  
   return true;
 }
 
@@ -709,10 +781,10 @@ bool palIListTest()
 }
 
 bool PalContainerTest() {
-  return true;
   //palHashMapTest2();
   
   palArrayTest();
+  palArrayTest2();
   palHashMapTest();
   palListTest();
   palListSortTest();

@@ -17,24 +17,22 @@
 
 int main(int argc, char** argv) {
   palStartup(windows_debugger_print_function);
-  palShutdown();
-  return 0;
   PalContainerTest();
+  PalStringTest();
+  PalFileTest();
   PalThreadTest();
-
-  palWebSocketServerTest();
+  PalJsonTest();
   PalObjectIdTableTest();
   PalEventTest();
-  PalJsonTest();
+  PalSimdTest();
+  PalCompactingAllocatorTest();
+  palShutdown();
+  return 0;
+
+  palWebSocketServerTest();
   //PalPoolAllocTest();
   PalTimeLineTest();
   PalAlgorithmsTest();
-  PalSimdTest();
-  PalCompactingAllocatorTest();
-  PalFileTest();
-  PalStringTest();
-  PalStringTest();
-  PalThreadTest();
   
 
   return 0;

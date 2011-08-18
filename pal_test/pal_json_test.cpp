@@ -6,15 +6,15 @@
 bool PalJsonTest() {
   palFile f;
 
-  bool r = f.OpenForReading("test.json");
+  int r = f.OpenForReading("test.json");
 
-  if (!r) {
+  if (r != 0) {
     // couldn't open file
     palBreakHere();
   }
 
-  uint64_t buf_len;
-  unsigned char* buf = f.CopyContentsAsString(&buf_len);
+  palMemBlob blob;
+  f.CopyContentsAsString(&blob);
   f.Close();
 
 #if 0
@@ -61,7 +61,8 @@ bool PalJsonTest() {
   }
 #endif
 
-  palJSONPrettyPrint((const char*)buf);
+  palJSONPrettyPrint(blob.GetPtr<const char>(0));
 
+  palFile::FreeFileContents(&blob);
   return true;
 }

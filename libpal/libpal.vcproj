@@ -313,10 +313,6 @@
 				<Filter
 					Name="Windows"
 					>
-					<File
-						RelativePath=".\windows\pal_file_windows.cpp"
-						>
-					</File>
 				</Filter>
 				<Filter
 					Name="Apple"
@@ -368,6 +364,22 @@
 				>
 				<File
 					RelativePath=".\pal_thread.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="stream"
+				>
+				<File
+					RelativePath=".\pal_file_stream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_memory_stream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_socket_stream.cpp"
 					>
 				</File>
 			</Filter>
@@ -560,10 +572,6 @@
 					RelativePath=".\pal_thread.h"
 					>
 				</File>
-				<File
-					RelativePath=".\pal_thread_interface.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="containers"
@@ -630,6 +638,10 @@
 				</File>
 				<File
 					RelativePath=".\pal_page_allocator.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_pool_allocator.h"
 					>
 				</File>
 				<File
@@ -762,6 +774,26 @@
 				</File>
 				<File
 					RelativePath=".\pal_web_socket_server.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="stream"
+				>
+				<File
+					RelativePath=".\pal_file_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_memory_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_socket_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_stream_interface.h"
 					>
 				</File>
 			</Filter>

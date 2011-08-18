@@ -9,18 +9,16 @@
 
 const char* string = "John McCutchan";
 
-bool fileWriteTest ()
-{
+bool fileWriteTest() {
   palFile pf;
 
-  if (!pf.OpenForWritingTruncate(FNAME))
-  {
+  if (pf.OpenForWritingTruncate(FNAME) != 0) {
     palBreakHere();
     return false;
   }
+
   int length = palStringLength(string)+1;
-  if (pf.Write(string, length) != length)
-  {
+  if (pf.Write(string, length) != length) {
     palBreakHere();
     return false;
   }
@@ -30,43 +28,38 @@ bool fileWriteTest ()
   return true;
 }
 
-bool fileReadTest ()
-{
+bool fileReadTest() {
   palFile pf;
 
-  if (!pf.OpenForReading(FNAME))
-  {
+  if (pf.OpenForReading(FNAME) != 0) {
     palBreakHere();
     return false;
   }
 
   int length = palStringLength(string)+1;
-  uint64_t read_length;
-  char* b = (char*)pf.CopyContents(&read_length);
-  if (!b)
-  {
+  palMemBlob blob;
+  pf.CopyContents(&blob);
+  if (blob.GetPtr(0) == NULL) {
     palBreakHere();
     return false;
   }
 
-  if (length != read_length)
-  {
-    palBreakHere();
-    return false;
-  }
-  if (palStringCompare(b, string))
-  {
+  if (length != blob.GetBufferSize()) {
     palBreakHere();
     return false;
   }
 
-  g_StdProxyAllocator->Deallocate(b);
+  if (palStringCompare(blob.GetPtr<const char>(0), string)) {
+    palBreakHere();
+    return false;
+  }
+
+  palFile::FreeFileContents(&blob);
   pf.Close();
   return true;
 }
 
-bool PalFileTest ()
-{
+bool PalFileTest() {
   fileWriteTest();
   fileReadTest();
   return true;

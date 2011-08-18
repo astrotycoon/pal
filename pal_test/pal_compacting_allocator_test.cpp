@@ -7,6 +7,8 @@ static unsigned char memory_chunk[1000 * 1000];
 bool PalCompactingAllocatorTest() {
   palCompactingAllocator gca(memory_chunk_size, &memory_chunk[0]);
 
+  gca.SetAllocator(g_DefaultHeapAllocator);
+
   //gca.DiagnosticDump();
 
   palGCAHandle handle1 = gca.Malloc(1000);
