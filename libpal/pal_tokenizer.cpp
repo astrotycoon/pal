@@ -70,7 +70,7 @@ static palLexerPunctuation default_pal_lexer_punctuation[] = {
 	{"]", kPunctuationSQUARE_BRACKET_CLOSE}
 };
 
-const char* default_name_splitters = " -=!@#$%^&*()_+.,<>?/:;";
+const char* default_name_splitters = " -=!@#$%^&*()_+.,<>?/:;{}[]\n\r";
 
 static bool IsNameSplitter(char ch, const char* name_splitters) {
   const char* p = name_splitters;
@@ -138,19 +138,15 @@ float palToken::GetFloatValue() {
 }
 
 palTokenizer::palTokenizer() {
-	own_buffer_ = false;
-	buffer_start_ = NULL;
-	buffer_p_ = NULL;
-	buffer_end_ = NULL;
-	buffer_length_ = 0;
 	pushed_token_ = NULL;
-	buffer_p_saved_ = NULL;
+	_saved_position = 0;
 	status_ = kTokenizerErrorNONE;
 	keyword_array_ = NULL;
   name_splitters_ = default_name_splitters;
 	disable_float_parsing_ = false;
   disable_number_parsing_ = false;
   disable_punctuation_parsing_ = false;
+  _stream = NULL;
 }
 
 palTokenizer::~palTokenizer() {
@@ -158,36 +154,22 @@ palTokenizer::~palTokenizer() {
 }
 
 void palTokenizer::Reset() {
-	buffer_p_ = buffer_start_;
 	buffer_p_saved_ = NULL;
 	pushed_token_ = NULL;
 	status_ = kTokenizerErrorNONE;
-  if (pf_.IsOpen())
-	{
-    pf_.Seek(kFileSeekBegin, 0);
-		saved_pos_ = 0;
-    pf_size_ = pf_.GetSize();
-	}
+  _stream = NULL;
 }
 
 void palTokenizer::ClearBuffer() {
-	if (own_buffer_)
-	{
-    g_StdProxyAllocator->Deallocate(buffer_start_);
-	}
-	own_buffer_ = false;
-	buffer_start_ = NULL;
-	buffer_end_ = NULL;
 	Reset();
 }
 
 void palTokenizer::SavePosition() {
-	buffer_p_saved_ = buffer_p_;
+  _saved_position = _stream->GetPosition();
 }
 
 void palTokenizer::RestorePosition() {
-	buffer_p_ = buffer_p_saved_;
-	buffer_p_saved_ = NULL;
+  _stream->Seek(_saved_position, kPalStreamSeekOriginBegin);
 }
 
 void palTokenizer::SetKeywordArray(const palTokenizerKeyword* keywords) {
@@ -198,17 +180,12 @@ void  palTokenizer::SetNameSplitCharacters(const char* name_splitters) {
   name_splitters_ = name_splitters;
 }
 
-void palTokenizer::UseReadOnlyBuffer(const char* buffer, int length) {
-	own_buffer_ = false;
-	buffer_start_ = const_cast<char*>(buffer);
-	buffer_length_ = length;
-	buffer_end_ = buffer_start_+buffer_length_;
-	Reset();
-}
-
-void palTokenizer::UseFile(palFile pf) {
-  pf_ = pf;
-	Reset();
+int palTokenizer::UseStream(palStreamInterface* stream) {
+  if (stream->CanSeek() == false || stream->CanRead() == false) {
+    return -1;
+  }
+  _stream = stream;
+  return 0;
 }
 
 void palTokenizer::SetPunctuationParsing(bool on) {
@@ -223,13 +200,6 @@ void palTokenizer::SetFloatParsing(bool on) {
 	disable_float_parsing_ = !on;
 }
 
-void	palTokenizer::CopyBuffer(const char* buffer) {
-	own_buffer_ = true;
-	buffer_start_ = palStringDuplicate(buffer);
-	buffer_length_ = palStringLength(buffer);
-	buffer_end_ = buffer_start_+buffer_length_;
-	Reset();
-}
 
 void	palTokenizer::PushToken(palToken* token) {
 	if (pushed_token_) {
@@ -253,115 +223,88 @@ int palTokenizer::GetStatus() {
 }
 
 int palTokenizer::GetStreamIndex() {
-  if (pf_.IsOpen()) {
-    uint64_t position;
-    position = pf_.GetPosition();
-    return (int)position;
-  } else {
-    return buffer_p_ - buffer_start_;
-  }
+  return (int)_stream->GetPosition();
 }
 
 bool palTokenizer::DoublePeekNextCh(char& ch) {
-	if (pf_.IsOpen()) {
+	if (_stream) {
 		uint64_t position;
-		position = pf_.GetPosition();
-		if (position == pf_size_ || position+1 == pf_size_) {
+    uint64_t size = _stream->GetLength();
+		position = _stream->GetPosition();
+		if (position == size || position+1 == size) {
 			ch = 0;
 			return false;
 		}
-    pf_.Seek(kFileSeekCurrent, 1);
-		uint64_t bytesRead;
-		bytesRead = pf_.Read(&ch, 1);
-    pf_.Seek(kFileSeekBegin, position);
-		if (bytesRead == 0) {
+    int r;
+    _stream->Seek(1, kPalStreamSeekOriginCurrent);
+    r = _stream->Read(&ch, 0, 1);
+    _stream->Seek(position, kPalStreamSeekOriginBegin);
+		if (r != 0) {
 			ch = 0;
 			return false;
 		}
 		return true;
-	} else {
-		if (buffer_p_ == buffer_end_ || buffer_p_+1 == buffer_end_)
-		{
-			ch = 0;
-			return false;
-		}
-		ch = *(buffer_p_+1);
-		return true;
-	}
+  } else {
+    return false;
+  }
 }
 
 bool palTokenizer::PeekNextCh(char& ch) {
-	if (pf_.IsOpen()) {
+	if (_stream) {
 		uint64_t position;
-		position = pf_.GetPosition();
-		if (position == pf_size_) {
+    uint64_t size;
+    size = _stream->GetLength();
+		position = _stream->GetPosition();
+		if (position == size) {
 			ch = 0;
 			return false;
 		}
-		uint64_t bytesRead;
-		bytesRead = pf_.Read(&ch, 1);
-		if (bytesRead == 0) {
+		int r;
+		r = _stream->Read(&ch, 0, 1);
+		if (r != 0) {
 			ch = 0;
 			return false;
 		}
-    pf_.Seek(kFileSeekBegin, position); // Reset position
+    _stream->Seek(position, kPalStreamSeekOriginBegin);
 		return true;
-	} else {
-		if (buffer_p_ == buffer_end_) {
-			ch = 0;
-			return false;
-		}
-		ch = *buffer_p_;
-		return true;
-	}
+  } else {
+    return false;
+  }
 }
 
 
 
 void palTokenizer::SkipNextCh() {
-	if (pf_.IsOpen()) {
-    pf_.Seek(kFileSeekCurrent, 1);
-	} else  {
-		if (buffer_p_ == buffer_end_) {
-			return;
-		}
-		buffer_p_++;
+	if (_stream) {
+    _stream->Seek(1, kPalStreamSeekOriginCurrent);
 	}
 }
 
 void palTokenizer::UnreadCh() {
-	if (pf_.IsOpen()) {
-    pf_.Seek(kFileSeekCurrent, -1); // move backward 1
-	} else {
-		if (buffer_p_ == buffer_start_)
-			return;
-		buffer_p_--;
+	if (_stream) {
+    _stream->Seek(-1, kPalStreamSeekOriginCurrent);
 	}
 }
 
 bool palTokenizer::ReadNextCh(char& ch) {
-	if (pf_.IsOpen()) {
+	if (_stream) {
 		uint64_t position;
-		position = pf_.GetPosition();
-		if (position == pf_size_) {
+    uint64_t size;
+		position = _stream->GetPosition();
+    size = _stream->GetLength();
+		if (position == size) {
 			ch = 0;
 			return false;
 		}
-		uint64_t bytesRead;
-		bytesRead = pf_.Read(&ch, 1);
-		if (bytesRead == 0) {
+		int r;
+		r = _stream->Read(&ch, 0, 1);
+		if (r != 0) {
 			ch = 0;
 			return false;
 		}
 		return true;
 	} else {
-		if (buffer_p_ == buffer_end_) {
-			ch = 0;
-			return false;
-		}
-		ch = *buffer_p_;
-		buffer_p_++;
-		return true;
+		return false;
 	}
 }
 

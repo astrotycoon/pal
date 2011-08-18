@@ -26,7 +26,7 @@
 
 #include "libpal/pal_types.h"
 #include "libpal/pal_string.h"
-#include "libpal/pal_file.h"
+#include "libpal/pal_stream_interface.h"
 
 /* token types:
  * NUMBER
@@ -130,9 +130,7 @@ public:
   // by default, most punctuation characters will break a name apart
   void  SetNameSplitCharacters(const char* name_splitters);
 
-	void	UseReadOnlyBuffer(const char* buffer, int length);
-  void  UseFile(palFile pf);
-	void	CopyBuffer(const char* buffer);
+  int UseStream(palStreamInterface* stream);
   
   void SetPunctuationParsing(bool on);
   void SetNumberParsing(bool on);
@@ -175,18 +173,8 @@ protected:
 	void RestorePosition();
 	palToken* PopToken();
 
-  // file backing
-  palFile pf_;
-  uint64_t pf_size_;
-  uint64_t saved_pos_;
-
-  // buffer backing
-	bool  own_buffer_;
-	char* buffer_start_;
-	char* buffer_p_; // current place in buffer
-	char* buffer_end_; // if buffer_p_ == buffer_end_, the stream has ended
-	int   buffer_length_;
-
+  palStreamInterface* _stream;
+  uint64_t _saved_position;
   // tokenizer state
 	palToken* pushed_token_;
   bool disable_number_parsing_;

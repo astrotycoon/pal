@@ -24,6 +24,7 @@
 #pragma once
 
 #include "libpal/pal_mem_blob.h"
+#include "libpal/pal_memory_stream.h"
 #include "libpal/pal_tokenizer.h"
 
 enum palJSONTokenType {
@@ -81,6 +82,7 @@ class palJSONParser {
   int JSON_str_len_;
   int parse_current_index_;
   int parse_end_index_;
+  palMemoryStream _memory_stream;
   palTokenizer tokenizer_;
 
   palJSONTokenType SkipValue(int* start_index, int* length);

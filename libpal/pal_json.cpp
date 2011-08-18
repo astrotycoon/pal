@@ -181,14 +181,18 @@ void palJSONParser::StartParse() {
   buffer_offset_ = 0;
   parse_current_index_ = 0;
   parse_end_index_ = JSON_str_len_+1;
-  tokenizer_.UseReadOnlyBuffer(JSON_str_, JSON_str_len_);
+  _memory_stream.Reset();
+  _memory_stream.Create(palMemBlob((void*)JSON_str_, (uint64_t)JSON_str_len_), false);
+  tokenizer_.UseStream(&_memory_stream);
 }
   
 void palJSONParser::StartParse(int start_index, int length) {
   buffer_offset_ = start_index;
   parse_current_index_ = start_index;
   parse_end_index_ = start_index+length;
-  tokenizer_.UseReadOnlyBuffer(JSON_str_+start_index, length);
+  _memory_stream.Reset();
+  _memory_stream.Create(palMemBlob((void*)(JSON_str_+start_index), (uint64_t)length), false);
+  tokenizer_.UseStream(&_memory_stream);
 }
 
 palJSONTokenType palJSONParser::SkipValue(int* start_index, int* length) {

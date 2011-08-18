@@ -23,6 +23,7 @@
 */
 
 #include "libpal/pal_web_socket_server.h"
+#include "libpal/pal_memory_stream.h"
 #include "libpal/pal_algorithms.h"
 #include "libpal/pal_string.h"
 #include "libpal/pal_endian.h"
@@ -386,12 +387,23 @@ bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
 }
 
 int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
+  palMemBlob blob((void*)s, (uint64_t)s_len);
+  palMemoryStream ms;
+  int res;
+
+  res = ms.Create(blob, false);
+  if (res != 0) {
+    return -2;
+  }
   palTokenizer tokenizer;
   if (s_len < 0xb0) {
     // not likely
     return -1;
   }
-  tokenizer.UseReadOnlyBuffer(s, s_len);
+  res = tokenizer.UseStream(&ms);
+  if (res != 0) {
+    return -3;
+  }
   tokenizer.SetKeywordArray(&handshake_keywords[0]);
   // don't detect punctuation or numbers
   tokenizer.SetNumberParsing(false);
