@@ -92,12 +92,12 @@ protected:
 	}
 public:
 	/* Copy constructor */
-	palArray(const palArray<T>& array, palAllocatorInterface* allocator = g_DefaultHeapAllocator) {
+	palArray(const palArray<T>& array) {
 		buffer_ = NULL;
 		capacity_ = 0;
 		size_ = 0;
 		stolen_ = false;
-    allocator_ = allocator;
+    allocator_ = array.allocator_;
 		growth_factor_ = array.growth_factor_;
 		Reserve(array.GetCapacity());
 		Resize(array.GetSize());
@@ -229,6 +229,17 @@ public:
 		}
 	}
 
+  void Remove(int start, int end) {
+    for (int i = start; i < end; i++) {
+      buffer_[i].~T();
+      size_--;
+    }
+    int num = end - start;
+    for (int i = start; i < size_; i++) {
+      buffer_[i] = buffer_[i+num];
+    }
+  }
+
 	void Remove(int position) {
 		if (position < size_) {
 			buffer_[position].~T();
@@ -329,6 +340,24 @@ public:
     palHeapSort(&buffer_[0], size_, LessThan);
   }
 
+  void CopySlice(int start, int end, palArray<T>* target) const {
+    for (int i = start; i < end; i++) {
+      target->push_back(buffer_[i]);
+    }
+  }
+
+  void CutSlice(int start, int end, palArray<T>* target) {
+    CopySlice(start, end, target);
+    Remove(start, end);
+  }
+
+  void Append(const palArray<T>& src, int src_start_index, int src_count) {
+    int src_end_index = src_start_index + src_count;
+    for (int i = src_start_index; i < src_end_index; i++) {
+      push_back(src[i]);
+    }
+  }
+
   void push_front(const T& element) {
     InsertAtPosition(0, element);
   }
@@ -359,3 +388,25 @@ public:
     buffer_[size_].~T();
   }
 };
+
+
+template <typename T, uint32_t Alignment>
+bool operator==(const palArray<T, Alignment>& A, const palArray<T, Alignment>& B) {
+  if (A.GetSize() != B.GetSize()) {
+    return false;
+  }
+
+  const int size = A.GetSize();
+  for (int i = 0; i < size; i++) {
+    if (A[i] != B[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+template <typename T, uint32_t Alignment>
+bool operator!=(const palArray<T, Alignment>& A, const palArray<T, Alignment>& B) {
+  return ! operator==(A,B);
+}

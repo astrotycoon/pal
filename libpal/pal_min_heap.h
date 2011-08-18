@@ -80,7 +80,7 @@ public:
   palMinHeap(int capacity) : array_(capacity), LessThan_(CompareFuncLessThan()) {
   }
 
-  palMinHeap(const palMinHeap<T>& mh, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : array_(mh.array_, allocator), LessThan_(mh.LessThan_) {
+  palMinHeap(const palMinHeap<T>& mh) : array_(mh.array_), LessThan_(mh.LessThan_) {
 
   }
 

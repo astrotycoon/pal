@@ -180,7 +180,7 @@ public:
 	}
 
   /* Copy constructor */
-  palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : hash_size_configuration_(map.hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_, allocator), chain_next_(map.chain_next_, allocator), key_array_(map.key_array_, allocator), value_array_(map.value_array_, allocator), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
+  palHashMap (const palHashMap<Key, Value, HashFunction, KeyEqual>& map) : hash_size_configuration_(map.hash_size_configuration_), hash_bucket_list_head_(map.hash_bucket_list_head_), chain_next_(map.chain_next_), key_array_(map.key_array_), value_array_(map.value_array_), hash_function_(map.hash_function_), key_equal_function_(map.key_equal_function_) {
   }
 
   void SetAllocator(palAllocatorInterface* allocator) {
