@@ -27,24 +27,77 @@
 #include "libpal/pal_types.h"
 #include "libpal/pal_mem_blob.h"
 
-// guarantees that there is a '\0' character at the end
-unsigned char* palCopyFileContentsAsString(const char* filename, uint64_t* string_length);
+#if defined(PAL_PLATFORM_WINDOWS)
+#include "libpal/windows/pal_file_windows.h"
+#else
+#error Need to implement palFile classes for this platform
+#endif
 
-unsigned char* palCopyFileContents(const char* filename, uint64_t* length);
-int palCopyFileContents(const char* filename, palMemBlob* blob);
-
-enum palFileSeek
-{
+enum palFileSeekOrigin {
   kFileSeekBegin = 0,
   kFileSeekCurrent = 1,
   kFileSeekEnd = 2,
-  kFileSeekNUM = 3,
+  kFileSeekOriginNUM = 3,
 };
 
-#if defined(PAL_PLATFORM_WINDOWS)
-#include "libpal/windows/pal_file_windows.h"
-#elif defined(PAL_PLATFORM_APPLE)
-#include "libpal/apple/pal_file_apple.h"
-#else
-#warning no file implementation for your platform
-#endif
+enum palFileAccess {
+  kFileAccessRead = 0,
+  kFileAccessWrite = 1,
+  kFileAccessReadWrite = 2,
+  NUM_palFileAccess
+};
+
+enum palFileMode {
+  kFileModeCreateNew = 0,
+  kFileModeCreate = 1,
+  kFileModeOpen = 2,
+  kFileModeOpenOrCreate = 3,
+  kFileModeTruncate = 4,
+  kFileModeAppend = 5,
+  NUM_palFileModes
+};
+
+#define PAL_FILE_ERROR_OPENNING palMakeErrorCode(0xcd, 1)
+
+class palFile {
+  PAL_DISALLOW_COPY_AND_ASSIGN(palFile);
+  palFilePlatformData _pdata;
+  palFileMode _mode;
+  palFileAccess _access;
+public:
+  palFile();
+  ~palFile();
+
+  int Open(const char* filename, palFileMode mode, palFileAccess access);
+  int OpenForReading(const char* filename);
+  int OpenForWritingTruncate(const char* filename);
+  
+  void Close();
+  bool IsOpen();
+
+  palFileMode GetMode();
+  palFileAccess GetAccess();
+
+  void CopyContentsAsString(palMemBlob* blob);
+  void CopyContents(palMemBlob* blob);
+
+  uint64_t Seek(palFileSeekOrigin p, int64_t offset);
+  uint64_t Read(void* buffer, uint64_t num_bytes);
+  uint64_t Write(const void* buffer, uint64_t num_bytes);
+  uint64_t Write(const char* str);
+  uint64_t WritePrintf(const char* str, ...);
+
+  uint64_t OffsetRead(uint64_t offset, void* buffer, uint64_t num_bytes);
+  uint64_t OffsetWrite(uint64_t offset, const void* buffer, uint64_t num_bytes);
+
+  uint64_t GetPosition();
+  uint64_t GetSize();
+
+  uint64_t SetFileSize(uint64_t new_size);
+
+  void Flush();
+
+  static void CopyFileContentsAsString(const char* filename, palMemBlob* blob);
+  static void CopyFileContents(const char* filename, palMemBlob* blob);
+  static void FreeFileContents(palMemBlob* blob);
+};
