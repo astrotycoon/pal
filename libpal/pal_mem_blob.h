@@ -29,53 +29,39 @@
 struct palMemBlob {
 protected:
   void* buffer;
-  int buffer_size; // in bytes
-  bool own_buffer;
+  uint64_t buffer_size; // in bytes
 public:
   palMemBlob() {
     buffer_size = 0;
     buffer = NULL;
-    own_buffer = false;
   }
 
   ~palMemBlob() {
-    if (buffer && own_buffer) {
-      g_StdProxyAllocator->Deallocate(buffer);
-    }
     buffer = NULL;
     buffer_size = 0;
-    own_buffer = false;
   }
 
-  palMemBlob(void* buffer, int buffer_len, bool own_buffer) {
+  palMemBlob(void* buffer, uint64_t buffer_len) {
     this->buffer = buffer;
     this->buffer_size = buffer_len;
-    this->own_buffer = own_buffer;
   }
 
-  void* GetPtr(uint32_t offset = 0) const {
+  template<typename T>
+  T* GetPtr(uint64_t byte_offset = 0) const {
     uintptr_t addr = reinterpret_cast<uintptr_t>(buffer);
-    return reinterpret_cast<void*>(addr+offset);
+    return reinterpret_cast<T*>(addr+byte_offset);
   }
 
-  int GetBufferSize() const {
+  void* GetPtr(uint64_t byte_offset = 0) const {
+    uintptr_t addr = reinterpret_cast<uintptr_t>(buffer);
+    return reinterpret_cast<void*>(addr+byte_offset);
+  }
+
+  uint64_t GetBufferSize() const {
     return buffer_size;
   }
 
-  void* StealBuffer() {
-    own_buffer = false;
-    return buffer;
-  }
-
-  void TakeOwnerShip() {
-    own_buffer = true;
-  }
-
   void Reset() {
-    if (own_buffer && buffer) {
-      g_StdProxyAllocator->Deallocate(buffer);
-    }
-    own_buffer = false;
     buffer_size = 0;
     buffer = NULL;
   }
@@ -84,62 +70,71 @@ public:
 template<typename T>
 struct palTypeBlob {
   T* elements;
-  int size;
+  uint64_t size;
 
   palTypeBlob<T>() {
     elements = NULL;
     size = 0;
   }
 
-  palTypeBlob<T>(T* e, int num_e) {
+  palTypeBlob<T>(T* e, uint64_t num_e) {
     elements = e;
     size = num_e;
   }
 };
 
-struct palGrowingMemoryBlob {
+class palGrowingMemoryBlob {
   void* buffer;
-  uint32_t buffer_capacity;
-  uint32_t buffer_size;
-
-  palGrowingMemoryBlob() {
+  uint64_t buffer_capacity;
+  uint64_t buffer_size;
+  palAllocatorInterface* allocator_;
+public:
+  palGrowingMemoryBlob(palAllocatorInterface* allocator) {
     buffer = NULL;
     buffer_capacity = 0;
     buffer_size = 0;
+    allocator_ = allocator;
   }
 
-  palGrowingMemoryBlob(uint32_t initial_capacity) {
-    buffer = NULL;
-    buffer_capacity = 0;
-    buffer_size = 0;
+  void SetAllocator(palAllocatorInterface* allocator) {
+    allocator_ = allocator;
   }
 
   ~palGrowingMemoryBlob() {
-    g_StdProxyAllocator->Deallocate(buffer);
+    if (allocator_ != NULL && buffer != NULL) {
+      allocator_->Deallocate(buffer);
+    } 
   }
 
-  void IncreaseCapacity(uint32_t new_capacity) {
+  void IncreaseCapacity(uint64_t new_capacity) {
     if (buffer_capacity == 0) {
       // initial growth
-      buffer = g_StdProxyAllocator->Allocate(new_capacity);
+      buffer = allocator_->Allocate(new_capacity);
       buffer_capacity = new_capacity;
     } else if (new_capacity > buffer_capacity) {
       // create new buffer
-      void* new_buffer = g_StdProxyAllocator->Allocate(new_capacity);
+      void* new_buffer = allocator_->Allocate(new_capacity);
       // copy old buffer into new buffer
       palMemoryCopyBytes(new_buffer, buffer, buffer_size);
       // free old buffer
-      g_StdProxyAllocator->Deallocate(buffer);
+      allocator_->Deallocate(buffer);
 
       buffer = new_buffer;
       buffer_capacity = new_capacity;
     }
   }
 
-  uint32_t Append(void* data, uint32_t data_size) {
+  void SetSize(uint64_t new_size) {
+    if (new_size > buffer_capacity) {
+      IncreaseCapacity(new_size);
+    }
+    buffer_size = new_size;
+  }
+
+  uint64_t Append(void* data, uint64_t data_size) {
     if (buffer_size + data_size >= buffer_capacity) {
       // need more room in buffer
-      uint32_t new_capacity = 2*buffer_capacity;
+      uint64_t new_capacity = 2*buffer_capacity;
       if (new_capacity == 0) {
         new_capacity = 64;
       }
@@ -148,7 +143,7 @@ struct palGrowingMemoryBlob {
       }
       IncreaseCapacity(new_capacity);
     }
-    uintptr_t target_address = reinterpret_cast<uintptr_t>(buffer) + buffer_size;
+    uintptr_t target_address = reinterpret_cast<uintptr_t>(buffer) + (uintptr_t)buffer_size;
     palMemoryCopyBytes((void*)target_address, data, data_size);
     buffer_size += data_size;
     uintptr_t base_address = reinterpret_cast<uintptr_t>(buffer);
@@ -159,25 +154,33 @@ struct palGrowingMemoryBlob {
     buffer_size = 0;
   }
 
-  void Reset() {
-    if (buffer) {
-      g_StdProxyAllocator->Deallocate(buffer);
+  void Reset(bool deallocate_buffer = true) {
+    if (allocator_ != NULL && buffer != NULL && deallocate_buffer == false) {
+      allocator_->Deallocate(buffer);
     }
     buffer = NULL;
     buffer_capacity = 0;
     buffer_size = 0;
   }
 
-  void* GetPtr(uint32_t offset) {
+  void* GetPtr(uint64_t offset) {
     uintptr_t byte_address = reinterpret_cast<uintptr_t>(buffer);
     return reinterpret_cast<void*>(byte_address+offset);
   }
 
-  uint32_t GetSize() {
+  uint64_t GetBufferSize() const {
     return buffer_size;
+  }
+
+  uint64_t GetBufferCapacity() const {
+    return buffer_capacity;
   }
 
   void* GetPtr() {
     return buffer;
+  }
+
+  void GetBlob(palMemBlob* blob) const {
+    *blob = palMemBlob(buffer, buffer_size);
   }
 };
