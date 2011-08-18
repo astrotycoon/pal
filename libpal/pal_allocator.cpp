@@ -34,6 +34,7 @@ palAllocatorInterface* g_StdProxyAllocator = NULL;
 palAllocatorInterface* g_StringProxyAllocator = NULL;
 palAllocatorInterface* g_AllocatorTrackerProxyAllocator = NULL;
 palAllocatorInterface* g_TrackingAllocator = NULL;
+palAllocatorInterface* g_FileProxyAllocator = NULL;
 
 palAllocatorTracker* g_AllocatorTracker = NULL;
 
@@ -46,49 +47,28 @@ int palAllocatorInit() {
   static uint32_t static_heap_size = BUFFER_SIZE-sizeof(*g_StaticHeapAllocator);
   ((palHeapAllocator*)g_StaticHeapAllocator)->Create(p, static_heap_size);
 
-  {
-    g_PageAllocator = g_StaticHeapAllocator->Construct<palPageAllocator>();
-  }
-  {
-    g_DefaultHeapAllocator = g_StaticHeapAllocator->Construct<palHeapAllocator>("Default Heap");
-    ((palHeapAllocator*)g_DefaultHeapAllocator)->Create((palPageAllocator*)g_PageAllocator);
-  }
-  {
-    g_TrackingAllocator = g_StaticHeapAllocator->Construct<palTrackingAllocator>("Default Heap Tracker", g_DefaultHeapAllocator);
-  }
+  g_PageAllocator = g_StaticHeapAllocator->Construct<palPageAllocator>();
+  g_DefaultHeapAllocator = g_StaticHeapAllocator->Construct<palHeapAllocator>("Default Heap");
+  ((palHeapAllocator*)g_DefaultHeapAllocator)->Create((palPageAllocator*)g_PageAllocator);
+  g_TrackingAllocator = g_StaticHeapAllocator->Construct<palTrackingAllocator>("Default Heap Tracker", g_DefaultHeapAllocator);
   palSwap(g_TrackingAllocator, g_DefaultHeapAllocator);
-  {
-    g_StdProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("STD Proxy", g_DefaultHeapAllocator);
-  }
-  {
-    g_AllocatorTrackerProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("AllocatorTracker", g_DefaultHeapAllocator);
-  }
-  {
-    g_StringProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Strings", g_DefaultHeapAllocator);
-  }
-  
-  {
-    g_AllocatorTracker = g_StaticHeapAllocator->Construct<palAllocatorTracker>();
-    g_AllocatorTracker->SetAllocator(g_DefaultHeapAllocator);
-  }
 
+
+  g_StdProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("STD Proxy", g_DefaultHeapAllocator);
+  g_AllocatorTrackerProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("AllocatorTracker", g_DefaultHeapAllocator);
+  g_StringProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Strings", g_DefaultHeapAllocator);
+  g_FileProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Files", g_DefaultHeapAllocator);
+
+  g_AllocatorTracker = g_StaticHeapAllocator->Construct<palAllocatorTracker>();
+  g_AllocatorTracker->SetAllocator(g_StaticHeapAllocator);
   g_AllocatorTracker->RegisterAllocator(g_StaticHeapAllocator, NULL);
-  g_AllocatorTracker->ConsoleDump();
   g_AllocatorTracker->RegisterAllocator(g_PageAllocator, NULL);
-  g_AllocatorTracker->ConsoleDump();
   g_AllocatorTracker->RegisterAllocator(g_TrackingAllocator, g_PageAllocator);
-  g_AllocatorTracker->ConsoleDump();
   g_AllocatorTracker->RegisterAllocator(g_DefaultHeapAllocator, g_TrackingAllocator);
-  g_AllocatorTracker->ConsoleDump();
-
   g_AllocatorTracker->RegisterAllocator(g_StdProxyAllocator, g_DefaultHeapAllocator);
-  g_AllocatorTracker->ConsoleDump();
   g_AllocatorTracker->RegisterAllocator(g_StringProxyAllocator, g_DefaultHeapAllocator);
-  g_AllocatorTracker->ConsoleDump();
   g_AllocatorTracker->RegisterAllocator(g_AllocatorTrackerProxyAllocator, g_DefaultHeapAllocator);
-  g_AllocatorTracker->ConsoleDump();
-  palPrintf("8888\n");
-
+  g_AllocatorTracker->RegisterAllocator(g_FileProxyAllocator, g_DefaultHeapAllocator);
 
   return 0;
 }
@@ -100,6 +80,7 @@ int palAllocatorShutdown() {
   g_StaticHeapAllocator->Destruct(g_AllocatorTracker);
 
   g_StaticHeapAllocator->Destruct(g_StdProxyAllocator);
+  g_StaticHeapAllocator->Destruct(g_FileProxyAllocator);
   g_StaticHeapAllocator->Destruct(g_StringProxyAllocator);
   g_StaticHeapAllocator->Destruct(g_AllocatorTrackerProxyAllocator);
   g_StaticHeapAllocator->Destruct(g_TrackingAllocator);
@@ -156,11 +137,11 @@ void palAllocatorTracker::ConsoleDump(int level, palTrackedAllocator* root) {
     return;
   }
 
-  const uint32_t bytes_allocated = root->allocator->GetMemoryAllocated();
-  const uint32_t allocations = root->allocator->GetNumberOfAllocations();
-  float kb = bytes_allocated/1024.0f;
+  const uint64_t bytes_allocated = root->allocator->GetMemoryAllocated();
+  const uint64_t allocations = root->allocator->GetNumberOfAllocations();
+  float kb = (float)bytes_allocated/1024.0f;
   print_n_spaces(level*2);
-  palPrintf("%s [%d] [%f KB]\n", root->allocator->GetName(), allocations, kb);
+  palPrintf("%s [%lld] [%f KB]\n", root->allocator->GetName(), allocations, kb);
   for (int i = 0; i < num_children; i++) {
     ConsoleDump(level+1, &root->children[i]);
   }

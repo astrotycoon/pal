@@ -34,6 +34,7 @@ extern palAllocatorInterface* g_PageAllocator; // page allocator
 extern palAllocatorInterface* g_DefaultHeapAllocator; // default heap
 extern palAllocatorInterface* g_StdProxyAllocator; // Calls to new, new[], etc go through here
 extern palAllocatorInterface* g_StringProxyAllocator; // string related allocations
+extern palAllocatorInterface* g_FileProxyAllocator; // palFile related allocations
 
 int palAllocatorInit();
 int palAllocatorShutdown();
