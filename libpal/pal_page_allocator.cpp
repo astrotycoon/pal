@@ -16,7 +16,11 @@ void* palPageAllocator::Allocate(uint64_t size, uint32_t alignment) {
   palAssert(alignment == _page_size);
   palAssert((size & (alignment-1)) == 0);
   unsigned char* p = NULL;
-  VirtualAlloc(&p, (SIZE_T)(size+_page_size), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  p = (unsigned char*)VirtualAlloc(NULL, (SIZE_T)(size+_page_size), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  if (p == NULL) {
+    DWORD e = GetLastError();
+    palPrintf("Error = %d,%x\n", e, e);
+  }
   palAssert(p != NULL);
   {
     *((uint32_t*)p) = PAGE_ALLOCATOR_MAGIC;
@@ -55,7 +59,7 @@ uint32_t palPageAllocator::GetPageSize() const {
 #define MAX_SIZE_T (~(size_t)0)
 #define MFAIL ((void*)(MAX_SIZE_T))
 void* palPageAllocator::mmap(size_t size) {
-  void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+  void* ptr = VirtualAlloc(NULL, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   if (ptr) {
     ReportMemoryAllocation(ptr, size);
     return ptr;

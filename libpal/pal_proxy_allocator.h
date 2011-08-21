@@ -34,6 +34,10 @@ public:
   palProxyAllocator(const char* proxy_name, palAllocatorInterface* target_allocator) : palAllocatorInterface(proxy_name), _target_allocator(target_allocator) {
   }
 
+  void SetTargetAllocator(palAllocatorInterface* target_allocator) {
+    _target_allocator = target_allocator;
+  }
+
   virtual void* Allocate(uint64_t size, uint32_t alignment  = 8) {
     void* p = _target_allocator->Allocate(size, alignment);
     if (p) {
