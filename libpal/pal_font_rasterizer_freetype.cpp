@@ -22,6 +22,8 @@
 */
 
 #include "libpal/freetype/include/ft2build.h"
+#include "libpal/freetype/include/freetype/ftsystem.h"
+#include "libpal/freetype/include/freetype/ftmodapi.h"
 #include FT_FREETYPE_H
 
 #include "libpal/libpal.h"
@@ -29,10 +31,12 @@
 
 #define FTL_CAST(x) (reinterpret_cast<FT_Library>(x))
 #define FTF_CAST(x) (reinterpret_cast<FT_Face>(x))
+#define FTM_CAST(x) (reinterpret_cast<FT_Memory>(x))
 
 palFontRasterizerFreeType::palFontRasterizerFreeType() {
   ft_library_ = NULL;
   ft_face_ = NULL;
+  ft_memory_ = NULL;
 }
 
 palFontRasterizerFreeType::~palFontRasterizerFreeType() {
@@ -41,8 +45,32 @@ palFontRasterizerFreeType::~palFontRasterizerFreeType() {
   }
 
   if (ft_library_ != NULL) {
-    FT_Done_FreeType(FTL_CAST(ft_library_));
+    FT_Done_Library(FTL_CAST(ft_library_));
   }
+
+  if (ft_memory_ != NULL) {
+    FT_Memory ftm = FTM_CAST(ft_memory_);
+    g_FontAllocator->Deallocate(ftm);
+  }
+}
+
+static void* palFTAlloc(FT_Memory memory, long size) {
+  palAllocatorInterface* allocator = (palAllocatorInterface*)memory->user;
+  void* p = allocator->Allocate(size);
+  return p;
+}
+
+static void palFTFree(FT_Memory memory, void* block) {
+  palAllocatorInterface* allocator = (palAllocatorInterface*)memory->user;
+  allocator->Deallocate(block);
+}
+
+static void* palFTRealloc(FT_Memory memory, long cur_size, long new_size, void* block) {
+  palAllocatorInterface* allocator = (palAllocatorInterface*)memory->user;
+  void* new_block = allocator->Allocate(new_size);
+  palMemoryCopyBytes(new_block, block, cur_size);
+  allocator->Deallocate(block);
+  return new_block;
 }
 
 palFontRasterizerError palFontRasterizerFreeType::InitFont(const unsigned char* font_data,  int font_data_length, int face_index) {
@@ -50,11 +78,22 @@ palFontRasterizerError palFontRasterizerFreeType::InitFont(const unsigned char* 
   
   FT_Library ftl = FTL_CAST(ft_library_);
   FT_Face ftf = FTF_CAST(ft_face_);
+  FT_Memory ftm = FTM_CAST(ft_memory_);
 
-  e = FT_Init_FreeType(&ftl);
+  ftm = (FT_Memory)g_FontAllocator->Allocate(sizeof(*ftm));
+  ft_memory_ = ftm;
+  ftm->alloc = palFTAlloc;
+  ftm->free = palFTFree;
+  ftm->realloc = palFTRealloc;
+  ftm->user = g_FontAllocator;
+  
+
+  e = FT_New_Library(ftm, &ftl);
   if (e != 0) {
     return PAL_FONT_RASTERIZER_ERROR;
   }
+
+  FT_Add_Default_Modules(ftl);
 
   e = FT_New_Memory_Face(ftl, font_data, font_data_length, face_index, &ftf);
   if (e != 0) {

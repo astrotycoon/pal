@@ -28,6 +28,7 @@
 
 class palFontRasterizerFreeType : public palFontRasterizer {
   // these are NULL just to keep the freetype headers from being included.
+  void* ft_memory_;
   void* ft_library_;
   void* ft_face_;
 public:
