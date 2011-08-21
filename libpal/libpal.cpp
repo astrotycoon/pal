@@ -29,6 +29,7 @@ int palStartup(palConsolePrintFunction print_func) {
   }
   palDebugInit();
   palAllocatorInit();
+  palProfilerInit();
   palAtomInitialize();
   palEventInit();
   palThreadInit();
@@ -44,6 +45,7 @@ int palShutdown() {
   palSocketFini();
   palEventShutdown();
   palAtomShutdown();
+  palProfilerShutdown();
   palAllocatorShutdown();
 
   return 0;
