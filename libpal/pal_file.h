@@ -97,7 +97,7 @@ public:
 
   void Flush();
 
-  static void CopyFileContentsAsString(const char* filename, palMemBlob* blob);
-  static void CopyFileContents(const char* filename, palMemBlob* blob);
+  static int CopyFileContentsAsString(const char* filename, palMemBlob* blob);
+  static int CopyFileContents(const char* filename, palMemBlob* blob);
   static void FreeFileContents(palMemBlob* blob);
 };

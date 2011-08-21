@@ -197,29 +197,31 @@ void palFile::Flush() {
   FlushFileBuffers(_pdata._handle);
 }
 
-void palFile::CopyFileContentsAsString(const char* filename, palMemBlob* blob) {
+int palFile::CopyFileContentsAsString(const char* filename, palMemBlob* blob) {
   palFile pf;
   int r;
   r = pf.OpenForReading(filename);
   if (r != 0) {
     *blob = palMemBlob(NULL, 0);
-    return;
+    return -1;
   }
   pf.CopyContentsAsString(blob);
   pf.Close();
+  return 0;
 }
 
-void palFile::CopyFileContents(const char* filename, palMemBlob* blob) {
+int palFile::CopyFileContents(const char* filename, palMemBlob* blob) {
   palFile pf;
   int r;
   *blob = palMemBlob(NULL, 0);
   r = pf.OpenForReading(filename);
   if (r != 0) {
     *blob = palMemBlob(NULL, 0);
-    return;
+    return -1;
   }
   pf.CopyContents(blob);
   pf.Close();
+  return 0;
 }
 
 void palFile::FreeFileContents(palMemBlob* blob) {
