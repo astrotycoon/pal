@@ -78,6 +78,8 @@ class palProfiler {
 public:
   palProfiler();
 
+  int Shutdown();
+
   void Enter(const char* name);
   void Exit();
 
@@ -87,6 +89,7 @@ public:
 
   palProfilerNode* GetRootNode();
 private:
+  void FreeNode(palProfilerNode* node);
   palProfilerNode root_;
   palProfilerNode* current_node_;
 };
@@ -101,6 +104,9 @@ public:
     profiler_->Exit();
   }
 };
+
+int palProfilerInit();
+int palProfilerShutdown();
 
 extern palProfiler g_palProfiler;
 #define palProfileScope(name) palProfilerScope __profile_scope(&g_palProfiler, name);

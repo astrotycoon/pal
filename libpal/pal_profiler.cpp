@@ -21,8 +21,12 @@
 	distribution.
 */
 
-#include "libpal/pal_profiler.h"
 #include "libpal/pal_debug.h"
+#include "libpal/pal_allocator.h"
+#include "libpal/pal_profiler.h"
+
+
+palProxyAllocator* _profile_proxy_allocator = NULL;
 
 palProfilerNode::palProfilerNode(const char* name_) {
   name = name_;
@@ -227,6 +231,11 @@ palProfiler::palProfiler() : root_("palProfilerRoot") {
   current_node_ = &root_;
 }
 
+int palProfiler::Shutdown() {
+  FreeNode(&root_);
+  return 0;
+}
+
 void palProfiler::Enter(const char* name) {
   if (current_node_->name == name) {
     // recursive call
@@ -254,7 +263,7 @@ void palProfiler::Enter(const char* name) {
 
   // need to create new node
 
-  palProfilerNode* new_node = new palProfilerNode(name);
+  palProfilerNode* new_node = _profile_proxy_allocator->Construct<palProfilerNode>(name);
   // establish family relationship
   new_node->sibling = current_node_->child;
   current_node_->child = new_node;
@@ -317,4 +326,30 @@ palProfilerNode* palProfiler::GetRootNode() {
   return &root_;
 }
 
+void palProfiler::FreeNode(palProfilerNode* node) {
+  if (node->child) {
+    palProfilerNode* sibling_node = node->child->sibling;
+    while (sibling_node != NULL) {
+      palProfilerNode* next = sibling_node->sibling;
+      FreeNode(sibling_node);
+      sibling_node = next;
+    }
+    FreeNode(node->child);
+  }
+  if (node != &root_) {
+    _profile_proxy_allocator->Destruct(node);
+  }
+}
+
 palProfiler g_palProfiler;
+
+int palProfilerInit() {
+  _profile_proxy_allocator = g_DefaultHeapAllocator->Construct<palProxyAllocator>("palProfile", g_DefaultHeapAllocator);
+  return 0;
+}
+
+int palProfilerShutdown() {
+  g_palProfiler.Shutdown();
+  g_DefaultHeapAllocator->Destruct(_profile_proxy_allocator);
+  return 0;
+}
