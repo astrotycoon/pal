@@ -35,6 +35,7 @@ int   palHexDigitValue(char ch);
 
 int   palStringLength(const char* str);
 char* palStringDuplicate(const char* str);
+void palStringDuplicateDeallocate(const char* str);
 void  palStringCopy(char* dest, const char* src);
 int   palStringCompare(const char* a, const char* b);
 int   palStringCompareN(const char* a, const char* b, int n);

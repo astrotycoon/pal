@@ -75,11 +75,13 @@ char* palStringDuplicate(const char* str) {
   if (!str)
     return NULL;
 
-#if defined(PAL_PLATFORM_WINDOWS)
-  return _strdup(str);
-#else
-  return strdup(str);
-#endif
+  char* new_str = (char*)g_StringProxyAllocator->Allocate(palStringLength(str)+1);
+  palStringCopy(new_str, str);
+  return new_str;
+}
+
+void palStringDuplicateDeallocate(const char* str) {
+  g_StringProxyAllocator->Deallocate((void*)str);
 }
 
 void palStringCopy(char* dest, const char* src) {
