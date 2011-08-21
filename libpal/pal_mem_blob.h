@@ -89,6 +89,12 @@ class palGrowingMemoryBlob {
   uint64_t buffer_size;
   palAllocatorInterface* allocator_;
 public:
+  palGrowingMemoryBlob() {
+    buffer = NULL;
+    buffer_size = 0;
+    buffer_capacity = 0;
+    allocator_ = NULL;
+  }
   palGrowingMemoryBlob(palAllocatorInterface* allocator) {
     buffer = NULL;
     buffer_capacity = 0;
