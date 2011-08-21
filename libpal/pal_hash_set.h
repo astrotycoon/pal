@@ -151,12 +151,6 @@ public:
   }
 public:
   palHashSet () : hash_size_configuration_(0), hash_bucket_list_head_(), chain_next_(), key_array_(), hash_function_(HashFunction()), key_equal_function_(KeyEqual()) {
-    int new_bucket_size = kPalHashTableSizeConfigurations[hash_size_configuration_].prime_size;
-    hash_bucket_list_head_.Resize(new_bucket_size);
-    for (int i = 0; i < new_bucket_size; i++) {
-      // set all list heads to NULL
-      hash_bucket_list_head_[i] = kPalHashNULL;
-    }
   }
 
   /* Assignment operator */
@@ -174,6 +168,11 @@ public:
 
   /* Copy constructor */
   palHashSet (const palHashSet<Key,HashFunction, KeyEqual>& set, palAllocatorInterface* allocator = g_DefaultHeapAllocator) : hash_size_configuration_(set.hash_size_configuration_), hash_bucket_list_head_(set.hash_bucket_list_head_, allocator), chain_next_(set.chain_next_, allocator), key_array_(set.key_array_, allocator), hash_function_(set.hash_function_), key_equal_function_(set.key_equal_function_) {
+  }
+
+  void SetAllocator(palAllocatorInterface* allocator) {
+    hash_bucket_list_head_.SetAllocator(allocator);
+    key_array_.SetAllocator(allocator);
   }
 
   bool Insert(const Key& key) {
