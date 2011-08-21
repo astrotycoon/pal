@@ -35,7 +35,8 @@ palAllocatorInterface* g_StringProxyAllocator = NULL;
 palAllocatorInterface* g_AllocatorTrackerProxyAllocator = NULL;
 palAllocatorInterface* g_TrackingAllocator = NULL;
 palAllocatorInterface* g_FileProxyAllocator = NULL;
-
+palAllocatorInterface* g_OpticsAllocator = NULL;
+palAllocatorInterface* g_FontAllocator = NULL;
 palAllocatorTracker* g_AllocatorTracker = NULL;
 
 static char buffer[BUFFER_SIZE];
@@ -51,6 +52,8 @@ int palAllocatorInit() {
   g_DefaultHeapAllocator = g_StaticHeapAllocator->Construct<palHeapAllocator>("Default Heap");
   ((palHeapAllocator*)g_DefaultHeapAllocator)->Create((palPageAllocator*)g_PageAllocator);
   g_TrackingAllocator = g_StaticHeapAllocator->Construct<palTrackingAllocator>("Default Heap Tracker", g_DefaultHeapAllocator);
+
+  // We swap tracking and default allocators here, enabling tracking by default.
   palSwap(g_TrackingAllocator, g_DefaultHeapAllocator);
 
 
@@ -58,6 +61,8 @@ int palAllocatorInit() {
   g_AllocatorTrackerProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("AllocatorTracker", g_DefaultHeapAllocator);
   g_StringProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Strings", g_DefaultHeapAllocator);
   g_FileProxyAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Files", g_DefaultHeapAllocator);
+  g_OpticsAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Optics Device", g_DefaultHeapAllocator);
+  g_FontAllocator = g_StaticHeapAllocator->Construct<palProxyAllocator>("Font Rasterization", g_DefaultHeapAllocator);
 
   g_AllocatorTracker = g_StaticHeapAllocator->Construct<palAllocatorTracker>();
   g_AllocatorTracker->SetAllocator(g_StaticHeapAllocator);
@@ -69,17 +74,23 @@ int palAllocatorInit() {
   g_AllocatorTracker->RegisterAllocator(g_StringProxyAllocator, g_DefaultHeapAllocator);
   g_AllocatorTracker->RegisterAllocator(g_AllocatorTrackerProxyAllocator, g_DefaultHeapAllocator);
   g_AllocatorTracker->RegisterAllocator(g_FileProxyAllocator, g_DefaultHeapAllocator);
+  g_AllocatorTracker->RegisterAllocator(g_OpticsAllocator, g_DefaultHeapAllocator);
+  g_AllocatorTracker->RegisterAllocator(g_FontAllocator, g_DefaultHeapAllocator);
 
   return 0;
 }
 
 int palAllocatorShutdown() {
+  // Unswap tracking and default heap allocator, undoing the swap in palAllocatorInit
+
   palSwap(g_TrackingAllocator, g_DefaultHeapAllocator);
   ((palTrackingAllocator*)g_TrackingAllocator)->ConsoleDump();
   g_AllocatorTracker->ConsoleDump();
   g_StaticHeapAllocator->Destruct(g_AllocatorTracker);
 
   g_StaticHeapAllocator->Destruct(g_StdProxyAllocator);
+  g_StaticHeapAllocator->Destruct(g_OpticsAllocator);
+  g_StaticHeapAllocator->Destruct(g_FontAllocator);
   g_StaticHeapAllocator->Destruct(g_FileProxyAllocator);
   g_StaticHeapAllocator->Destruct(g_StringProxyAllocator);
   g_StaticHeapAllocator->Destruct(g_AllocatorTrackerProxyAllocator);

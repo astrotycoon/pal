@@ -35,6 +35,8 @@ extern palAllocatorInterface* g_DefaultHeapAllocator; // default heap
 extern palAllocatorInterface* g_StdProxyAllocator; // Calls to new, new[], etc go through here
 extern palAllocatorInterface* g_StringProxyAllocator; // string related allocations
 extern palAllocatorInterface* g_FileProxyAllocator; // palFile related allocations
+extern palAllocatorInterface* g_OpticsAllocator;
+extern palAllocatorInterface* g_FontAllocator;
 
 int palAllocatorInit();
 int palAllocatorShutdown();
