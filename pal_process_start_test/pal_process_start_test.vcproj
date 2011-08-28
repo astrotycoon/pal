@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="pal_test"
-	ProjectGUID="{CF09789A-8968-4731-B8E0-4B32B9C192E2}"
-	RootNamespace="pal_test"
+	Name="pal_process_start_test"
+	ProjectGUID="{53055138-5767-4AD9-85C7-62BFD17C3776}"
+	RootNamespace="pal_process_start_test"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="0"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,10 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -62,7 +60,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -95,7 +92,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="0"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -117,9 +114,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="$(SolutionDir)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -137,7 +132,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -177,67 +171,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\pal_algorithms_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_atomic_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_compacting_allocator_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_container_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_event_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_file_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_heap_allocator_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_json_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_object_id_table_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_process_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_simd_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_string_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_test_main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_thread_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_time_line_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_web_socket_server_test.cpp"
+				RelativePath=".\main.cpp"
 				>
 			</File>
 		</Filter>
@@ -246,66 +180,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\pal_algorithms_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_atomic_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_compacting_allocator_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_container_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_event_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_file_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_heap_allocator_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_json_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_object_id_table_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_process_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_simd_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_string_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_thread_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_time_line_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pal_web_socket_server_test.h"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

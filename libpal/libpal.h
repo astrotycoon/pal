@@ -71,6 +71,8 @@
 #include "libpal/pal_mem_blob.h"
 #include "libpal/pal_frame_clock.h"
 #include "libpal/pal_atom.h"
+#include "libpal/pal_process.h"
+#include "libpal/pal_pipe_stream.h"
 
 int palStartup(palConsolePrintFunction print_func);
 int palShutdown();

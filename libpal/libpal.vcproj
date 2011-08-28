@@ -228,7 +228,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_pipe.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_platform.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_process.cpp"
 				>
 			</File>
 			<File
@@ -379,6 +387,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\pal_pipe_stream.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\pal_socket_stream.cpp"
 					>
 				</File>
@@ -478,7 +490,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pal_pipe.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pal_platform.h"
+				>
+			</File>
+			<File
+				RelativePath=".\pal_process.h"
 				>
 			</File>
 			<File
@@ -786,6 +806,10 @@
 				</File>
 				<File
 					RelativePath=".\pal_memory_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pal_pipe_stream.h"
 					>
 				</File>
 				<File

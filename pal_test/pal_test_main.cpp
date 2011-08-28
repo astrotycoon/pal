@@ -14,9 +14,11 @@
 #include "pal_object_id_table_test.h"
 #include "pal_web_socket_server_test.h"
 #include "pal_heap_allocator_test.h"
+#include "pal_process_test.h"
 
 int main(int argc, char** argv) {
   palStartup(windows_debugger_print_function);
+  PalProcessTest();
   PalContainerTest();
   PalStringTest();
   PalFileTest();
