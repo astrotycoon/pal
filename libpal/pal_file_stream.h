@@ -56,9 +56,9 @@ public:
   virtual int SetLength(uint64_t length);
 
   virtual int Seek(int64_t offset, palStreamSeekOrigin origin);
-  virtual int Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes);
-  virtual int Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes);
+  virtual int Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_read);
+  virtual int Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_written);
 
-  virtual int OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset);
-  virtual int OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset);
+  virtual int OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_read);
+  virtual int OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_written);
 };

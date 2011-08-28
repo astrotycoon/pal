@@ -142,19 +142,21 @@ int palMemoryStream::Seek(int64_t offset, palStreamSeekOrigin origin) {
   return 0;
 }
 
-int palMemoryStream::Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes) {
+int palMemoryStream::Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_read) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
   if (_growable) {
     palMemoryCopyBytes((void*)bp, _growing_blob.GetPtr(_position), count_bytes);
+    *bytes_read = count_bytes;
   } else {
     palMemoryCopyBytes((void*)bp, _fixed_blob.GetPtr(_position), count_bytes);
+    *bytes_read = count_bytes;
   }
   _position += count_bytes;
   return 0;
 }
 
-int palMemoryStream::Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes) {
+int palMemoryStream::Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_written) {
   if (_can_write == false) {
     return PAL_STREAM_ERROR_CANT_WRITE;
   }
@@ -162,25 +164,29 @@ int palMemoryStream::Write(const void* buffer, uint64_t buffer_offset, uint64_t 
   bp += (uintptr_t)buffer_offset;
   if (_growable) {
     palMemoryCopyBytes(_growing_blob.GetPtr(_position), (void*)bp, count_bytes);
+    *bytes_written = count_bytes;
   } else {
     palMemoryCopyBytes(_fixed_blob.GetPtr(_position), (void*)bp, count_bytes);
+    *bytes_written = count_bytes;
   }
   _position += count_bytes;
   return 0;
 }
 
-int palMemoryStream::OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) {
+int palMemoryStream::OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_read) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
   if (_growable) {
     palMemoryCopyBytes((void*)bp, _growing_blob.GetPtr(stream_offset), count_bytes);
+    *bytes_read = count_bytes;
   } else {
     palMemoryCopyBytes((void*)bp, _fixed_blob.GetPtr(stream_offset), count_bytes);
+    *bytes_read = count_bytes;
   }
   return 0;
 }
 
-int palMemoryStream::OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) {
+int palMemoryStream::OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_written) {
   if (_can_write == false) {
     return PAL_STREAM_ERROR_CANT_WRITE;
   }
@@ -188,8 +194,10 @@ int palMemoryStream::OffsetWrite(const void* buffer, uint64_t buffer_offset, uin
   bp += (uintptr_t)buffer_offset;
   if (_growable) {
     palMemoryCopyBytes(_growing_blob.GetPtr(stream_offset), (void*)bp, count_bytes);
+    *bytes_written = count_bytes;
   } else {
     palMemoryCopyBytes(_fixed_blob.GetPtr(stream_offset), (void*)bp, count_bytes);
+    *bytes_written = count_bytes;
   }
   return 0;
 }

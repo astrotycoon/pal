@@ -128,46 +128,34 @@ int palFileStream::Seek(int64_t offset, palStreamSeekOrigin origin) {
   return 0;
 }
 
-int palFileStream::Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes) {
+int palFileStream::Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_read) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
-  uint64_t bytes_read = _file->Read((void*)bp, count_bytes);
-  if (bytes_read == count_bytes) {
-    return 0;
-  } else {
-    return -1;
-  }
+  uint64_t _bytes_read = _file->Read((void*)bp, count_bytes);
+  *bytes_read = _bytes_read;
+  return 0;
 }
 
-int palFileStream::Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes) {
+int palFileStream::Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_written) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
-  uint64_t bytes_written = _file->Write((const void*)bp, count_bytes);
-  if (bytes_written == count_bytes) {
-    return 0;
-  } else {
-    return -1;
-  }
+  uint64_t _bytes_written = _file->Write((const void*)bp, count_bytes);
+  *bytes_written = _bytes_written;
+  return 0;
 }
 
-int palFileStream::OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) {
+int palFileStream::OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_read) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
-  uint64_t bytes_read = _file->OffsetRead(stream_offset, (void*)bp, count_bytes);
-  if (bytes_read == count_bytes) {
-    return 0;
-  } else {
-    return -1;
-  }
+  uint64_t _bytes_read = _file->OffsetRead(stream_offset, (void*)bp, count_bytes);
+  *bytes_read = _bytes_read;
+  return 0;
 }
 
-int palFileStream::OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) {
+int palFileStream::OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_written) {
   uintptr_t bp = (uintptr_t)buffer;
   bp += (uintptr_t)buffer_offset;
-  uint64_t bytes_written = _file->OffsetWrite(stream_offset, (const void*)bp, count_bytes);
-  if (bytes_written == count_bytes) {
-    return 0;
-  } else {
-    return -1;
-  }
+  uint64_t _bytes_written = _file->OffsetWrite(stream_offset, (const void*)bp, count_bytes);
+  *bytes_written = _bytes_written;
+  return 0;
 }

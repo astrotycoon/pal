@@ -23,31 +23,24 @@
 
 #pragma once
 
-#include "libpal/pal_mem_blob.h"
+#include "libpal/pal_file.h"
 #include "libpal/pal_stream_interface.h"
+#include "libpal/pal_pipe.h"
 
-class palMemoryStream : public palStreamInterface {
-  palMemBlob _fixed_blob;
-  palGrowingMemoryBlob _growing_blob;
-  uint64_t _position;
-  bool _own_growing_blob;
-  bool _growable;
-  bool _can_seek;
+#define PAL_PIPE_STREAM_INVALID_STREAM palMakeErrorCode(PAL_ERROR_CODE_STREAM_GROUP, 200)
+
+class palPipeStream : public palStreamInterface {
+  palPipe* _pipe;
   bool _can_read;
   bool _can_write;
 public:
-  palMemoryStream();
-  virtual ~palMemoryStream();
+  palPipeStream();
+  virtual ~palPipeStream();
 
-  // fixed size
-  int Create(const palMemBlob& blob, bool can_write);
-  // growable with initial capacity
-  int Create(palAllocatorInterface* allocator, int capacity);
+  int CreateReadStream(palPipe* pipe);
+  int CreateWriteStream(palPipe* pipe);
 
   int Reset();
-
-  void GetBlob(palMemBlob* blob);
-  void StealBlob(palMemBlob* blob);
 
   virtual bool CanRead() const;
   virtual bool CanWrite() const;
@@ -64,7 +57,7 @@ public:
   virtual int Seek(int64_t offset, palStreamSeekOrigin origin);
   virtual int Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_read);
   virtual int Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_written);
-  // Stream must be seekable
+
   virtual int OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_read);
   virtual int OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_written);
 };

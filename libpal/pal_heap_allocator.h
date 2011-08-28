@@ -27,7 +27,7 @@
 #include "libpal/pal_allocator_interface.h"
 #include "libpal/pal_page_allocator.h"
 
-#define PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE palMakeErrorCode(0xee, 1)
+#define PAL_HEAP_ALLOCATOR_COULD_NOT_CREATE palMakeErrorCode(PAL_ERROR_CODE_ALLOCATOR_GROUP, 1)
 
 class palHeapAllocator : public palAllocatorInterface {
   void* internal_;

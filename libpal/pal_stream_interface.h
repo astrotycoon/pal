@@ -32,9 +32,9 @@ enum palStreamSeekOrigin {
   kPalStreamSeekOriginEnd,
 };
 
-#define PAL_STREAM_ERROR_CANT_SEEK palMakeErrorCode(0xed, 1)
-#define PAL_STREAM_ERROR_CANT_READ palMakeErrorCode(0xed, 2)
-#define PAL_STREAM_ERROR_CANT_WRITE palMakeErrorCode(0xed, 2)
+#define PAL_STREAM_ERROR_CANT_SEEK palMakeErrorCode(PAL_ERROR_CODE_STREAM_GROUP, 1)
+#define PAL_STREAM_ERROR_CANT_READ palMakeErrorCode(PAL_ERROR_CODE_STREAM_GROUP, 2)
+#define PAL_STREAM_ERROR_CANT_WRITE palMakeErrorCode(PAL_ERROR_CODE_STREAM_GROUP, 3)
 
 class palStreamInterface {
   PAL_DISALLOW_COPY_AND_ASSIGN(palStreamInterface);
@@ -62,9 +62,9 @@ public:
   virtual int SetLength(uint64_t length) = 0;
 
   virtual int Seek(int64_t offset, palStreamSeekOrigin origin) = 0;
-  virtual int Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes) = 0;
-  virtual int Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes) = 0;
+  virtual int Read(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_read) = 0;
+  virtual int Write(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t* bytes_written) = 0;
   // Stream must be seekable
-  virtual int OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) = 0;
-  virtual int OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset) = 0;
+  virtual int OffsetRead(void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_read) = 0;
+  virtual int OffsetWrite(const void* buffer, uint64_t buffer_offset, uint64_t count_bytes, uint64_t stream_offset, uint64_t* bytes_written) = 0;
 };

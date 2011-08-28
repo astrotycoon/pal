@@ -237,7 +237,8 @@ bool palTokenizer::DoublePeekNextCh(char& ch) {
 		}
     int r;
     _stream->Seek(1, kPalStreamSeekOriginCurrent);
-    r = _stream->Read(&ch, 0, 1);
+    uint64_t read_bytes;
+    r = _stream->Read(&ch, 0, 1, &read_bytes);
     _stream->Seek(position, kPalStreamSeekOriginBegin);
 		if (r != 0) {
 			ch = 0;
@@ -260,7 +261,8 @@ bool palTokenizer::PeekNextCh(char& ch) {
 			return false;
 		}
 		int r;
-		r = _stream->Read(&ch, 0, 1);
+    uint64_t read_bytes;
+    r = _stream->Read(&ch, 0, 1, &read_bytes);
 		if (r != 0) {
 			ch = 0;
 			return false;
@@ -297,7 +299,8 @@ bool palTokenizer::ReadNextCh(char& ch) {
 			return false;
 		}
 		int r;
-		r = _stream->Read(&ch, 0, 1);
+    uint64_t read_bytes;
+    r = _stream->Read(&ch, 0, 1, &read_bytes);
 		if (r != 0) {
 			ch = 0;
 			return false;
