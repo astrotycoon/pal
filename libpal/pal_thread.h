@@ -37,9 +37,9 @@
 #error Need to implement palThread classes for this platform
 #endif
 
-#define PAL_THREAD_ERROR_GENERIC palMakeErrorCode(0xf00d, 0)
-#define PAL_THREAD_ERROR_TRY_AGAIN palMakeErrorCode(0xf00d, 1)
-#define PAL_THREAD_ERROR_COULD_NOT_CREATE palMakeErrorCode(0xf00d, 2)
+#define PAL_THREAD_ERROR_GENERIC palMakeErrorCode(PAL_ERROR_CODE_THREAD_GROUP, 0)
+#define PAL_THREAD_ERROR_TRY_AGAIN palMakeErrorCode(PAL_ERROR_CODE_THREAD_GROUP, 1)
+#define PAL_THREAD_ERROR_COULD_NOT_CREATE palMakeErrorCode(PAL_ERROR_CODE_THREAD_GROUP, 2)
 
 enum palThreadRecursionPolicy {
   kPalThreadRecursionPolicyNotAllowed,
