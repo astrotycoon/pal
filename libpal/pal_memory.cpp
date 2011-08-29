@@ -65,16 +65,22 @@ int palRoundToPowerOfTwo(int x) {
 
 // globally override new operator
 
-void* operator new(size_t size) { 
-  return g_StdProxyAllocator->Allocate(size, 16);
-}
-
-void* operator new(size_t size, void* p) {
+void* operator new(size_t size, palAllocatorInterface* allocator) {
+  void* p = allocator->Allocate(size, 8);
   return p;
 }
 
-void operator delete(void* p) {
-  g_StdProxyAllocator->Deallocate(p);
+void* operator new(size_t size, palAllocatorInterface* allocator, size_t alignment) {
+  void* p = allocator->Allocate(size, alignment);
+  return p;
+}
+
+void operator delete(void* p, palAllocatorInterface* allocator) {
+  allocator->Deallocate(p);
+}
+
+void* operator new(size_t size) { 
+  return g_StdProxyAllocator->Allocate(size, 16);
 }
 
 void* operator new[](size_t size) {
@@ -84,3 +90,12 @@ void* operator new[](size_t size) {
 void operator delete[](void* p) {
   g_StdProxyAllocator->Deallocate(p);
 }
+
+void operator delete(void* p) {
+  g_StdProxyAllocator->Deallocate(p);
+}
+
+void* operator new(size_t size, void* p) {
+  return p;
+}
+

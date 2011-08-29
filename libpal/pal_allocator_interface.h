@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "libpal/pal_memory.h"
 #include "libpal/pal_atomic.h"
 #include "libpal/pal_align.h"
 

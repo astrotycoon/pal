@@ -24,6 +24,7 @@
 #pragma once
 
 #include "libpal/pal_types.h"
+#include "libpal/pal_allocator_interface.h"
 
 #ifndef NULL
 #define NULL 0
@@ -35,9 +36,16 @@ void palMemorySetBytes(void* destination, unsigned char byte, uint64_t bytes);
 
 int   palRoundToPowerOfTwo(int x);
 
-void* operator new(size_t size);
-void* operator new(size_t size, void* p);
-void operator delete(void* p);
+// new delete operators that work on allocator interface
+void* operator new(size_t size, palAllocatorInterface* allocator);
+void* operator new(size_t size, palAllocatorInterface* allocator, size_t alignment);
+void operator delete(void* p, palAllocatorInterface* allocator);
 
+// placement new
+void* operator new(size_t size, void* p);
+
+// standard new, delete operators
+void* operator new(size_t size);
+void operator delete(void* p);
 void* operator new[](size_t size);
 void operator delete[](void* p);
