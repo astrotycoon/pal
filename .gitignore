@@ -13,3 +13,5 @@ Release
 PS3_SNC_PPU_Debug
 PS3_SNC_PPU_Release
 .DS_Store
+*.sdf
+ipch

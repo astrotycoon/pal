@@ -91,7 +91,7 @@ bool palBinaryReader::Read(uint32_t length, void* r) {
 		// EOF
 		return false;
 	}
-	pal_memmove(r, buffer_p_, length);
+	palMemoryCopyBytes(r, buffer_p_, length);
 	buffer_p_ += length;
 	return true;
 }
@@ -168,7 +168,7 @@ bool palBinaryReader::ReadChar(char* r)
 	return true;
 }
 
-bool palBinaryReader::FetchString(palString<>* string)
+bool palBinaryReader::FetchString(palDynamicString* string)
 {
 	const char* start = buffer_p_;
 	while (*buffer_p_ != '\0' && IsEOF() == false) {
@@ -178,19 +178,19 @@ bool palBinaryReader::FetchString(palString<>* string)
 	if (start == buffer_p_)
 		return false;
 	uint32_t length = buffer_p_ - start;
-  string->SetSize(0);
-  string->AppendLength(start, length);
+  string->SetLength(0);
+  string->Append(start, length);
 	return true;
 }
 
-bool palBinaryReader::FetchFixedLengthString(uint32_t length, palString<>* string)
+bool palBinaryReader::FetchFixedLengthString(uint32_t length, palDynamicString* string)
 {
 	const char* start = buffer_p_;
-  string->SetSize(0);
+  string->SetLength(0);
 	if (buffer_p_ + length >= buffer_end_) {
 		// EOF
 		return false;
 	}
-  string->AppendLength(start, length);
+  string->Append(start, length);
   return true;
 }

@@ -55,8 +55,8 @@ public:
 	bool ReadFloat(float* r);
 	bool ReadDouble(double* r);
 	bool ReadChar(char* r);
-	bool FetchString(palString<>* string);
-	bool FetchFixedLengthString(uint32_t length, palString<>* string);
+	bool FetchString(palDynamicString* string);
+	bool FetchFixedLengthString(uint32_t length, palDynamicString* string);
 };
 
 #endif  // LIBPAL_PAL_BINARY_READER_H_

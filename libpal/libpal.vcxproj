@@ -1,0 +1,300 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dlmalloc\dlmalloc.cpp" />
+    <ClCompile Include="libpal.cpp" />
+    <ClCompile Include="pal_adi.cpp" />
+    <ClCompile Include="pal_algorithms.cpp" />
+    <ClCompile Include="pal_align.cpp" />
+    <ClCompile Include="pal_allocator.cpp" />
+    <ClCompile Include="pal_atom.cpp" />
+    <ClCompile Include="pal_binary_reader.cpp" />
+    <ClCompile Include="pal_command_buffer.cpp" />
+    <ClCompile Include="pal_compacting_allocator.cpp" />
+    <ClCompile Include="pal_console.cpp" />
+    <ClCompile Include="pal_debug.cpp" />
+    <ClCompile Include="pal_event.cpp" />
+    <ClCompile Include="pal_file.cpp" />
+    <ClCompile Include="pal_file_stream.cpp" />
+    <ClCompile Include="pal_font_rasterizer_freetype.cpp" />
+    <ClCompile Include="pal_font_rasterizer_stb.cpp" />
+    <ClCompile Include="pal_frame_clock.cpp" />
+    <ClCompile Include="pal_hash_constants.cpp" />
+    <ClCompile Include="pal_heap_allocator.cpp" />
+    <ClCompile Include="pal_image.cpp" />
+    <ClCompile Include="pal_json.cpp" />
+    <ClCompile Include="pal_md5.cpp" />
+    <ClCompile Include="pal_memory.cpp" />
+    <ClCompile Include="pal_memory_stream.cpp" />
+    <ClCompile Include="pal_page_allocator.cpp" />
+    <ClCompile Include="pal_pipe.cpp" />
+    <ClCompile Include="pal_pipe_stream.cpp" />
+    <ClCompile Include="pal_platform.cpp" />
+    <ClCompile Include="pal_process.cpp" />
+    <ClCompile Include="pal_profiler.cpp" />
+    <ClCompile Include="pal_random.cpp" />
+    <ClCompile Include="pal_scalar.cpp" />
+    <ClCompile Include="pal_simd.cpp" />
+    <ClCompile Include="pal_socket.cpp" />
+    <ClCompile Include="pal_socket_stream.cpp" />
+    <ClCompile Include="pal_string.cpp" />
+    <ClCompile Include="pal_tcp_client.cpp" />
+    <ClCompile Include="pal_tcp_listener.cpp" />
+    <ClCompile Include="pal_thread.cpp" />
+    <ClCompile Include="pal_timer_event.cpp" />
+    <ClCompile Include="pal_time_line.cpp" />
+    <ClCompile Include="pal_tokenizer.cpp" />
+    <ClCompile Include="pal_tracking_allocator.cpp" />
+    <ClCompile Include="pal_utf8.cpp" />
+    <ClCompile Include="pal_web_socket_server.cpp" />
+    <ClCompile Include="SFMT\SFMT.cpp" />
+    <ClCompile Include="stb\stb_image.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dlmalloc\dlmalloc.h" />
+    <ClInclude Include="libpal.h" />
+    <ClInclude Include="pal_adi.h" />
+    <ClInclude Include="pal_adi_keyboard_symbols.h" />
+    <ClInclude Include="pal_adi_mouse_symbols.h" />
+    <ClInclude Include="pal_adi_sdl.h" />
+    <ClInclude Include="pal_adi_win32.h" />
+    <ClInclude Include="pal_algorithms.h" />
+    <ClInclude Include="pal_align.h" />
+    <ClInclude Include="pal_allocator.h" />
+    <ClInclude Include="pal_allocator_interface.h" />
+    <ClInclude Include="pal_array.h" />
+    <ClInclude Include="pal_atom.h" />
+    <ClInclude Include="pal_atomic.h" />
+    <ClInclude Include="pal_atomic_inl.h" />
+    <ClInclude Include="pal_binary_reader.h" />
+    <ClInclude Include="pal_command_buffer.h" />
+    <ClInclude Include="pal_compacting_allocator.h" />
+    <ClInclude Include="pal_console.h" />
+    <ClInclude Include="pal_debug.h" />
+    <ClInclude Include="pal_delegate.h" />
+    <ClInclude Include="pal_delegate_internal.h" />
+    <ClInclude Include="pal_endian.h" />
+    <ClInclude Include="pal_errorcode.h" />
+    <ClInclude Include="pal_event.h" />
+    <ClInclude Include="pal_file.h" />
+    <ClInclude Include="pal_file_stream.h" />
+    <ClInclude Include="pal_font_rasterizer.h" />
+    <ClInclude Include="pal_font_rasterizer_freetype.h" />
+    <ClInclude Include="pal_font_rasterizer_stb.h" />
+    <ClInclude Include="pal_frame_clock.h" />
+    <ClInclude Include="pal_hash_constants.h" />
+    <ClInclude Include="pal_hash_functions.h" />
+    <ClInclude Include="pal_hash_map.h" />
+    <ClInclude Include="pal_hash_map_cache.h" />
+    <ClInclude Include="pal_hash_set.h" />
+    <ClInclude Include="pal_heap_allocator.h" />
+    <ClInclude Include="pal_ilist.h" />
+    <ClInclude Include="pal_image.h" />
+    <ClInclude Include="pal_json.h" />
+    <ClInclude Include="pal_limits.h" />
+    <ClInclude Include="pal_list.h" />
+    <ClInclude Include="pal_md5.h" />
+    <ClInclude Include="pal_memory.h" />
+    <ClInclude Include="pal_memory_stream.h" />
+    <ClInclude Include="pal_mem_blob.h" />
+    <ClInclude Include="pal_min_heap.h" />
+    <ClInclude Include="pal_object_id_table.h" />
+    <ClInclude Include="pal_page_allocator.h" />
+    <ClInclude Include="pal_pair.h" />
+    <ClInclude Include="pal_pipe.h" />
+    <ClInclude Include="pal_pipe_stream.h" />
+    <ClInclude Include="pal_platform.h" />
+    <ClInclude Include="pal_pool_allocator.h" />
+    <ClInclude Include="pal_process.h" />
+    <ClInclude Include="pal_profiler.h" />
+    <ClInclude Include="pal_proxy_allocator.h" />
+    <ClInclude Include="pal_random.h" />
+    <ClInclude Include="pal_scalar.h" />
+    <ClInclude Include="pal_simd.h" />
+    <ClInclude Include="pal_simd_impl-inl.h" />
+    <ClInclude Include="pal_simd_types-inl.h" />
+    <ClInclude Include="pal_socket.h" />
+    <ClInclude Include="pal_socket_stream.h" />
+    <ClInclude Include="pal_spinlock.h" />
+    <ClInclude Include="pal_stack_allocator.h" />
+    <ClInclude Include="pal_stream_interface.h" />
+    <ClInclude Include="pal_string.h" />
+    <ClInclude Include="pal_string_inl.h" />
+    <ClInclude Include="pal_tcp_client.h" />
+    <ClInclude Include="pal_tcp_listener.h" />
+    <ClInclude Include="pal_thread.h" />
+    <ClInclude Include="pal_timer.h" />
+    <ClInclude Include="pal_timer_event.h" />
+    <ClInclude Include="pal_time_line.h" />
+    <ClInclude Include="pal_tokenizer.h" />
+    <ClInclude Include="pal_tracking_allocator.h" />
+    <ClInclude Include="pal_types.h" />
+    <ClInclude Include="pal_unicode_tables.h" />
+    <ClInclude Include="pal_utf8.h" />
+    <ClInclude Include="pal_web_socket_server.h" />
+    <ClInclude Include="SFMT\SFMT-params.h" />
+    <ClInclude Include="SFMT\SFMT-params11213.h" />
+    <ClInclude Include="SFMT\SFMT-params1279.h" />
+    <ClInclude Include="SFMT\SFMT-params132049.h" />
+    <ClInclude Include="SFMT\SFMT-params19937.h" />
+    <ClInclude Include="SFMT\SFMT-params216091.h" />
+    <ClInclude Include="SFMT\SFMT-params2281.h" />
+    <ClInclude Include="SFMT\SFMT-params4253.h" />
+    <ClInclude Include="SFMT\SFMT-params44497.h" />
+    <ClInclude Include="SFMT\SFMT-params607.h" />
+    <ClInclude Include="SFMT\SFMT-params86243.h" />
+    <ClInclude Include="SFMT\SFMT-sse2.h" />
+    <ClInclude Include="SFMT\SFMT.h" />
+    <ClInclude Include="stb\stb_image.h" />
+    <ClInclude Include="stb\stb_truetype.h" />
+    <ClInclude Include="windows\pal_atomic_windows.h" />
+    <ClInclude Include="windows\pal_file_windows.h" />
+    <ClInclude Include="windows\pal_pipe_windows.h" />
+    <ClInclude Include="windows\pal_process_windows.h" />
+    <ClInclude Include="windows\pal_thread_windows.h" />
+    <ClInclude Include="windows\pal_timer_windows.h" />
+    <ClInclude Include="x86\pal_simd_sse_impl.h" />
+    <ClInclude Include="x86\pal_simd_sse_types.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{ADF319F9-233A-404B-AB64-67BE35F22B20}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libpal</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="SaneDefaults.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="SaneDefaults.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="SaneDefaults.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="SaneDefaults.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\libpal\freetype\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\libpal\freetype\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\libpal\freetype\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\libpal\freetype\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
