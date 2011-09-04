@@ -68,7 +68,7 @@ int palHexDigitValue(char ch) {
 int palStringLength(const char* str) {
   if (!str || *str == '\0')
     return 0;
-  return strlen(str);
+  return (int)strlen(str);
 }
 
 char* palStringDuplicate(const char* str) {
@@ -85,6 +85,9 @@ void palStringDuplicateDeallocate(const char* str) {
 }
 
 void palStringCopy(char* dest, const char* src) {
+  if (src == NULL || dest == NULL) {
+    return;
+  }
 #if defined(PAL_COMPILER_MICROSOFT)
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -275,7 +278,7 @@ palDynamicString::palDynamicString(const char* init_string) : _buffer(NULL), _ca
   Set(init_string);
 }
 
-palDynamicString::palDynamicString(const palDynamicString& other) : _buffer(NULL), _capacity(0), _length(0){
+palDynamicString::palDynamicString(const palDynamicString& other) : _buffer(NULL), _capacity(0), _length(0) {
   Set(other.C());
 }
 
@@ -582,6 +585,34 @@ void palDynamicString::Copy(int start, int count, palDynamicString* target_str) 
     target_str->ExpandCapacityIfNeeded(count);
   }
   return Copy(start, count, target_str->C());
+}
+
+void palDynamicString::SearchAndReplace(int start, int count, char search, char replace) {
+  if (start < 0 || start >= _length) {
+    return;
+  }
+  if (start+count > _length) {
+    int allowed = start+count-_length;
+    count = allowed;
+  }
+  char* s = _buffer;
+  for (int i = start; i < start+count; i++) {
+    if (s[i] == search) {
+      s[i] = replace;
+    }
+  }
+}
+
+void palDynamicString::SearchAndReplace(int start, char search, char replace) {
+  if (start < 0 || start >= _length) {
+    return;
+  }
+  char* s = _buffer;
+  for (int i = start; _buffer[i] != NULL; i++) {
+    if (s[i] == search) {
+      s[i] = replace;
+    }
+  }
 }
 
 palDynamicString& palDynamicString::operator=(const palDynamicString& str) {

@@ -40,7 +40,7 @@ palTcpClient::~palTcpClient() {
 int palTcpClient::Connect(palIpv4Address address, int port) {
   socket_ = palSocketOpenStream();
   if (socket_ <= 0)
-    return socket_;
+    return (int)socket_;
   int r = palSocketConnect(socket_, address, port);
   connected_ = r == 0;
   return r;

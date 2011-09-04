@@ -25,9 +25,14 @@
 
 #if defined(PAL_BUILD_DEBUG)
 
-#if defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86)
+#if defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86) && defined(PAL_ARCH_32BIT)
 void palBreakHere() {
   __asm int 3
+}
+#elif defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86) && defined(PAL_ARCH_64BIT)
+#include <windows.h>
+void palBreakHere() {
+  DebugBreak();
 }
 #elif defined(PAL_CPU_X86) && defined(PAL_COMPILER_GNU)
 void palBreakHere() {

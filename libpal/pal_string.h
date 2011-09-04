@@ -115,6 +115,8 @@ public:
   void Copy(int start, int count, char* target_str);
   void Copy(int start, int count, palDynamicString* target_str);
 
+  void SearchAndReplace(int start, int count, char search, char replace);
+  void SearchAndReplace(int start, char search, char replace);
   palDynamicString& operator=(const palDynamicString& str);
   palDynamicString& operator=(const char* str);
 private:

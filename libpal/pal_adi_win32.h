@@ -153,7 +153,7 @@ void palAdiProcessEvents() {
           if (checkmessage.message == WM_CHAR) {
             // remove the message
             PeekMessage(&checkmessage, NULL, 0, 0, PM_REMOVE);
-            pkevent.ascii = checkmessage.wParam;
+            pkevent.ascii = (char)checkmessage.wParam;
           }
         }
         if ((running_mod & KB_MOD_CTRL) != 0 && pkevent.key == KB_SYM_g) {

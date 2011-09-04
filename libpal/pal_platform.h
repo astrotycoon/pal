@@ -88,16 +88,17 @@
 #define PAL_NO_INLINE __attribute__((noinline))
 #endif
 
-#if !defined(PAL_PLATFORM_PS3) && defined(_WIN32) && defined(_MSC_VER)
+#if !defined(PAL_PLATFORM_PS3) && defined(_WIN32) && defined(_MSC_VER) && defined(_M_IX86)
 #define PAL_PLATFORM_WINDOWS
 #define PAL_ARCH_32BIT
 #define PAL_CPU_X86
 // this is needed so that when <windows.h> is included, it doesn't include winsock.h
 #define _WINSOCKAPI_
-#elif defined(_WIN64)
+#elif !defined(PAL_PLATFORM_PS3) && defined(_WIN32) && defined(_MSC_VER) && defined(_M_X64)
 #define PAL_PLATFORM_WINDOWS
 #define PAL_ARCH_64BIT
 #define PAL_CPU_X86
+#define _WINSOCKAPI_
 #endif
 
 #if defined(_MSC_VER)

@@ -30,9 +30,9 @@
 class palPoolAllocator : public palAllocatorInterface {
 protected:
   palSpinlock spinlock_;
-	uint32_t pool_element_size_;
-	uint32_t num_pool_elements_;
-	uint32_t num_free_pool_elements_;
+	uint64_t pool_element_size_;
+	uint64_t num_pool_elements_;
+	uint64_t num_free_pool_elements_;
 
 	unsigned char* pool_base_ptr_;
 	unsigned char* free_ptr_;
@@ -53,12 +53,12 @@ public:
   ~palPoolAllocator() {
   }
 
-  void Create(void* pool_memory, uint32_t pool_memory_size, uint32_t element_size, uint32_t element_alignment) {  
+  void Create(void* pool_memory, uint64_t pool_memory_size, uint64_t element_size, uint64_t element_alignment) {  
 		pool_element_size_ = element_size;
 
     // find aligned start
     uintptr_t pool_start_address = (uintptr_t)pool_memory;
-    pool_start_address = palAlign(pool_start_address, element_alignment);
+    pool_start_address = palAlign(pool_start_address, (uintptr_t)element_alignment);
     // adjust pool memory size
     pool_memory_size -= pool_start_address - (uintptr_t)pool_memory;
 
@@ -78,7 +78,7 @@ public:
 		}
 	}
 
-	uint32_t GetNumFree() {
+	uint64_t GetNumFree() {
 		return num_free_pool_elements_;
 	}
 
