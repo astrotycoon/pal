@@ -38,6 +38,7 @@ static bool __display_fullscreen = false;
 static uint32_t __display_width = 0;
 static uint32_t __display_height = 0;
 static const int __display_bpp = 32;
+static bool __display_closed = false;
 
 static HWND __window;
 static IDXGIAdapter1* __adapter;
@@ -71,6 +72,7 @@ int palAdiInitialize(void* a, void* b, int c) {
   hInstance = reinterpret_cast<HINSTANCE>(a);
   hPrevInstance = reinterpret_cast<HINSTANCE>(b);
   nCmdShow = c;
+  __display_closed = true;
   return 0;
 }
 
@@ -458,8 +460,13 @@ void*   palAdiGetDeviceHandle() {
 }
 
 int palAdiOpenDisplay() {
+  __display_closed = false;
   ShowWindow(__window, nCmdShow);
   return 0;
+}
+
+bool palAdiIsDisplayClosed() {
+  return __display_closed;
 }
 
 int palAdiDisplayWidth() {

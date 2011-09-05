@@ -35,8 +35,8 @@ int palStartup(palConsolePrintFunction print_func) {
   palThreadInit();
   palSocketInit();
 
-  palPrintf("palStartup\n");
-  palPrintf("--------------\n");
+//   palPrintf("palStartup\n");
+//   palPrintf("--------------\n");
 
   return 0;
 }

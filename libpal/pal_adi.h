@@ -74,6 +74,7 @@ void		palAdiWarpMouse(uint16_t x, uint16_t y);
 
 int			palAdiConfigureDisplay(int width, int height, bool fullscreen = false);
 int			palAdiOpenDisplay();
+bool    palAdiIsDisplayClosed();
 int     palAdiDisplayWidth();
 int     palAdiDisplayHeight();
 int     palAdiDisplayDPI();
