@@ -231,7 +231,7 @@ typedef ptrdiff_t  FT_PtrDist;
 #endif
 
   /* as usual, for the speed hungry :-) */
-
+#define FT_STATIC_RASTER
 #ifndef FT_STATIC_RASTER
 
 #define RAS_ARG   PWorker  worker
