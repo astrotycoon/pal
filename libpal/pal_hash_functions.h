@@ -201,4 +201,11 @@ struct palHashFunction<const char*>
 	}
 };
 
+template<>
+struct palHashFunction<palDynamicString> {
+  unsigned int operator()(const palDynamicString& str) {
+    return palMurmurHash(str.C(), str.GetLength());
+  }
+};
+
 #endif

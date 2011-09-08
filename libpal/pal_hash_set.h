@@ -87,7 +87,7 @@ public:
       return false;
     }
 
-    if (size > high) {
+    if (hash_size_configuration_ == 0 || size > high) {
       // table needs to grow
       hash_size_configuration_++;
       if (hash_size_configuration_ == kPalNumHashTableSizeConfigurations) {
@@ -173,12 +173,14 @@ public:
   void SetAllocator(palAllocatorInterface* allocator) {
     hash_bucket_list_head_.SetAllocator(allocator);
     key_array_.SetAllocator(allocator);
+    chain_next_.SetAllocator(allocator);
   }
 
   bool Insert(const Key& key) {
     /* First try and find the key in the hash table */
     int index = FindIndex(key);
     if (index != kPalHashNULL) {
+      key_array_[index] = key;
       return true;
     }
 
