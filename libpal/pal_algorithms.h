@@ -1,24 +1,24 @@
 /*
-	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
+  Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
+  1. The origin of this software must not be misrepresented; you must not
+  claim that you wrote the original software. If you use this software
+  in a product, an acknowledgment in the product documentation would be
+  appreciated but is not required.
 
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
+  2. Altered source versions must be plainly marked as such, and must not be
+  misrepresented as being the original software.
 
-	3. This notice may not be removed or altered from any source
-	distribution.
+  3. This notice may not be removed or altered from any source
+  distribution.
 */
 
 #pragma once
@@ -32,109 +32,114 @@ void palSwap(T& a, T& b) {
 
 template<class T>
 const T& palMin( const T& a, const T& b ) {
-	return (a<b)?a:b;
+  return (a<b)?a:b;
 }
 
 template<class T>
 const T& palMax( const T& a, const T& b ) {
-	return (b<a)?a:b;
+  return (b<a)?a:b;
 }
 
 template<class T>
 const T& palClamp(const T& a, const T& min, const T& max) {
-	return (a < min) ? min : (a > max) ? max : a;
+  return (a < min) ? min : (a > max) ? max : a;
 }
 
 template<class T>
-int palBinarySearchLT(const T* data, const int num_data, const T& needle) {
+int palBinarySearchLowerBound(const T* data, const int num_data, const T& needle, const T** hit) {
+  *hit = NULL;
+
   int len = num_data;
-	int mid = len;
-	int offset = 0;
-	while( mid > 0 ) {
-		mid = len >> 1;
-		if ( data[offset+mid] < needle ) {
-			offset += mid;
-		}
-		len -= mid;
-	}
-	return offset;
+  int mid = len;
+  int offset = 0;
+  bool once = false;
+  while( mid > 0 ) {
+    mid = len >> 1;
+    if ( data[offset+mid] < needle ) {
+      offset += mid;
+      once = true;
+    }
+    len -= mid;
+  }
+  if (once) {
+    *hit = &data[offset];
+    return 0;
+  }
+  return -1;
 }
 
 template<class T>
-int palBinarySearchLTE(const T* data, const int num_data, const T& needle) {
-	int len = num_data;
-	int mid = len;
-	int offset = 0;
-	while( mid > 0 ) {
-		mid = len >> 1;
-		if ( data[offset+mid] <= needle ) {
-			offset += mid;
-		}
-		len -= mid;
-	}
-	return offset;
+int palBinarySearchUpperBound(const T* data, const int num_data, const T& needle, const T** hit) {
+  *hit = NULL;
+  bool once = false;
+
+#if 1
+  int len = num_data;
+  int mid = len;
+  int offset = 0;
+  int res = 0;
+  while( mid > 0 ) {
+    mid = len >> 1;
+    if ( data[offset+mid] > needle ) {
+      once = true;
+      res = 0;
+    } else {
+      offset += mid;
+      res = 1;
+    }
+    len -= mid;
+  }
+  offset += res;
+#else
+  int len = num_data;
+  int mid = len;
+  int offset = 0;
+  bool once = false;
+  while( mid > 0 ) {
+    mid = len >> 1;
+    if ( data[offset+mid] > needle ) {
+      offset += mid;
+      once = true;
+    }
+    len -= mid;
+  }
+#endif
+  if (once) {
+    *hit = &data[offset];
+    return 0;
+  }
+  return -1;
+
 }
 
 template<class T>
-int palBinarySearch(const T* data, const int num_data, const T& needle) {
+int palBinarySearch(const T* data, const int num_data, const T& needle, const T** hit) {
   int first = 0;
   int last = num_data - 1;
-  
-  if (num_data == 0)
-    return num_data;
-  
-  while (first <= last)
-  {
+
+  *hit = NULL;
+
+  if (num_data == 0) {
+    return -1;
+  }
+
+  while (first <= last) {
     int mid = ((unsigned int)first + (unsigned int)last) >> 1;
-    if (needle < data[mid])
-    {
+    if (needle < data[mid]) {
       last = mid - 1;
-    } else if (data[mid] < needle)
-    {
+    } else if (data[mid] < needle) {
       first = mid+1;	
     } else {
-      return mid;
+      *hit = &data[mid];
+      return 0;
     }
   }
-  return num_data;
-}
-
-template<class T>
-int palBinarySearchGTE(const T* data, const int num_data, const T& needle) {
-  int len = num_data;
-	int mid = len;
-	int offset = 0;
-	int res = 0;
-	while( mid > 0 ) {
-		mid = len >> 1;
-		if ( data[offset+mid] >= needle ) {
-			res = 0;
-		} else {
-			offset += mid;
-			res = 1;
-		}
-		len -= mid;
-	}
-	return offset+res;
+  return -1;
 }
 
 template<class T>
 int palBinarySearchGT(const T* data, const int num_data, const T& needle) {
-  int len = num_data;
-	int mid = len;
-	int offset = 0;
-	int res = 0;
-	while( mid > 0 ) {
-		mid = len >> 1;
-		if ( data[offset+mid] > needle ) {
-			res = 0;
-		} else {
-			offset += mid;
-			res = 1;
-		}
-		len -= mid;
-	}
-	return offset+res;
+  
 }
 
 template<typename T>

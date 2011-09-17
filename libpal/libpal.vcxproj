@@ -45,6 +45,7 @@
     <ClCompile Include="pal_memory.cpp" />
     <ClCompile Include="pal_memory_stream.cpp" />
     <ClCompile Include="pal_page_allocator.cpp" />
+    <ClCompile Include="pal_path.cpp" />
     <ClCompile Include="pal_pipe.cpp" />
     <ClCompile Include="pal_pipe_stream.cpp" />
     <ClCompile Include="pal_platform.cpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="pal_object_id_table.h" />
     <ClInclude Include="pal_page_allocator.h" />
     <ClInclude Include="pal_pair.h" />
+    <ClInclude Include="pal_path.h" />
     <ClInclude Include="pal_pipe.h" />
     <ClInclude Include="pal_pipe_stream.h" />
     <ClInclude Include="pal_platform.h" />

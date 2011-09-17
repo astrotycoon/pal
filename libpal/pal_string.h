@@ -50,6 +50,7 @@ void palStringAllocatingPrintfInternalDeallocate(char* buff);
 int palStringPrintfInternal(char* str, uint32_t size, const char* format, va_list args);
 
 int   palStringFindCh(const char* str, char ch);
+int   palStringFindChFromRight(const char* str, char ch);
 bool  palStringFindString(const char* str, const char* findstr, int* start, int* end);
 
 int palStringToInteger(const char* str);

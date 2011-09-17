@@ -155,6 +155,9 @@
     <ClCompile Include="dlmalloc\dlmalloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pal_path.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libpal.h">
@@ -467,6 +470,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dlmalloc\dlmalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pal_path.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

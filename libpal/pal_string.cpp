@@ -193,6 +193,17 @@ int palStringFindCh(const char* str, char ch) {
   return -1;
 }
 
+int palStringFindChFromRight(const char* str, char ch) {
+  int length = palStringLength(str);
+  while (length > 0) {
+    if (str[length] == ch) {
+      return length;
+    }
+    length--;
+  }
+  return -1;
+}
+
 bool palStringFindString(const char* str, const char* findstr, int* start_out, int* end_out) {
   int str_len = palStringLength(str);
   int findstr_len = palStringLength(findstr);

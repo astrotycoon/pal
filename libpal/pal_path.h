@@ -21,29 +21,29 @@
   distribution.
 */
 
+#pragma once
+
 #include "libpal/pal_platform.h"
+#include "libpal/pal_string.h"
 
-#if defined(PAL_BUILD_DEBUG)
+class palPath {
+public:
+  static char GetDirectorySeperator();
 
-#if defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86) && defined(PAL_ARCH_32BIT)
-void palBreakHere() {
-  __asm int 3
-}
-#elif defined(PAL_COMPILER_MICROSOFT) && defined(PAL_CPU_X86) && defined(PAL_ARCH_64BIT)
-#include <windows.h>
-void palBreakHere() {
-  DebugBreak();
-}
-#elif defined(PAL_CPU_X86) && defined(PAL_COMPILER_GNU)
-void palBreakHere() {
-  asm("int $0x3");
-}
-#endif
+  
 
-#else // defined(PAL_BUILD_DEBUG)
+  static uint64_t GetAccessTime(const char* path);
+  static uint64_t GetModificationTime(const char* path);
+  static uint64_t GetCreationTime(const char* path);
 
-void palBreakHere() {
-  return;
-}
+  static bool IsAbsolutePath(const char* path);
+  static bool Exists(const char* path);
+  static bool IsDirectory(const char* path);
+  static bool IsFile(const char* path);
 
-#endif
+  static bool Split(const char* path, palDynamicString* head, palDynamicString* tail);
+  static bool SplitDrive(const char* path, palDynamicString* drive, palDynamicString* tail);
+  static bool SplitExtension(const char* path, palDynamicString* root, palDynamicString* extension);
+
+  static void Build(palDynamicString* path, ...);
+};
