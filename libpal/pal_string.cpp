@@ -689,3 +689,46 @@ void palDynamicString::Resize(int new_capacity) {
     _capacity = new_capacity;
   }
 }
+
+void palDynamicString::TrimWhiteSpaceFromStart() {
+  int index = 0;
+  int start_ws = -1;
+  int ws_count = 0;
+
+  while (index < GetLength()) {
+    bool ws = palIsWhiteSpace(_buffer[index]);
+    if (start_ws == -1 && ws) {
+      start_ws = index;
+      ws_count++;
+      palAssert(start_ws == 0);
+    } else if (ws) {
+      ws_count++;
+    } else {
+      break;
+    }
+    index++;
+  }
+
+  Cut(start_ws, ws_count);
+}
+
+void palDynamicString::TrimWhiteSpaceFromEnd() {
+  int index = GetLength()-1;
+  int ws_count = 0;
+  int start_ws;
+
+  while (index >= 0) {
+    bool ws = palIsWhiteSpace(_buffer[index]);
+    if (start_ws == -1 && ws) {
+      start_ws = index;
+      palAssert(start_ws == GetLength()-1);
+    } else if (ws) {
+      ws_count++;
+    } else {
+      break;
+    }
+    index--;
+  }
+
+  Cut(start_ws-ws_count, ws_count);
+}

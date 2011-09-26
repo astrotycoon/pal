@@ -74,6 +74,9 @@ public:
   const char* C() const;
   char* C();
 
+  void TrimWhiteSpaceFromStart();
+  void TrimWhiteSpaceFromEnd();
+
   bool Equals(const char* str) const;
   bool Equals(const palDynamicString& str) const;
 

@@ -14,9 +14,15 @@
 #include "pal_web_socket_server_test.h"
 #include "pal_heap_allocator_test.h"
 #include "pal_process_test.h"
+#include "pal_blob_test.h"
 
 int main(int argc, char** argv) {
   palStartup(windows_debugger_print_function);
+
+  palWebSocketServerTest();
+  return 0;
+
+  PalBlobTest();
   PalAlgorithmsTest();
   PalProcessTest();
   PalContainerTest();
@@ -31,7 +37,7 @@ int main(int argc, char** argv) {
   palShutdown();
   return 0;
 
-  palWebSocketServerTest();
+  
   //PalPoolAllocTest();
   PalTimeLineTest();
   

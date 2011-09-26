@@ -59,6 +59,9 @@
     <ClCompile Include="pal_web_socket_server_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pal_blob_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pal_algorithms_test.h">
@@ -104,6 +107,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pal_web_socket_server_test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pal_blob_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

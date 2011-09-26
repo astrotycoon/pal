@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="pal_algorithms_test.cpp" />
     <ClCompile Include="pal_atomic_test.cpp" />
+    <ClCompile Include="pal_blob_test.cpp" />
     <ClCompile Include="pal_compacting_allocator_test.cpp" />
     <ClCompile Include="pal_container_test.cpp" />
     <ClCompile Include="pal_event_test.cpp" />
@@ -167,6 +168,7 @@
   <ItemGroup>
     <ClInclude Include="pal_algorithms_test.h" />
     <ClInclude Include="pal_atomic_test.h" />
+    <ClInclude Include="pal_blob_test.h" />
     <ClInclude Include="pal_compacting_allocator_test.h" />
     <ClInclude Include="pal_container_test.h" />
     <ClInclude Include="pal_event_test.h" />
