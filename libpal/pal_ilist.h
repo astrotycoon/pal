@@ -1,24 +1,24 @@
 /*
-	Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
+  Copyright (c) 2010 John McCutchan <john@johnmccutchan.com>
 
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
+  1. The origin of this software must not be misrepresented; you must not
+  claim that you wrote the original software. If you use this software
+  in a product, an acknowledgment in the product documentation would be
+  appreciated but is not required.
 
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
+  2. Altered source versions must be plainly marked as such, and must not be
+  misrepresented as being the original software.
 
-	3. This notice may not be removed or altered from any source
-	distribution.
+  3. This notice may not be removed or altered from any source
+  distribution.
 */
 
 #ifndef LIBPAL_PAL_ILIST_H__
@@ -40,8 +40,8 @@
 #define palIListNode_offsetof(Type, MemberName) (reinterpret_cast<size_t>(&reinterpret_cast<char &>(reinterpret_cast<Type *> (1)->MemberName))- 1)
 
 #define palIListNodeDeclare(Type, MemberName)\
-	static size_t offset_##MemberName(void) { return palIListNode_offsetof(Type, MemberName); }\
-	palIListNode MemberName
+  static size_t offset_##MemberName(void) { return palIListNode_offsetof(Type, MemberName); }\
+  palIListNode MemberName
 
 #define palIListForeachDeclare(Type, MemberName) palIListForeach<Type , Type::offset_##MemberName>
 
@@ -144,7 +144,7 @@ class palIList {
 
   // Is this the root (dead) node
   bool IsRoot(const palIListNode* node) const {
-	  return node == &root_;
+    return node == &root_;
   }
 
   palIListNode* GetRoot() {
@@ -356,22 +356,22 @@ public:
 
 template <typename T, size_t offset(void)>
 class palIListForeach {
-	palIList* list_;
-	palIListNode* current;
+  palIList* list_;
+  palIListNode* current;
   
-	T* list_entry(palIListNode* node) {
-		return reinterpret_cast<T*>((size_t)node - offset());
-	}
+  T* list_entry(palIListNode* node) {
+    return reinterpret_cast<T*>((size_t)node - offset());
+  }
 public:
-	palIListForeach(palIList* list) : list_(list) {
-		current = list_->GetFirst();
-	}
+  palIListForeach(palIList* list) : list_(list) {
+    current = list_->GetFirst();
+  }
   
-	T* GetListEntry() { return list_entry(current); }
+  T* GetListEntry() { return list_entry(current); }
   
-	bool Finished() const {
-		return list_->IsRoot(current);
-	}
+  bool Finished() const {
+    return list_->IsRoot(current);
+  }
   
   void AddAfter(palIListNode* node) {
     palIListNode* next = current->next;
@@ -392,13 +392,13 @@ public:
     current = list_->GetLast();
   }
 
-	void Next() {
-		current = current->next;
-	}
+  void Next() {
+    current = current->next;
+  }
   
-	void Prev() {
-		current = current->prev;
-	}
+  void Prev() {
+    current = current->prev;
+  }
 };
 
 

@@ -1,30 +1,34 @@
-#pragma once
-
 /*
-	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
+  Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
+  1. The origin of this software must not be misrepresented; you must not
+  claim that you wrote the original software. If you use this software
+  in a product, an acknowledgment in the product documentation would be
+  appreciated but is not required.
 
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
+  2. Altered source versions must be plainly marked as such, and must not be
+  misrepresented as being the original software.
 
-	3. This notice may not be removed or altered from any source
-	distribution.
+  3. This notice may not be removed or altered from any source
+  distribution.
 */
 
+#pragma once
+
 #include "libpal/pal_memory.h"
+#include "libpal/pal_errorcode.h"
 #include "libpal/pal_allocator.h"
+
+#define PAL_RING_BLOB_NO_ROOM palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 1)
+#define PAL_RING_BLOB_NO_DATA palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 2)
 
 struct palMemBlob {
 protected:
@@ -188,5 +192,181 @@ public:
 
   void GetBlob(palMemBlob* blob) const {
     *blob = palMemBlob(buffer, buffer_size);
+  }
+};
+
+class palRingBlob {
+  void* _buffer;
+  uint8_t* _read_pointer;
+  uint64_t _buffer_capacity;
+  uint64_t _buffer_size;
+
+  void Read(void* data, uint64_t data_size) {
+    uint8_t* _start = reinterpret_cast<uint8_t*>(_buffer);
+    uintptr_t read_offset = _read_pointer - _start;
+    if (read_offset + data_size > _buffer_capacity) {
+      // The read must be broken into two parts
+      uintptr_t slop = (read_offset + (uintptr_t)data_size) - (uintptr_t)_buffer_capacity;
+      uintptr_t first = (uintptr_t)data_size - slop;
+      uintptr_t data_offset = reinterpret_cast<uintptr_t>(data);
+      data_offset += first;
+      palMemoryCopyBytes(data, _read_pointer, first);
+      palMemoryCopyBytes(reinterpret_cast<void*>(data_offset), _buffer, slop);
+    } else {
+      // The read can be done in one
+      palMemoryCopyBytes(data, _read_pointer, data_size);
+    }
+  }
+
+  void Write(const void* data, uint64_t data_size) {
+    uint8_t* _write_start = reinterpret_cast<uint8_t*>(MakeWritePointer());
+    uint8_t* _start = reinterpret_cast<uint8_t*>(_buffer);
+    uintptr_t write_offset = _write_start - _start;
+    if (write_offset + data_size > _buffer_capacity) {
+      // The write must be broken into two parts
+      uintptr_t slop = (write_offset + (uintptr_t)data_size) - (uintptr_t)_buffer_capacity;
+      uintptr_t first = (uintptr_t)data_size - slop;
+      uintptr_t data_offset = reinterpret_cast<uintptr_t>(data);
+      data_offset += first;
+      palMemoryCopyBytes(_write_start, data, first);
+      palMemoryCopyBytes(_buffer, reinterpret_cast<const void*>(data_offset), slop);
+    } else {
+      // The write can be done in one
+      palMemoryCopyBytes(_write_start, data, data_size);
+    }
+  }
+
+  void* MakeWritePointer() {
+    uint64_t offset = _buffer_size % _buffer_capacity;
+    uintptr_t start = reinterpret_cast<uintptr_t>(_read_pointer);
+    return reinterpret_cast<void*>(start+offset);
+  }
+
+  void MoveReadPointer(uint64_t bytes) {
+    uint64_t read_offset = _read_pointer - reinterpret_cast<uint8_t*>(_buffer);
+    read_offset += bytes;
+    read_offset = read_offset % _buffer_capacity;
+    _read_pointer = reinterpret_cast<uint8_t*>(_buffer) + read_offset;
+  }
+public:
+  palRingBlob() {
+    _buffer = NULL;
+    _read_pointer = NULL;
+    _buffer_size = 0;
+    _buffer_capacity = 0;
+  }
+
+  ~palRingBlob() {
+  }
+
+  palRingBlob(void* buffer, uint64_t buffer_capacity) {
+    Reset(buffer, buffer_capacity);
+  }
+
+  palRingBlob(const palMemBlob& blob) {
+    Reset(blob.GetPtr(), blob.GetBufferSize());
+  }
+
+  uint64_t GetCapacity() const {
+    return _buffer_capacity;
+  }
+
+  uint64_t GetSize() const {
+    return _buffer_size;
+  }
+
+  bool IsFull() const {
+    return _buffer_size == _buffer_capacity;
+  }
+
+  bool IsEmpty() const {
+    return _buffer_size == 0;
+  }
+
+  void Reset(void* buffer, uint64_t buffer_capacity) {
+    _buffer = buffer;
+    _buffer_capacity = buffer_capacity;
+    _read_pointer = (uint8_t*)_buffer;
+    _buffer_size = 0;
+  }
+
+  void Clear() {
+    _buffer_size = 0;
+    _read_pointer = reinterpret_cast<uint8_t*>(_buffer);
+  }
+
+  int Append(const void* data, uint64_t data_size) {
+    if (_buffer_size + data_size > _buffer_capacity) {
+      return PAL_RING_BLOB_NO_ROOM;
+    }
+    Write(data, data_size);
+    _buffer_size += data_size;
+    return 0;
+  }
+
+  template<typename T>
+  int Append(const T* item) {
+    return Append(reinterpret_cast<const void*>(item), sizeof(T));
+  }
+
+  template<typename T>
+  int Append(const T* items, int item_count) {
+    return Append(reinterpret_cast<const void*>(items), sizeof(T)*item_count);
+  }
+
+  int Consume(void* data, uint64_t data_size) {
+    if (_buffer_size < data_size) {
+      return PAL_RING_BLOB_NO_DATA;
+    }
+    Read(data, data_size);
+    _buffer_size -= data_size;
+    MoveReadPointer(data_size);
+    return 0;
+  }
+
+  template<typename T>
+  int Consume(T* item) {
+    return Consume(reinterpret_cast<void*>(item), sizeof(T));
+  }
+
+  template<typename T>
+  int Consume(T* item, int item_count) {
+    return Consume(reinterpret_cast<void*>(item), sizeof(T)*item_count);
+  }
+
+  int Peek(void* data, uint64_t data_size) {
+    if (_buffer_size < data_size) {
+      return PAL_RING_BLOB_NO_DATA;
+    }
+    Read(data, data_size);
+    return 0;
+  }
+
+  template<typename T>
+  int Peek(T* item) {
+    return Peek(reinterpret_cast<void*>(T), sizeof(T));
+  }
+
+  template<typename T>
+  int Peek(T* item, int item_count) {
+    return Peek(reinterpret_cast<void*>(T), sizeof(T)*item_count);
+  }
+
+  void* GetReadPointer() {
+    return _read_pointer;
+  }
+
+  void* GetWritePointer() {
+    return MakeWritePointer();
+  }
+
+  template<typename T>
+  T* GetReadPointer() {
+    return reinterpret_cast<T*>(_read_pointer);
+  }
+
+  template<typename T>
+  T* GetWritePointer() {
+    return reinterpret_cast<T*>(MakeWritePointer());
   }
 };
