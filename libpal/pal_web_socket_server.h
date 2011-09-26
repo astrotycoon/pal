@@ -51,7 +51,7 @@ public:
   int Startup(palIPPort port);
   void Shutdown();
 
-  // these functions are cleared by calling Update
+  // The state these functions reference are updated by calling Update
   bool HasOpen() const;
   bool HasClose() const;
   bool HasError() const;
@@ -70,7 +70,6 @@ public:
   int SendMessage(const char* msg, int msg_length);
 
   typedef palDelegate<void (const char* msg, int msg_length)> OnMessageDelegate;
-
   
   int PendingMessageCount() const;
 

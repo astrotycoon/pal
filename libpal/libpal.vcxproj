@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="dlmalloc\dlmalloc.cpp" />
     <ClCompile Include="libpal.cpp" />
+    <ClCompile Include="pal_sha1.cpp" />
     <ClCompile Include="pal_adi.cpp" />
     <ClCompile Include="pal_algorithms.cpp" />
     <ClCompile Include="pal_align.cpp" />
@@ -72,6 +73,7 @@
   <ItemGroup>
     <ClInclude Include="dlmalloc\dlmalloc.h" />
     <ClInclude Include="libpal.h" />
+    <ClInclude Include="pal_sha1.h" />
     <ClInclude Include="pal_adi.h" />
     <ClInclude Include="pal_adi_keyboard_symbols.h" />
     <ClInclude Include="pal_adi_mouse_symbols.h" />

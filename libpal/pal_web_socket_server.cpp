@@ -1,25 +1,25 @@
 
 /*
-	Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
+  Copyright (c) 2011 John McCutchan <john@johnmccutchan.com>
 
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
 
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
 
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
+  1. The origin of this software must not be misrepresented; you must not
+  claim that you wrote the original software. If you use this software
+  in a product, an acknowledgment in the product documentation would be
+  appreciated but is not required.
 
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
+  2. Altered source versions must be plainly marked as such, and must not be
+  misrepresented as being the original software.
 
-	3. This notice may not be removed or altered from any source
-	distribution.
+  3. This notice may not be removed or altered from any source
+  distribution.
 */
 
 #include "libpal/pal_web_socket_server.h"
@@ -27,7 +27,7 @@
 #include "libpal/pal_algorithms.h"
 #include "libpal/pal_string.h"
 #include "libpal/pal_endian.h"
-#include "libpal/pal_md5.h"
+#include "libpal/pal_sha1.h"
 #include "libpal/pal_tokenizer.h"
 
 palWebSocketServer::palWebSocketServer(unsigned char* incoming_buffer, int incoming_buffer_capacity, unsigned  char* outgoing_buffer, int outgoing_buffer_capacity) {
@@ -282,45 +282,36 @@ int palWebSocketServer::ParseMessages() {
 
 
 
-static uint32_t ParseKey(palTokenizer* tokenizer) {  
+static int ParseKey(palTokenizer* tokenizer, unsigned char* key) {  
   palDynamicString key_as_string;
 
   bool r = tokenizer->ReadRestOfLineAsString(&key_as_string);
   if (r == false) {
-    return 0;
-  }
-  int spaces = 0;
-  uint32_t key = 0;
-
-  const char* ch = key_as_string.C();
-  while (*ch != '\0') {
-    if (palIsDigit(*ch)) {
-      key *= 10;
-      key += palDigitValue(*ch);
-    } else if (palIsWhiteSpace(*ch)) {
-      spaces++;
-    }
-    ch++;
-  }
-  // key_as_string starts off with a space
-  spaces--;
-
-  if (spaces == 0) {
-    // bad client
-    return 0;
+    return -1;
   }
 
-  if (key % spaces != 0) {
-    // bad client
-    return 0;
+  //key_as_string.Set("dGhlIHNhbXBsZSBub25jZQ==");
+  key_as_string.Append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+
+  key_as_string.TrimWhiteSpaceFromStart();
+
+  palPrintf("Key: **%s**\n", key_as_string.C());
+
+  {
+    palSHA1 sha1;
+    sha1.Reset();
+    sha1.Update((unsigned char*)key_as_string.C(), key_as_string.GetLength());
+    sha1.Finalize();
+    sha1.GetSHA1(key);
   }
-#if 0
-  palPrintf("Number = %d\n", key);
-  palPrintf("Spaces = %d\n", spaces);
-  palPrintf("Number mod Spaces = %d\n", key % spaces);
-  palPrintf("number / spaces = %d\n", key / spaces);
-#endif
-  return key/spaces;
+
+  palPrintf("Dumping SHA-1: ");
+  for (int i = 0; i < 20; i++) {
+    palPrintf("%02x ", key[i]);
+  }
+  palPrintf("\n");
+
+  return 0;
 }
 
 #define kKW_GET 1
@@ -333,6 +324,10 @@ static uint32_t ParseKey(palTokenizer* tokenizer) {
 #define kKW_OriginColon 8
 #define kKW_key1 10
 #define kKW_key2 11
+#define kKW_key 12
+#define kKW_WebSocketOriginColon 13
+#define kKW_WebSocketProtocolColon 14
+#define kKW_WebSocketVersionColon 15
 
 static palTokenizerKeyword handshake_keywords[] = {
   {"GET", kKW_GET},
@@ -345,12 +340,17 @@ static palTokenizerKeyword handshake_keywords[] = {
   {"Origin:", kKW_OriginColon},
   {"Sec-WebSocket-Key1:", kKW_key1},
   {"Sec-WebSocket-Key2:", kKW_key2},
+  {"Sec-WebSocket-Key:", kKW_key},
+  {"Sec-WebSocket-Origin:", kKW_WebSocketOriginColon },
+  {"Sec-WebSocket-Protocol:", kKW_WebSocketProtocolColon },
+  {"Sec-WebSocket-Version:", kKW_WebSocketVersionColon },
   { NULL, -1 }
 };
 
 bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
   // super simple test for a complete handshake
   const char* first = s;
+  palPrintf("Checking handshake: %s\n", s);
   if (s_len < 12) {
     return false;
   }
@@ -366,7 +366,8 @@ bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
   if (*first != 'T') {
     return false;
   }
-  const char* final_bytes = &s[s_len-12];
+
+  const char* final_bytes = &s[s_len-4];
   // two cr+lf pairs
   if (*final_bytes != '\r') {
     return false;
@@ -386,10 +387,117 @@ bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
   return true;
 }
 
+#if 0
+static char base64_encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                                      'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                      'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                                      'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                                      'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                                      'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                                      'w', 'x', 'y', 'z', '0', '1', '2', '3',
+                                      '4', '5', '6', '7', '8', '9', '+', '/'};
+static int base64_mod_table[] = {0, 2, 1};
+
+int base64_encode(const char *data, size_t input_length, char* output, size_t *output_length) {
+  palAssert(input_length == 20);
+  *output_length = 28;
+  //*output_length = (size_t) (4.0 * ceil((double) input_length / 3.0));
+
+  char* encoded_data = output;
+
+  for (unsigned int i = 0, j = 0; i < input_length;) {
+    uint32_t octet_a = i < input_length ? data[i++] : 0;
+    uint32_t octet_b = i < input_length ? data[i++] : 0;
+    uint32_t octet_c = i < input_length ? data[i++] : 0;
+
+    uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+
+    encoded_data[j++] = base64_encoding_table[(triple >> 3 * 6) & 0x3F];
+    encoded_data[j++] = base64_encoding_table[(triple >> 2 * 6) & 0x3F];
+    encoded_data[j++] = base64_encoding_table[(triple >> 1 * 6) & 0x3F];
+    encoded_data[j++] = base64_encoding_table[(triple >> 0 * 6) & 0x3F];
+  }
+
+  for (int i = 0; i < base64_mod_table[input_length % 3]; i++) {
+    encoded_data[*output_length - 1 - i] = '=';
+  }
+
+  return 0;
+}
+
+#endif
+
+static const char Base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char Pad64 = '=';
+
+int base64_encode(const char* data, size_t input_length, char* target, size_t* output_length) {
+  size_t datalength = 0;
+  u_char input[3];
+  u_char output[4];
+  size_t i;
+  size_t srclength = input_length;
+  palAssert(input_length == 20);
+  *output_length = 28;
+  const char* src = data;
+
+  while (2 < srclength) {
+    input[0] = *src++;
+    input[1] = *src++;
+    input[2] = *src++;
+    srclength -= 3;
+
+    output[0] = input[0] >> 2;
+    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+    output[3] = input[2] & 0x3f;
+    palAssert(output[0] < 64);
+    palAssert(output[1] < 64);
+    palAssert(output[2] < 64);
+    palAssert(output[3] < 64);
+
+    if (datalength + 4 > *output_length)
+      return (-1);
+
+    target[datalength++] = Base64[output[0]];
+    target[datalength++] = Base64[output[1]];
+    target[datalength++] = Base64[output[2]];
+    target[datalength++] = Base64[output[3]];
+  }
+
+  /* Now we worry about padding. */
+  if (0 != srclength) {
+    /* Get what's left. */
+    input[0] = input[1] = input[2] = '\0';
+    for (i = 0; i < srclength; i++)
+      input[i] = *src++;
+
+    output[0] = input[0] >> 2;
+    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+    palAssert(output[0] < 64);
+    palAssert(output[1] < 64);
+    palAssert(output[2] < 64);
+
+    if (datalength + 4 > *output_length)
+      return (-1);
+    target[datalength++] = Base64[output[0]];
+    target[datalength++] = Base64[output[1]];
+    if (srclength == 1)
+      target[datalength++] = Pad64;
+    else
+      target[datalength++] = Base64[output[2]];
+    target[datalength++] = Pad64;
+  }
+  return 0;
+}
+
+
 int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   palMemBlob blob((void*)s, (uint64_t)s_len);
   palMemoryStream ms;
   int res;
+
+  palPrintf("Process Handshake %s\n", s);
 
   res = ms.Create(blob, false);
   if (res != 0) {
@@ -427,8 +535,8 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
 
   palDynamicString host_name;
   palDynamicString origin_name;
-  uint32_t key1 = 0;
-  uint32_t key2 = 0;
+  unsigned char key[20];
+  bool key_processed = false;
   do {
     r = tokenizer.FetchNextToken(&token);
     if (!r || token.type != kTokenKeyword) {
@@ -451,120 +559,46 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
         origin_name = token.value_string;
         tokenizer.SkipRestOfLine();
       break;
-      case kKW_key1:
-        key1 = ParseKey(&tokenizer);
-        if (key1 == 0) {
-          return -5;
-        }
+      case kKW_key:
+        ParseKey(&tokenizer, &key[0]);
+        key_processed = true;
       break;
-      case kKW_key2:
-        key2 = ParseKey(&tokenizer);
-        if (key2 == 0) {
-          return -6;
-        }
+      case kKW_WebSocketOriginColon:
+        tokenizer.SkipRestOfLine();
+      break;
+      case kKW_WebSocketProtocolColon:
+        tokenizer.SkipRestOfLine();
+      break;
+      case kKW_WebSocketVersionColon:
+        tokenizer.SkipRestOfLine();
       break;
     }
-  } while (key1 == 0 || key2 == 0);
+  } while (key_processed == false);
   
-  unsigned char key3[8];
 
-  const char* final_bytes = &s[s_len-12];
-  // two cr+lf pairs
-  if (*final_bytes != '\r') {
-    return -7;
-  }
-  final_bytes++;
-  if (*final_bytes != '\n') {
-    return -8;
-  }
-  final_bytes++;
-  if (*final_bytes != '\r') {
-    return -9;
-  }
-  final_bytes++;
-  if (*final_bytes != '\n') {
-    return -10;
-  }
-  final_bytes++;
-  key3[0] = *final_bytes;
-  final_bytes++;
-  key3[1] = *final_bytes;
-  final_bytes++;
-  key3[2] = *final_bytes;
-  final_bytes++;
-  key3[3] = *final_bytes;
-  final_bytes++;
-  key3[4] = *final_bytes;
-  final_bytes++;
-  key3[5] = *final_bytes;
-  final_bytes++;
-  key3[6] = *final_bytes;
-  final_bytes++;
-  key3[7] = *final_bytes;
-  final_bytes++;
-
-  key1 = palEndianByteSwap(key1);
-  key2 = palEndianByteSwap(key2);
-
-  unsigned char challenge[16] = {0x36,0x09,0x65,0x65,0x0A,0xB9,0x67,0x33,0x57,0x6A,0x4E,0x7D,0x7C,0x4D,0x28,0x36};
-
-  unsigned char* key1_c = (unsigned char*)&key1;
-  unsigned char* key2_c = (unsigned char*)&key2;
-  challenge[0] = key1_c[0];
-  challenge[1] = key1_c[1];
-  challenge[2] = key1_c[2];
-  challenge[3] = key1_c[3];
-  challenge[4] = key2_c[0];
-  challenge[5] = key2_c[1];
-  challenge[6] = key2_c[2];
-  challenge[7] = key2_c[3];
-  challenge[8] = key3[0];
-  challenge[9] = key3[1];
-  challenge[10] = key3[2];
-  challenge[11] = key3[3];
-  challenge[12] = key3[4];
-  challenge[13] = key3[5];
-  challenge[14] = key3[6];
-  challenge[15] = key3[7];
-
-  palMD5 md5;
-  md5.Reset();
-  md5.Update(&challenge[0], 16);
-  md5.Finalize();
-  char response[16];
-  md5.GetMD5((unsigned char*)&response[0]);
-
-#if 0
-  palPrintf("IN : ");
-  for (int i = 0; i < 16; i++) {
-    int ch = challenge[16-i];
-    palPrintf("%02x", ch);
-  }
-  palPrintf("\n");
-  palPrintf("OUT: ");
-  for (int i = 0; i < 16; i++) {
-    int ch = response[i];
-    palPrintf("%02x", ch);
-  }
-#endif
-
+  char accept_key[29];
+  size_t accept_key_length;
+  base64_encode((const char*)&key[0], 20, &accept_key[0], &accept_key_length);
+  accept_key[28] = '\0';
   palDynamicString server_response;
-
-  server_response.Append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
-  server_response.Append("Upgrade: WebSocket\r\n");
+  server_response.Append("HTTP/1.1 101 Switching Protocols\r\n");
+  server_response.Append("Upgrade: websocket\r\n");
   server_response.Append("Connection: Upgrade\r\n");
+  server_response.AppendPrintf("Sec-WebSocket-Accept: %s\r\n", &accept_key[0]);
+  //server_response.Append("Sec-WebSocket-Protocol: \r\n");
+#if 0
   server_response.Append("Sec-WebSocket-Location: ws://");
   server_response.Append(host_name.C());
   server_response.Append(resource_name.C());
   server_response.Append("\r\n");
+
   server_response.Append("Sec-WebSocket-Origin: ");
   server_response.Append(origin_name.C());
+#endif
   server_response.Append("\r\n");
   server_response.Append("\r\n");
-  server_response.Append(&response[0], 16);
-
-  //printf("Client:\n%s\n", s);
-  //printf("Reply:\n%s\n", server_response.C());
+  
+  palPrintf("Response:\n%s\n", server_response.C());
   client_.Send((unsigned char*)server_response.C(), server_response.GetLength());
   return 0;
 }

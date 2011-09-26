@@ -36,9 +36,10 @@ function onOpen(websocket,evt) {
 }
 
 function onClose(websocket,evt) {
+    writeToScreen("> DISCONNECTED");
 	writeToScreen(websocket.readyState);
 	writeToScreen(websocket.bufferedAmount);
-	writeToScreen("DISCONNECTED");
+	writeToScreen("< DISCONNECTED");
 }
 
 function onMessage(websocket, evt) {

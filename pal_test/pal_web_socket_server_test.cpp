@@ -28,8 +28,10 @@ bool palWebSocketServerTest() {
   r = server.Startup(8080);
   if (r != 0) {
     palPrintf("Could not start websocket server: %d\n", r);
+    return false;
   }
 
+  palPrintf("Started server on port: %d\n", 8080);
   int threshold = 2;
   while (true) {
     server.Update();
@@ -42,6 +44,7 @@ bool palWebSocketServerTest() {
     if (server.HasError()) {
       palPrintf("Connection had error\n");
     }
+    
     if (server.PendingMessageCount() > threshold) {
       threshold = 0;
       MsgCounter counter;
@@ -49,7 +52,17 @@ bool palWebSocketServerTest() {
       palPrintf("Received %d messages\n", counter.counter);
       server.ProcessMessages(PrintMessages);
       server.ClearMessages(); // clear messages
-      server.SendMessage("MSG");
+      server.SendMessage("MSG0");
+      server.SendMessage("MSG1");
+      server.SendMessage("MSG2");
+      server.SendMessage("MSG3");
+      server.SendMessage("MSG4");
+      server.SendMessage("MSG5");
+      server.SendMessage("MSG6");
+      server.SendMessage("MSG7");
+      server.SendMessage("MSG8");
+      server.SendMessage("MSG9");
+      server.SendMessage("MSG10");
     }
   }
 
