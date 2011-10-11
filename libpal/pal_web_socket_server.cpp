@@ -30,40 +30,285 @@
 #include "libpal/pal_sha1.h"
 #include "libpal/pal_tokenizer.h"
 
-palWebSocketServer::palWebSocketServer(unsigned char* incoming_buffer, int incoming_buffer_capacity, unsigned  char* outgoing_buffer, int outgoing_buffer_capacity) {
-  SetIncomingBuffer(incoming_buffer, incoming_buffer_capacity);
-  SetOutgoingBuffer(outgoing_buffer, outgoing_buffer_capacity);
-  last_message_cursor_ = 0;
+#define kPalWebSocketServerMessageType__MASK 0x8000000000000000
+#define kPalWebSocketServerMessageType__SHIFT 63
+#define kPalWebSocketServerMessageTypeText 0x0
+#define kPalWebSocketServerMessageTypeBinary 0x1
+#define kPalWebSocketServerMessageSize__MASK ~(kPalWebSocketServerMessageType__MASK)
+
+#define kWS_CONTINUATION 0
+#define kWS_TEXT_FRAME 1
+#define kWS_BINARY_FRAME 2
+#define kWS_CLOSED_OP 8
+#define kWS_PING_OP 9
+#define kWS_PONG_OP 10
+
+#define kWS_MESSAGE_FRAME_START 0
+#define kWS_MESSAGE_FRAME_END 2
+#define kWS_CONTROL_FRAME_START 8
+#define kWS_CONTROL_FRAME_END 0xF
+
+static const char* op_code_name[16] = {
+  "CONTINUATION", // 0
+  "TEXT FRAME", // 1
+  "BINARY FRAME", // 2
+  "RESERVED 0x3", // 3
+  "RESERVED 0x4", // 4
+  "RESERVED 0x5", // 5
+  "RESERVED 0x6", // 6
+  "RESERVED 0x7", // 7
+  "CONNECTION CLOSED", // 8
+  "PING", // 9
+  "PONG", // A
+  "RESERVED 0xB", // B
+  "RESERVED 0xC", // C
+  "RESERVED 0xD", // D
+  "RESERVED 0xE", // E
+  "RESERVED 0xF", // F
+};
+
+#if 0
+unsigned char test_messages[] = {
+  0x89,0x05,0x48,0x65,0x6c,0x6c,0x6f, // ping with "Hello" as payload
+  0x8a,0x05,0x48,0x65,0x6c,0x6c,0x6f, // pong with "Hello" as payload
+  0x82, 0x7F, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // unmaked binary message with 65536 bytes of data (data not present)
+  0x82, 0x7E, 0x00, 0x01, // unmasked binary message with 256 of data (data not present)
+  0x01,0x03,0x48,0x65,0x6c, // unmasked "Hel"
+  0x80,0x02,0x6c,0x6f, // unmasked CONTINUATION "lo"
+  0x81,0x85,0x37,0xfa,0x21,0x3d,0x7f,0x9f,0x4d,0x51,0x58, // masked "Hello"
+  0x81,0x05,0x48,0x65,0x6c,0x6c,0x6f, // unmasked "Hello"
+};
+#endif
+
+#define kWS_MAX_MESSAGE_HEADER_SIZE 10
+struct WebSocketMessageHeader {
+  union {
+    struct {
+      unsigned int OP_CODE : 4;
+      unsigned int RSV1 : 1;
+      unsigned int RSV2 : 1;
+      unsigned int RSV3 : 1;
+      unsigned int FIN : 1;
+      unsigned int PAYLOAD : 7;
+      unsigned int MASK : 1;
+    } bits;
+    uint16_t short_header;
+  };
+
+  bool IsFinal() const {
+    return bits.FIN;
+  }
+
+  bool IsMasked() const {
+    return bits.MASK == 1;
+  }
+
+  bool UsesExtendedPayload() const {
+    return bits.PAYLOAD == 126;
+  }
+
+  bool UsesExtendedExtendedPayloadLength() const {
+    return bits.PAYLOAD == 127;
+  }
+
+  uint8_t GetOpCode() const {
+    return bits.OP_CODE;
+  }
+
+  uint64_t GetPayloadLength() const {
+    uint16_t* chunks = (uint16_t*)&short_header;
+    chunks++;
+    if (UsesExtendedPayload()) {
+      return *chunks;
+    } else if (UsesExtendedExtendedPayloadLength()) {
+      uint64_t r = (uint64_t)chunks[0] | (uint64_t)chunks[1] << 16 | (uint64_t)chunks[2] << 32 | (uint64_t)chunks[3] << 48;
+      return r;
+    } else {
+      return bits.PAYLOAD;
+    }
+    return 0;
+  }
+
+  uint16_t GetClosedCode() const {
+    uint16_t* chunks = (uint16_t*)&short_header;
+    chunks++;
+    return *chunks;
+  }
+
+  uint32_t GetMask() const {
+    uint16_t* chunks = (uint16_t*)&short_header;
+    chunks++;
+    uint32_t r = 0;
+    if (IsMasked() == false) {
+      return r;
+    }
+    if (UsesExtendedPayload()) {
+      r = (uint32_t)chunks[1] | (uint32_t)chunks[2] << 16;
+    } else if (UsesExtendedExtendedPayloadLength()) {
+      r = (uint32_t)chunks[4] | (uint32_t)chunks[5] << 16;
+    } else {
+      r = (uint32_t)chunks[0] | (uint32_t)chunks[1] << 16;
+    }
+    return r;
+  }
+
+  uint64_t GetMessageLength() const {
+    uint64_t r = GetPayloadLength();
+    r += 2;
+    if (UsesExtendedPayload()) {
+      r += 2;
+    }
+    if (UsesExtendedExtendedPayloadLength()) {
+      r += 8;
+    }
+    if (IsMasked()) {
+      r += 4;
+    }
+    return r;
+  }
+
+  uint64_t GetPayloadOffset() const {
+    uint64_t r = 0;
+    r += 2;
+    if (UsesExtendedPayload()) {
+      r += 2;
+    }
+    if (UsesExtendedExtendedPayloadLength()) {
+      r += 8;
+    }
+    if (IsMasked()) {
+      r += 4;
+    }
+    return r;
+  }
+
+  uint64_t GetHeaderSize() const {
+    return GetPayloadOffset();
+  }
+
+  template<typename T>
+  T* GetPayload() {
+    uintptr_t payload_addr = reinterpret_cast<uintptr_t>(this);
+    payload_addr += (uintptr_t)GetPayloadOffset();
+    return reinterpret_cast<T*>(payload_addr);
+  }
+
+  void Init() {
+    short_header = 0;
+  }
+
+  void SetOpCode(uint8_t op_code) {
+    bits.OP_CODE = op_code;
+  }
+
+  void SetFinal(bool final) {
+    bits.FIN = final == true ? 1 : 0;
+  }
+
+  void SetMaskAndSize(uint32_t mask, uint64_t size) {
+    uint16_t* chunks = (uint16_t*)&short_header;
+    chunks++;
+    if (size > 65536) {
+      bits.PAYLOAD = 127;
+      uint64_t* big_chunk = reinterpret_cast<uint64_t*>(chunks);
+      *big_chunk = size;
+    } else if (size > 125) {
+      bits.PAYLOAD = 126;
+      *chunks = (uint16_t)size;
+    } else {
+      bits.PAYLOAD = (uint8_t)size;
+    }
+
+    if (mask != 0) {
+      bits.MASK = 1;
+      uint16_t mask_hi = (mask >> 16) & 0xFFFF;
+      uint16_t mask_lo = mask & 0xFFFF;
+      if (UsesExtendedPayload()) {
+        chunks[1] = mask_lo;
+        chunks[2] = mask_hi;
+      } else if (UsesExtendedExtendedPayloadLength()) {
+        chunks[4] = mask_lo;
+        chunks[5] = mask_hi;
+      } else {
+        chunks[0] = mask_lo;
+        chunks[1] = mask_hi;
+      }
+    } else {
+      bits.MASK = 0;
+    }
+  }
+};
+
+
+static int FromTCPToRing(palTcpClient& client, palRingBlob* blob) {
+  int r;
+  int amount = (int)blob->GetConsecutiveWriteBlockSize();
+  if (amount) {
+    r = client.Receive(blob->GetWritePointer<unsigned char>(), &amount);
+    if (r == 0) {
+      blob->MoveWritePointer(amount);
+    }
+    return r;
+  }
+  return 0;
+}
+
+static int FromRingToTCP(palTcpClient& client, palRingBlob* blob) {
+  int r;
+  uint64_t amount = blob->GetConsecutiveReadBlockSize();
+  if (amount) {
+    r = client.Send(blob->GetReadPointer<const unsigned char>(), (int)amount);
+    if (r != 0) {
+      return r;
+    }
+    blob->Skip(amount);
+    amount = blob->GetConsecutiveReadBlockSize();
+    if (amount) {
+      client.Send(blob->GetReadPointer<const unsigned char>(), (int)amount);
+      if (r != 0) {
+        return r;
+      }
+      blob->Skip(amount);
+    }
+  }
+  return 0;
+}
+
+palWebSocketServer::palWebSocketServer() {
+  SetIncomingBuffer(NULL, 0);
+  SetOutgoingBuffer(NULL, 0);
   handshake_okay_ = false;
 }
 
-void palWebSocketServer::SetIncomingBuffer(unsigned char* incoming_buffer, int buffer_capacity) {
-  incoming_buffer_ = incoming_buffer;
-  incoming_buffer_cursor_ = 0;
-  incoming_buffer_length_ = buffer_capacity;
+void palWebSocketServer::SetIncomingBuffer(unsigned char* incoming_buffer, uint64_t buffer_capacity) {
+  _incoming_buffer = palRingBlob(incoming_buffer, buffer_capacity);
 }
 
-void palWebSocketServer::SetOutgoingBuffer(unsigned char* outgoing_buffer, int buffer_capacity) {
-  outgoing_buffer_ = outgoing_buffer;
-  outgoing_buffer_cursor_ = 0;
-  outgoing_buffer_length_ = buffer_capacity;
+void palWebSocketServer::SetOutgoingBuffer(unsigned char* outgoing_buffer, uint64_t buffer_capacity) {
+  _outgoing_buffer = palRingBlob(outgoing_buffer, buffer_capacity);
+}
+
+void palWebSocketServer::SetMessageBuffer(unsigned char* msg_buffer, uint64_t buffer_capacity) {
+  _message_buffer = palAppendChopBlob(msg_buffer, buffer_capacity);
+  _message_count = 0;
 }
 
 // total capacity of buffers
-int palWebSocketServer::GetIncomingBufferCapacity() {
-  return incoming_buffer_length_;
+uint64_t palWebSocketServer::GetIncomingBufferCapacity() {
+  return _incoming_buffer.GetCapacity();
 }
-int palWebSocketServer::GetOutgoingBufferCapacity() {
-  return outgoing_buffer_length_;
+
+uint64_t palWebSocketServer::GetOutgoingBufferCapacity() {
+  return _outgoing_buffer.GetCapacity();
 }
 
 // amount currently used
-int palWebSocketServer::GetIncomingBufferSize() {
-  return incoming_buffer_cursor_;
+uint64_t palWebSocketServer::GetIncomingBufferSize() {
+  return _incoming_buffer.GetSize();
 }
 
-int palWebSocketServer::GetOutgoingBufferSize() {
-  return outgoing_buffer_cursor_;
+uint64_t palWebSocketServer::GetOutgoingBufferSize() {
+  return _outgoing_buffer.GetSize();
 }
 
 // startup, waiting on given port
@@ -80,9 +325,10 @@ int palWebSocketServer::Startup(palIPPort port) {
 void palWebSocketServer::Shutdown() {
   client_.Close();
   listener_.StopListening();
-  incoming_buffer_cursor_ = 0;
-  outgoing_buffer_cursor_ = 0;
-  last_message_cursor_ = 0;
+  _incoming_buffer.Clear();
+  _outgoing_buffer.Clear();
+  _message_buffer.Clear();
+  _message_count = 0;
   handshake_okay_ = false;
 }
 
@@ -96,19 +342,22 @@ bool palWebSocketServer::HasError() const {
   return has_error_;
 }
 
-
 bool palWebSocketServer::Connected() const {
-  return client_.Connected();
+  return client_.Connected() && handshake_okay_;
 }
 
 // 1) accept/disconnect a connection
 // 2) send any pending messages
 // 3) receive any pending messages
 void palWebSocketServer::Update() {
+#define NETWORK_BUFFER_SIZE 512
+  unsigned char network_buffer[NETWORK_BUFFER_SIZE];
   int r;
+
   // clear flags
   has_open_ = false;
   has_close_ = false;
+  _closed_code = 0;
   has_error_ = false;
 
   if (client_.Connected() == false) {
@@ -116,73 +365,106 @@ void palWebSocketServer::Update() {
     if (handshake_okay_ == true) {
       // we had been connected.
       has_close_ = true;
+      _closed_code = 0;
       handshake_okay_ = false;
       ClientDisconnect();
     }
     if (listener_.PendingConnections()) {
       r = listener_.AcceptTcpClient(&client_);
     }
-  } else if (handshake_okay_ == false) {
+  }
+
+  if (client_.Connected() == true && handshake_okay_ == false) {
     // still need to handle handshake    
     if (client_.CanBeRead()) {
-      int bytes_to_read = 512;
-      if (incoming_buffer_cursor_ >= incoming_buffer_length_) {
+      if (_incoming_buffer.IsFull()) {
         // we have filled our entire buffer without finding a valid handshake
         // kick this client off
         has_error_ = true;
         client_.Close();
-        incoming_buffer_cursor_ = 0;
-      } else {
-        r = client_.Receive(&incoming_buffer_[incoming_buffer_cursor_], &bytes_to_read);
-        if (bytes_to_read > 0) {
-          incoming_buffer_cursor_ += bytes_to_read;
-          palDynamicString s;
-          s.Append((const char*)incoming_buffer_, incoming_buffer_cursor_);
-          if (HasCompleteHandshake(s.C(), bytes_to_read)) {
-            r = ProcessHandshake(s.C(), bytes_to_read);
-            if (r == 0) {
-              handshake_okay_ = true;
-              has_open_ = true;
-              incoming_buffer_cursor_ = 0;
-            } else {
-              has_error_ = true;
-              client_.Close();
-              incoming_buffer_cursor_ = 0;
-            }
-          }
-        }
-      } 
-    } else if (incoming_buffer_cursor_ > 0) {
+        _incoming_buffer.Clear();
+        return;
+      }
+    } else if (_incoming_buffer.GetSize() > 0) {
+      // if the 
       // if we can't read from the socket and we've read part of a handshake, quit.
       has_error_ = true;
       client_.Close();
-      incoming_buffer_cursor_ = 0;
+      _incoming_buffer.Clear();
+      return;
     }
-  } else {
-    // have an active connection
-    if (outgoing_buffer_cursor_ > 0) {
-      // pump outgoing messages
-      client_.Send(&outgoing_buffer_[0], outgoing_buffer_cursor_);
-      outgoing_buffer_cursor_ = 0;
+
+    int bytes_to_read = NETWORK_BUFFER_SIZE;
+
+    r = client_.Receive(&network_buffer[0], &bytes_to_read);
+    if (bytes_to_read > 0) {
+      _incoming_buffer.Append(&network_buffer[0], bytes_to_read);
+    } else {
+      return;
     }
-    
-    // read incoming messages
 
-    const int buffer_available = incoming_buffer_length_ - incoming_buffer_cursor_;
-    int num_bytes_to_read = buffer_available;
+    bytes_to_read = NETWORK_BUFFER_SIZE;
+    if (_incoming_buffer.GetSize() < NETWORK_BUFFER_SIZE) {
+      bytes_to_read = (int)_incoming_buffer.GetSize();
+    }
 
-    if (client_.CanBeRead()) {
-      r = client_.Receive(&incoming_buffer_[incoming_buffer_cursor_], &num_bytes_to_read);
-      if (r < 0) {
-        ClientDisconnect();
+    _incoming_buffer.Peek(&network_buffer[0], bytes_to_read);
+
+    if (HasCompleteHandshake(&network_buffer[0], bytes_to_read)) {
+      r = ProcessHandshake(&network_buffer[0], bytes_to_read);
+      if (r == 0) {
+        // Got a connection.
+        handshake_okay_ = true;
+        has_open_ = true;
+        _incoming_buffer.Clear();
+        _outgoing_buffer.Clear();
+        _message_count = 0;
+        _message_buffer.Clear();
       } else {
-        if (num_bytes_to_read > 0) {
-          incoming_buffer_cursor_ += num_bytes_to_read;
-          ParseMessages();
-        }
-      } 
+        has_error_ = true;
+        client_.Close();
+        _incoming_buffer.Clear();
+      }
     }
   }
+  
+  if (client_.Connected() == true && handshake_okay_ == true) {
+    // have an active connection
+    if (_outgoing_buffer.GetSize() > 0) {
+      r = FromRingToTCP(client_, &_outgoing_buffer);
+      if (r != 0) {
+        ClientDisconnect();
+        return;
+      }
+    }
+
+    if (client_.CanBeRead()) {
+      r = FromTCPToRing(client_, &_incoming_buffer);
+      if (r != 0) {
+        ClientDisconnect();
+        return;
+      }
+    }
+
+    if (_incoming_buffer.GetSize() > 0) {
+      ParseMessages();
+    }
+  }
+}
+
+int palWebSocketServer::SendPing() {
+  uint16_t header_temp[kWS_MAX_MESSAGE_HEADER_SIZE];
+  WebSocketMessageHeader* header = (WebSocketMessageHeader*)&header_temp[0];
+  header->Init();
+  header->SetOpCode(kWS_PING_OP);
+  header->SetFinal(true);
+  header->SetMaskAndSize(0, 0);
+  uint64_t header_size = header->GetHeaderSize();
+  if (_outgoing_buffer.GetAvailableSize() < header_size) {
+    return -1;
+  }
+  _outgoing_buffer.Append((void*)header, header_size);
+  return 0;
 }
 
 int palWebSocketServer::SendMessage(const char* msg) {
@@ -191,6 +473,18 @@ int palWebSocketServer::SendMessage(const char* msg) {
 }
 
 int palWebSocketServer::SendMessage(const char* msg, int msg_length) {
+  uint16_t header_temp[kWS_MAX_MESSAGE_HEADER_SIZE];
+  WebSocketMessageHeader* header = (WebSocketMessageHeader*)&header_temp[0];
+  header->Init();
+  header->SetFinal(true);
+  header->SetOpCode(kWS_TEXT_FRAME);
+  header->SetMaskAndSize(0, msg_length);
+  uint64_t packet_length = header->GetMessageLength();
+  if (packet_length <= _outgoing_buffer.GetAvailableSize()) {
+    _outgoing_buffer.Append((void*)header, header->GetHeaderSize());
+    _outgoing_buffer.Append((void*)msg, (uint64_t)msg_length);
+  }
+#if 0
   if (2 + msg_length + outgoing_buffer_cursor_ >= outgoing_buffer_length_) {
     return -1;
   }
@@ -201,86 +495,223 @@ int palWebSocketServer::SendMessage(const char* msg, int msg_length) {
   outgoing_buffer_cursor_ += msg_length;
   outgoing_buffer_[outgoing_buffer_cursor_] = 0xFF;
   outgoing_buffer_cursor_++;  
+#endif
   return 0;
 }
 
-int palWebSocketServer::PendingMessageCount() const {
-  return messages_.GetSize();
+uint64_t palWebSocketServer::PendingMessageCount() const {
+  return _message_count;
 }
 
 void palWebSocketServer::ProcessMessages(OnMessageDelegate del) {
-  for (int i = 0; i < messages_.GetSize(); i++) {
-    message_header* msg = &messages_[i];
-    del((const char*)msg->msg, msg->msg_length);
+  if (del.empty()) {
+    return;
+  }
+  uint64_t num_messages = _message_count;
+  uint64_t cursor = 0;
+  while (num_messages != 0) {
+    uint64_t* header = _message_buffer.GetPtr<uint64_t>(cursor);
+    uint64_t size = (*header & kPalWebSocketServerMessageSize__MASK);
+    bool binary_message = ((*header & (kPalWebSocketServerMessageSize__MASK << kPalWebSocketServerMessageType__SHIFT)) >> kPalWebSocketServerMessageType__SHIFT) == kPalWebSocketServerMessageTypeBinary;
+    palMemBlob msg(_message_buffer.GetPtr(cursor+8), size);
+    del(msg, binary_message);
+    num_messages--;
+    cursor += 8 + size;
   }
 }
 
 void palWebSocketServer::ClearMessages() {
-  messages_.Clear();
-  int bytes_to_parse = incoming_buffer_cursor_ - last_message_cursor_;
-  if (bytes_to_parse > 0) {
-    // move rest of messages down
-    palMemoryCopyBytes(&incoming_buffer_[0], &incoming_buffer_[last_message_cursor_], bytes_to_parse);
-    incoming_buffer_cursor_ -= last_message_cursor_;
-    last_message_cursor_ = 0;
-  }
+  _message_buffer.Chop(_message_cursor);
+  _message_count = 0;
+  _message_cursor = 0;
 }
 
 void palWebSocketServer::ClientDisconnect() {
+  client_.Close();
   ResetBuffers();
-  messages_.Clear();
+  has_open_ = false;
+  handshake_okay_ = false;
+  has_close_ = true;
 }
 
 void palWebSocketServer::ResetBuffers() {
-  incoming_buffer_cursor_ = 0;
-  outgoing_buffer_cursor_ = 0;
-  last_message_cursor_ = 0;  
+  _incoming_buffer.Clear();
+  _outgoing_buffer.Clear();
+  _message_buffer.Clear();
+  _message_count = 0;
+}
+
+static void UnmaskPayload(uint8_t* payload, uint64_t payload_length, uint32_t mask) {
+  uint8_t* mask_octets = reinterpret_cast<uint8_t*>(&mask);
+  for (uint64_t i = 0; i < payload_length; i++) {
+    uint8_t j = i & 0x3;
+    payload[i] = payload[i] ^ mask_octets[j];
+  }
+}
+
+void palWebSocketServer::SendPong(uint64_t payload_size, uint32_t mask) {
+  const uint64_t buff_size = 256;
+  int r = 0;
+  unsigned char buff[256];
+  uint16_t header_temp[kWS_MAX_MESSAGE_HEADER_SIZE];
+  WebSocketMessageHeader* header = (WebSocketMessageHeader*)&header_temp[0];
+  header->SetOpCode(kWS_PONG_OP);
+  header->SetFinal(true);
+  header->SetMaskAndSize(mask, payload_size);
+  _outgoing_buffer.Append((void*)header, header->GetHeaderSize());
+  while (payload_size >= buff_size) {
+    r = _incoming_buffer.Consume((void*)&buff[0], buff_size);
+    palAssert(r == 0);
+    _outgoing_buffer.Append((void*)&buff[0], buff_size);
+    payload_size -= buff_size;
+  }
+  if (payload_size > 0) {
+    r = _incoming_buffer.Consume((void*)&buff[0], payload_size);
+    palAssert(r == 0);
+    _outgoing_buffer.Append((void*)&buff[0], payload_size);
+  }
+}
+
+static void palMemoryCopyBytes(palAppendChopBlob* dest, palRingBlob* src, uint64_t bytes) {
+  const uint64_t buff_size = 256;
+  uint8_t buff[256];
+  int r;
+  while (bytes >= buff_size) {
+    r = src->Consume((void*)&buff[0], buff_size);
+    palAssert(r == 0);
+    dest->Append((void*)&buff[0], buff_size);
+    bytes -= buff_size;
+  }
+  if (bytes > 0) {
+    r = src->Consume((void*)&buff[0], bytes);
+//     uint32_t z = (uint32_t)bytes;
+//     palPrintf("CP: %.*s\n", z, (const char*)&buff[0]);
+    palAssert(r == 0);
+    dest->Append((void*)&buff[0], bytes);
+  }
+}
+
+void palWebSocketServer::ParseMessage(uint64_t header_size) {
+  uint16_t header_temp[kWS_MAX_MESSAGE_HEADER_SIZE];
+  WebSocketMessageHeader* header = (WebSocketMessageHeader*)&header_temp[0];
+  _incoming_buffer.Consume<uint16_t>(&header_temp[0], (int)header_size/sizeof(header_temp[0]));
+  uint64_t payload_len = header->GetPayloadLength();
+  uint8_t opcode = header->GetOpCode();
+  uint64_t zz = 0;
+  if (opcode >= kWS_CONTROL_FRAME_START && opcode <= kWS_CONTROL_FRAME_END) {
+    // Control frame
+    if (opcode == kWS_PING_OP) {
+      // With a pong, we don't unmask the data, just send the ping payload with the same mask.
+      SendPong(payload_len, header->GetMask());
+    } else {
+      // A control frame we don't care about.
+      // Just skip the payload
+      _incoming_buffer.Skip(payload_len);
+      if (opcode == kWS_PONG_OP) {
+        palPrintf("Pong.\n");
+      }
+    }
+  } else {
+    // Message frame
+    const bool final = header->IsFinal(); // Final fragment of message?
+    // Unmask the data
+    UnmaskPayload(_incoming_buffer.GetReadPointer<uint8_t>(), payload_len, header->GetMask());
+    
+    if (opcode == kWS_CONTINUATION) {
+      uint64_t* header = _message_buffer.GetPtr<uint64_t>(_message_cursor);
+      uint64_t old_size = (*header & kPalWebSocketServerMessageSize__MASK);
+      // Zero out the size contained in the header
+      *header &= ~(kPalWebSocketServerMessageSize__MASK);
+      // Update the size of the message
+      old_size += payload_len;
+      *header |= old_size;
+      // Copy the payload into the message buffer
+      palMemoryCopyBytes(&_message_buffer, &_incoming_buffer, payload_len);
+      zz += payload_len;
+    } else {
+      uint64_t message_header = payload_len;
+      // Start of a new message
+      if (opcode == kWS_TEXT_FRAME) {
+        message_header |= ((uint64_t)kPalWebSocketServerMessageTypeText << kPalWebSocketServerMessageType__SHIFT);
+      } else if (opcode == kWS_BINARY_FRAME) {
+        message_header |= ((uint64_t)kPalWebSocketServerMessageTypeBinary << kPalWebSocketServerMessageType__SHIFT);
+      }
+      // Remember where the message started
+      _message_cursor = _message_buffer.GetSize();
+      // Append the header
+      _message_buffer.Append(&message_header);
+      // Copy the payload into the message buffer
+      palMemoryCopyBytes(&_message_buffer, &_incoming_buffer, payload_len);
+      zz += payload_len;
+    }
+    if (final) {
+      // We added another message
+      _message_count++;
+      _message_cursor = _message_buffer.GetSize();
+    }
+  }
 }
 
 int palWebSocketServer::ParseMessages() {
-  int bytes_to_parse = incoming_buffer_cursor_ - last_message_cursor_;
+  uint16_t header_temp[kWS_MAX_MESSAGE_HEADER_SIZE];
+  WebSocketMessageHeader* header = NULL;
+  int r;
 
-  // state machine:
-  // 0 - need to find 0 byte
-  // 1 - reading message
-  // 0 - back to 0 after reading in 0xff byte
-  int state = 0;
-  int cursor = last_message_cursor_;
-  while (bytes_to_parse > 0) {
-    unsigned char byte = incoming_buffer_[cursor];
-    if (state == 0) {
-      if (byte == 0x0) {
-        state = 1;
-        cursor++;
-      } else {
-        return -1;
-      }
-    } else {
-      if (byte == 0xff) {
-        // end of message
-        cursor++;
-        message_header msg;
-        msg.msg = &incoming_buffer_[last_message_cursor_+1];
-        msg.msg_length = cursor - last_message_cursor_;
-        // subtract the 0x00 and 0xff bytes
-        msg.msg_length = msg.msg_length - 2;
-        messages_.push_back(msg);
+  while (_incoming_buffer.GetSize() > 0) {
+    // We peek the first 16-bits so we can determine the header size
+    r = _incoming_buffer.Peek(&header_temp[0]);
+    if (r != 0) {
+      // Not enough data
+      break;
+    }
+    header = (WebSocketMessageHeader*)&header_temp[0];
+    uint64_t header_size = header->GetHeaderSize();
+    if (_incoming_buffer.GetSize() < header_size) {
+      // Not enough data to parse this message
+      break;
+    }
+    if (header->IsMasked() == false) {
+      has_error_ = true;
+      has_close_ = true;
+      ClientDisconnect();
+      break;
+    }
+    // We peek the header size so we can determine the packet size
+    r = _incoming_buffer.Peek<uint16_t>(&header_temp[0], (int)header_size/sizeof(header_temp[0]));
+    if (r != 0) {
+      // Not enough data
+      break;
+    }
+    uint64_t packet_len = header->GetMessageLength();
+    if (_incoming_buffer.GetSize() < packet_len) {
+      // Not enough data
+      break;
+    }
+    uint64_t payload_len = header->GetPayloadLength();
 
-        state = 0;
-        last_message_cursor_ = cursor;
-      } else {
-        // inside message
-        cursor++;
+    if (header->GetOpCode() >= kWS_MESSAGE_FRAME_START && header->GetOpCode() <= kWS_MESSAGE_FRAME_END) {
+      if (_message_buffer.GetAvailableSize() <= payload_len) {
+        // Not enough room in outgoing message buffer for this message.
+        break;
       }
     }
-
-    bytes_to_parse--;
+    if (header->GetOpCode() == kWS_CLOSED_OP) {
+      // Connection closed
+      if (header->GetHeaderSize() >= 4) {
+        _closed_code = header->GetClosedCode();
+        palPrintf("WebSocket connection gracefully closed with code: %hd\n", _closed_code);
+      } else {
+        palPrintf("WebSocket connection gracefully closed.\n");
+      }
+      has_close_ = true;
+      ClientDisconnect();
+      break;
+    } else {
+      ParseMessage(header_size);
+    }    
   }
-
   return 0;
 }
-
-
 
 static int ParseKey(palTokenizer* tokenizer, unsigned char* key) {  
   palDynamicString key_as_string;
@@ -295,7 +726,7 @@ static int ParseKey(palTokenizer* tokenizer, unsigned char* key) {
 
   key_as_string.TrimWhiteSpaceFromStart();
 
-  palPrintf("Key: **%s**\n", key_as_string.C());
+  //palPrintf("Key: **%s**\n", key_as_string.C());
 
   {
     palSHA1 sha1;
@@ -305,11 +736,11 @@ static int ParseKey(palTokenizer* tokenizer, unsigned char* key) {
     sha1.GetSHA1(key);
   }
 
-  palPrintf("Dumping SHA-1: ");
-  for (int i = 0; i < 20; i++) {
-    palPrintf("%02x ", key[i]);
-  }
-  palPrintf("\n");
+//   palPrintf("Dumping SHA-1: ");
+//   for (int i = 0; i < 20; i++) {
+//     palPrintf("%02x ", key[i]);
+//   }
+//   palPrintf("\n");
 
   return 0;
 }
@@ -347,10 +778,10 @@ static palTokenizerKeyword handshake_keywords[] = {
   { NULL, -1 }
 };
 
-bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
+bool palWebSocketServer::HasCompleteHandshake(const unsigned char* s, int s_len) {
   // super simple test for a complete handshake
-  const char* first = s;
-  palPrintf("Checking handshake: %s\n", s);
+  const char* first = (const char*)s;
+  //palPrintf("Checking handshake: %s\n", s);
   if (s_len < 12) {
     return false;
   }
@@ -367,7 +798,7 @@ bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
     return false;
   }
 
-  const char* final_bytes = &s[s_len-4];
+  const char* final_bytes = (const char*)&s[s_len-4];
   // two cr+lf pairs
   if (*final_bytes != '\r') {
     return false;
@@ -386,46 +817,6 @@ bool palWebSocketServer::HasCompleteHandshake(const char* s, int s_len) {
   }
   return true;
 }
-
-#if 0
-static char base64_encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                                      'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                      'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-                                      'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-                                      'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                                      'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                                      'w', 'x', 'y', 'z', '0', '1', '2', '3',
-                                      '4', '5', '6', '7', '8', '9', '+', '/'};
-static int base64_mod_table[] = {0, 2, 1};
-
-int base64_encode(const char *data, size_t input_length, char* output, size_t *output_length) {
-  palAssert(input_length == 20);
-  *output_length = 28;
-  //*output_length = (size_t) (4.0 * ceil((double) input_length / 3.0));
-
-  char* encoded_data = output;
-
-  for (unsigned int i = 0, j = 0; i < input_length;) {
-    uint32_t octet_a = i < input_length ? data[i++] : 0;
-    uint32_t octet_b = i < input_length ? data[i++] : 0;
-    uint32_t octet_c = i < input_length ? data[i++] : 0;
-
-    uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
-
-    encoded_data[j++] = base64_encoding_table[(triple >> 3 * 6) & 0x3F];
-    encoded_data[j++] = base64_encoding_table[(triple >> 2 * 6) & 0x3F];
-    encoded_data[j++] = base64_encoding_table[(triple >> 1 * 6) & 0x3F];
-    encoded_data[j++] = base64_encoding_table[(triple >> 0 * 6) & 0x3F];
-  }
-
-  for (int i = 0; i < base64_mod_table[input_length % 3]; i++) {
-    encoded_data[*output_length - 1 - i] = '=';
-  }
-
-  return 0;
-}
-
-#endif
 
 static const char Base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char Pad64 = '=';
@@ -492,12 +883,12 @@ int base64_encode(const char* data, size_t input_length, char* target, size_t* o
 }
 
 
-int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
+int palWebSocketServer::ProcessHandshake(const unsigned char* s, int s_len) {
   palMemBlob blob((void*)s, (uint64_t)s_len);
   palMemoryStream ms;
   int res;
 
-  palPrintf("Process Handshake %s\n", s);
+  //palPrintf("Process Handshake %s\n", s);
 
   res = ms.Create(blob, false);
   if (res != 0) {
@@ -585,6 +976,7 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   server_response.Append("Upgrade: websocket\r\n");
   server_response.Append("Connection: Upgrade\r\n");
   server_response.AppendPrintf("Sec-WebSocket-Accept: %s\r\n", &accept_key[0]);
+  server_response.Append("\r\n");
   //server_response.Append("Sec-WebSocket-Protocol: \r\n");
 #if 0
   server_response.Append("Sec-WebSocket-Location: ws://");
@@ -595,10 +987,9 @@ int palWebSocketServer::ProcessHandshake(const char* s, int s_len) {
   server_response.Append("Sec-WebSocket-Origin: ");
   server_response.Append(origin_name.C());
 #endif
-  server_response.Append("\r\n");
-  server_response.Append("\r\n");
   
-  palPrintf("Response:\n%s\n", server_response.C());
+  
+  //palPrintf("Response:\n%s\n", server_response.C());
   client_.Send((unsigned char*)server_response.C(), server_response.GetLength());
   return 0;
 }

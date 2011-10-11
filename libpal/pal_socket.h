@@ -24,6 +24,7 @@
 */
 
 #include "libpal/pal_types.h"
+#include "libpal/pal_errorcode.h"
 
 #if defined(PAL_PLATFORM_WINDOWS)
 #include <winsock2.h>
@@ -39,6 +40,9 @@ typedef int palSocket;
 #define kIpv4AddressLocalhost 0x7f000001 // 127.0.0.1
 typedef uint32_t palIpv4Address;
 typedef uint16_t palIPPort;
+
+#define PAL_SOCKET_ERROR_WOULDBLOCK palMakeErrorCode(PAL_ERROR_CODE_SOCKET_GROUP, 1)
+#define PAL_SOCKET_ERROR_CONNECTION_ABORTED palMakeErrorCode(PAL_ERROR_CODE_SOCKET_GROUP, 2)
 
 // application wide
 void palSocketInit();

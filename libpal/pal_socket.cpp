@@ -22,7 +22,7 @@
 */
 
 #include "libpal/pal_platform.h"
-
+#include "libpal/pal_debug.h"
 #if defined(PAL_PLATFORM_WINDOWS)
 #include <winsock2.h>
 #else
@@ -30,9 +30,24 @@
 #include <stdio.h>
 #include "libpal/pal_socket.h"
 
+static int TranslateSocketError(int error) {
+  switch (error) {
+  case WSAEWOULDBLOCK:
+    return PAL_SOCKET_ERROR_WOULDBLOCK;
+  break;
+  case WSAECONNABORTED:
+    return PAL_SOCKET_ERROR_CONNECTION_ABORTED;
+  break;
+  default:
+    palPrintf("Untranslated socket error: %d\n", error);
+  break;
+  }
+  return error;
+}
+
 void palSocketPrintErrorNo() {
   int error = WSAGetLastError();
-  printf("Socket error: %d (0x%08x)\n", error, error);
+  palPrintf("Socket error: %d (0x%08x)\n", error, error);
 }
 
 void palSocketInit() {
@@ -61,7 +76,7 @@ bool palSocketIsValid(palSocket socket) {
 }
 
 int palSocketGetErrorNumber() {
-  return WSAGetLastError();
+  return TranslateSocketError(WSAGetLastError());
 }
 
 int palSocketGetLocalName(palSocket socket, palIpv4Address* local_ip, palIPPort* local_port) {
@@ -171,6 +186,8 @@ int palSocketSend(palSocket socket, const unsigned char* buf, int* bytes_to_send
 
   r = send(socket, (char*)buf, *bytes_to_send, 0);
   if (r < 0) {
+    palPrintf("socket=%d . bytes_to_send=%d\n", socket, *bytes_to_send);
+    palSocketPrintErrorNo();
     return r;
   }
   if (r > 0) {
@@ -189,6 +206,10 @@ int palSocketReceive(palSocket socket, unsigned char* buf, int* bytes_to_read) {
   if (r > 0) {
     *bytes_to_read = r;
     return 0;
+  } else if (r < 0) {
+    *bytes_to_read = 0;
+    palSocketPrintErrorNo();
+    return r;
   } else {
     *bytes_to_read = 0;
     return r;

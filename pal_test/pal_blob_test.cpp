@@ -60,7 +60,7 @@ bool TestRingBufferFillEmpty() {
   r = rb.Append(&num_b);
   palAssertBreak(r == 0);
   r = rb.Append(&la);
-  palAssertBreak(r == PAL_RING_BLOB_NO_ROOM);
+  palAssertBreak(r == PAL_MEM_BLOB_NO_ROOM);
 
   uint64_t c;
   r = rb.Consume(&c);
@@ -70,7 +70,7 @@ bool TestRingBufferFillEmpty() {
   palAssertBreak(r == 0);
   palAssertBreak(c == num_b);
   r = rb.Consume(&c);
-  palAssertBreak(r == PAL_RING_BLOB_NO_DATA);
+  palAssertBreak(r == PAL_MEM_BLOB_NO_DATA);
 
   return true;
 }
@@ -92,7 +92,7 @@ bool TestRingBufferWrap() {
   r = rb.Append(&num_a);
   palAssertBreak(r == 0);
   r = rb.Append(&num_b);
-  palAssertBreak(r == PAL_RING_BLOB_NO_ROOM);
+  palAssertBreak(r == PAL_MEM_BLOB_NO_ROOM);
 
   r = rb.Consume(&check_la);
   palAssertBreak(r == 0);

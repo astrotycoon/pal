@@ -27,8 +27,8 @@
 #include "libpal/pal_errorcode.h"
 #include "libpal/pal_allocator.h"
 
-#define PAL_RING_BLOB_NO_ROOM palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 1)
-#define PAL_RING_BLOB_NO_DATA palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 2)
+#define PAL_MEM_BLOB_NO_ROOM palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 1)
+#define PAL_MEM_BLOB_NO_DATA palMakeErrorCode(PAL_ERROR_CODE_BLOB_GROUP, 2)
 
 struct palMemBlob {
 protected:
@@ -275,6 +275,10 @@ public:
     return _buffer_size;
   }
 
+  uint64_t GetAvailableSize() const {
+    return _buffer_capacity - _buffer_size;
+  }
+
   bool IsFull() const {
     return _buffer_size == _buffer_capacity;
   }
@@ -296,8 +300,8 @@ public:
   }
 
   int Append(const void* data, uint64_t data_size) {
-    if (_buffer_size + data_size > _buffer_capacity) {
-      return PAL_RING_BLOB_NO_ROOM;
+    if (_buffer_size + data_size >= _buffer_capacity) {
+      return PAL_MEM_BLOB_NO_ROOM;
     }
     Write(data, data_size);
     _buffer_size += data_size;
@@ -316,7 +320,7 @@ public:
 
   int Consume(void* data, uint64_t data_size) {
     if (_buffer_size < data_size) {
-      return PAL_RING_BLOB_NO_DATA;
+      return PAL_MEM_BLOB_NO_DATA;
     }
     Read(data, data_size);
     _buffer_size -= data_size;
@@ -336,7 +340,7 @@ public:
 
   int Peek(void* data, uint64_t data_size) {
     if (_buffer_size < data_size) {
-      return PAL_RING_BLOB_NO_DATA;
+      return PAL_MEM_BLOB_NO_DATA;
     }
     Read(data, data_size);
     return 0;
@@ -344,12 +348,29 @@ public:
 
   template<typename T>
   int Peek(T* item) {
-    return Peek(reinterpret_cast<void*>(T), sizeof(T));
+    return Peek(reinterpret_cast<void*>(item), sizeof(T));
   }
 
   template<typename T>
   int Peek(T* item, int item_count) {
-    return Peek(reinterpret_cast<void*>(T), sizeof(T)*item_count);
+    return Peek(reinterpret_cast<void*>(item), sizeof(T)*item_count);
+  }
+
+  int Skip(uint64_t bytes) {
+    if (_buffer_size < bytes) {
+      return PAL_MEM_BLOB_NO_DATA;
+    }
+    MoveReadPointer(bytes);
+    _buffer_size -= bytes;
+    return 0;
+  }
+
+  int MoveWritePointer(uint64_t bytes) {
+    if (_buffer_size + bytes >= _buffer_capacity) {
+      return PAL_MEM_BLOB_NO_ROOM;
+    }
+    _buffer_size += bytes;
+    return 0;
   }
 
   void* GetReadPointer() {
@@ -368,5 +389,136 @@ public:
   template<typename T>
   T* GetWritePointer() {
     return reinterpret_cast<T*>(MakeWritePointer());
+  }
+
+  uint64_t GetConsecutiveReadBlockSize() {
+    uint64_t data_size = GetSize();
+    uint8_t* _start = reinterpret_cast<uint8_t*>(_buffer);
+    uintptr_t read_offset = _read_pointer - _start;
+    if (read_offset + data_size > _buffer_capacity) {
+      // The read must be broken into two parts
+      uintptr_t slop = (read_offset + (uintptr_t)data_size) - (uintptr_t)_buffer_capacity;
+      uintptr_t first = (uintptr_t)data_size - slop;
+      return first;
+    } else {
+      return data_size;
+    }
+  }
+
+  uint64_t GetConsecutiveWriteBlockSize() {
+    uint64_t data_size = GetCapacity()-GetSize();
+    uint8_t* _write_start = reinterpret_cast<uint8_t*>(MakeWritePointer());
+    uint8_t* _start = reinterpret_cast<uint8_t*>(_buffer);
+    uintptr_t write_offset = _write_start - _start;
+    if (write_offset + data_size > _buffer_capacity) {
+      // The write must be broken into two parts
+      uintptr_t slop = (write_offset + (uintptr_t)data_size) - (uintptr_t)_buffer_capacity;
+      uintptr_t first = (uintptr_t)data_size - slop;
+      return first;
+    } else {
+      return data_size;
+    }
+  }
+};
+
+class palAppendChopBlob {
+  uintptr_t _buffer;
+  uint64_t _buffer_capacity;
+  uint64_t _buffer_size;
+public:
+  palAppendChopBlob() {
+    _buffer = 0;
+    _buffer_capacity = 0;
+    _buffer_size = 0;
+  }
+
+  palAppendChopBlob(void* buffer, uint64_t buffer_capacity) {
+    Reset(buffer, buffer_capacity);
+  }
+
+  uint64_t GetCapacity() const {
+    return _buffer_capacity;
+  }
+
+  uint64_t GetSize() const {
+    return _buffer_size;
+  }
+
+  uint64_t GetAvailableSize() const {
+    return _buffer_capacity - _buffer_size;
+  }
+
+  bool IsFull() const {
+    return _buffer_size == _buffer_capacity;
+  }
+
+  bool IsEmpty() const {
+    return _buffer_size == 0;
+  }
+
+  void Reset(void* buffer, uint64_t buffer_capacity) {
+    _buffer = reinterpret_cast<uintptr_t>(buffer);
+    _buffer_capacity = buffer_capacity;
+    _buffer_size = 0;
+  }
+
+  void Clear() {
+    _buffer_size = 0;
+  }
+
+  int Append(const void* data, uint64_t data_size) {
+    if (_buffer_size + data_size >= _buffer_capacity) {
+      return PAL_MEM_BLOB_NO_ROOM;
+    }
+    palMemoryCopyBytes(reinterpret_cast<void*>(_buffer+_buffer_size), data, data_size);
+    _buffer_size += data_size;
+    return 0;
+  }
+
+  template<typename T>
+  int Append(const T* item) {
+    return Append(reinterpret_cast<const void*>(item), sizeof(T));
+  }
+
+  template<typename T>
+  int Append(const T* items, int item_count) {
+    return Append(reinterpret_cast<const void*>(items), sizeof(T)*item_count);
+  }
+
+  int Chop(uint64_t size) {
+    if (size > _buffer_size) {
+      return PAL_MEM_BLOB_NO_DATA;
+    }
+    uint64_t left_over = _buffer_size - size;
+    palMemoryCopyBytes(reinterpret_cast<void*>(_buffer), reinterpret_cast<void*>(_buffer+size), left_over);
+    _buffer_size = left_over;
+    return 0;
+  }
+
+  template<typename T>
+  T* GetPtr(uint64_t byte_offset) const {
+    return reinterpret_cast<T*>(_buffer+byte_offset);
+  }
+
+  void* GetPtr(uint64_t byte_offset) const {
+    return reinterpret_cast<void*>(_buffer+byte_offset);
+  }
+
+  template<typename T>
+  T* GetAppendPtr() const {
+    return reinterpret_cast<T*>(_buffer+_buffer_size);
+  }
+
+  void* GetAppendPtr() const {
+    return reinterpret_cast<void*>(_buffer+_buffer_size);
+  }
+
+  int MoveAppendPtr(uint64_t bytes) {
+    if (bytes + _buffer_size >= _buffer_capacity) {
+      return PAL_MEM_BLOB_NO_ROOM;
+    }
+
+    _buffer_size += bytes;
+    return 0;
   }
 };

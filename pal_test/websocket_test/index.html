@@ -24,6 +24,16 @@ function testWebSocket() {
 	websocket.onclose = function(evt) { onClose(websocket,evt) };
 	websocket.onmessage = function(evt) { onMessage(websocket,evt) };
 	websocket.onerror = function(evt) { onError(websocket,evt) };
+    setInterval(function()
+        {
+            readyState = websocket.readyState;
+            amount = websocket.bufferedAmount;
+            if (readyState == 1 && amount > 0) {
+                writeToScreen("> BUFFERED");
+                writeToScreen(amount);
+                writeToScreen("< BUFFERED");
+            }
+        },  1);
 }
 
 function onOpen(websocket,evt) {
@@ -32,7 +42,9 @@ function onOpen(websocket,evt) {
 	doSend("WebSocket rocks");
 	doSend("SPAM 1");
 	doSend("SPAM 2");
+    doSend("XXXZZZZ");
 	doSend("SPAM 3");
+    doSend("3.14159");
 }
 
 function onClose(websocket,evt) {
@@ -48,8 +60,10 @@ function onMessage(websocket, evt) {
 	counter++;
 	if (counter == 10) {
 		websocket.close();
+        websocket.onopen = undefined;
+        websocket.onmessage = undefined;
+        websocket.onerror = undefined;
 	}
-	
 }
 
 function onError(websocket, evt) {
@@ -59,10 +73,14 @@ function onError(websocket, evt) {
 }
 
 function doSend(message) {
+    writeToScreen("> SEND");
+    writeToScreen(websocket.readyState);
+	writeToScreen(websocket.bufferedAmount);
 	writeToScreen("SENT: " + message);
 	websocket.send(message);
 	writeToScreen(websocket.readyState);
 	writeToScreen(websocket.bufferedAmount);
+    writeToScreen("< SEND");
 }
 
 function writeToScreen(message) {

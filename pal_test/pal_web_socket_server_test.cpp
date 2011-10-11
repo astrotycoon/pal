@@ -1,14 +1,20 @@
 #include "libpal/libpal.h"
 #include "pal_web_socket_server_test.h"
 
-void PrintMessages(const char* msg, int msg_len) {
-  palPrintf("%.*s\n", msg_len, msg);
+void PrintMessages(palMemBlob msg, bool binary_message) {
+  palPrintf("Message handler\n");
+  if (binary_message == false) {
+    uint32_t len = (uint32_t)msg.GetBufferSize();
+    palPrintf("%.*s\n", len, msg.GetPtr<const char>());
+  } else {
+    palPrintf("Got a binary message with %lld bytes\n", msg.GetBufferSize());
+  }
 }
 
 struct MsgCounter {
   int counter;
   MsgCounter() : counter(0) {}
-  void CountMessages(const char* msg, int msg_len) {
+  void CountMessages(palMemBlob msg, bool binary_message) {
     counter++;
   }
 };
@@ -17,11 +23,12 @@ bool palWebSocketServerTest() {
 #define BUFFER_SIZE 10*1024
   unsigned char* incoming_buffer = new unsigned char[BUFFER_SIZE];
   unsigned char* outgoing_buffer = new unsigned char[BUFFER_SIZE];
-
-  palWebSocketServer server(NULL, 0, NULL, 0);
+  unsigned char* message_buffer = new unsigned char[BUFFER_SIZE];
+  palWebSocketServer server;
 
   server.SetIncomingBuffer(incoming_buffer, BUFFER_SIZE);
   server.SetOutgoingBuffer(outgoing_buffer, BUFFER_SIZE);
+  server.SetMessageBuffer(message_buffer, BUFFER_SIZE);
 
   int r;
   
@@ -44,6 +51,10 @@ bool palWebSocketServerTest() {
     if (server.HasError()) {
       palPrintf("Connection had error\n");
     }
+
+    if (server.Connected() == true) {
+      //server.SendPing();
+    }
     
     if (server.PendingMessageCount() > threshold) {
       threshold = 0;
@@ -53,6 +64,7 @@ bool palWebSocketServerTest() {
       server.ProcessMessages(PrintMessages);
       server.ClearMessages(); // clear messages
       server.SendMessage("MSG0");
+#if 0
       server.SendMessage("MSG1");
       server.SendMessage("MSG2");
       server.SendMessage("MSG3");
@@ -63,6 +75,7 @@ bool palWebSocketServerTest() {
       server.SendMessage("MSG8");
       server.SendMessage("MSG9");
       server.SendMessage("MSG10");
+#endif
     }
   }
 

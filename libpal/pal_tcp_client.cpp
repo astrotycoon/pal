@@ -88,15 +88,17 @@ int palTcpClient::Receive(unsigned char* buff, int* num_bytes_to_read) {
   int r = palSocketReceive(socket_, buff, &bytes_to_read);
   if (r < 0) {
     int error = palSocketGetErrorNumber();
-    if (error == WSAEWOULDBLOCK) {
+    if (error == PAL_SOCKET_ERROR_WOULDBLOCK) {
       r = 0;
+    } else {
+      connected_ = false;
+      return PAL_TCP_CLIENT_DISCONNECTED;
     }
-    connected_ = false;
   } else if (r == 0 && bytes_to_read == 0) {
     // connection closed
     palSocketClose(socket_);
     connected_ = false;
-    return -1;
+    return PAL_TCP_CLIENT_DISCONNECTED_EOF;
   } else {
     connected_ = r == 0;
   }
